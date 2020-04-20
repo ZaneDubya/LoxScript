@@ -1,25 +1,25 @@
-# Syntactic sugar:
+Syntactic sugar:
 - Add ++, --, +=, -=, /=, *=, and modulus % and %=
 
-# Parsing Expressions:
+Parsing Expressions:
 - Add support for comma expressions.
 - Add ternary ?: operator.
 - Add error production to handle each binary operator that appears without a left-hand operation.
 
-# Control Flow:
+Control Flow:
 - Add break.
 - Add continue.
 - Make sure these are only usable in loops.
 
-# Functions:
+Functions:
 - Add anonymous functions:
 
-# Resolving and Binding:
+Resolving and Binding:
 - Don't allow redefinition of a local within an enclosed scope.
 - Extend resolver to report error if local variable is never used.
 - See item four for a more efficient reference system.
 
-# Classes
+Classes
 - Add Static Methods.
 - Properties (vars in class).
 - private and public modifiers (maybe).
@@ -27,6 +27,6 @@
 - init with New
 - How does set and get work??
 
-# Inheritance:
+Inheritance:
 - Replace inherits extender '<' with ':'
 - Replace "super" with "base"
