@@ -64,12 +64,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\GenerateAst\GenerateAst.csproj">
-      <Project>{b4ba5a2c-273e-4dde-850b-9e2ab25c408c}</Project>
-      <Name>GenerateAst</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
+    <Content Include="Tests\classes.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Tests\todo-anon-fns.txt" />
     <Content Include="Tests\count.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
