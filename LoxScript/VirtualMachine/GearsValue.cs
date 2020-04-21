@@ -22,5 +22,17 @@ namespace LoxScript.VirtualMachine {
         /// Explicit conversion from MoneyAmount to double (requires cast operator).
         /// </summary>
         public static explicit operator double(GearsValue value) => value._Value;
+
+        // public static GearsValue operator +(GearsValue value) => value;
+
+        public static GearsValue operator -(GearsValue value) => -value._Value;
+
+        public static GearsValue operator +(GearsValue a, GearsValue b) => a._Value + b._Value;
+
+        public static GearsValue operator -(GearsValue a, GearsValue b) =>  a._Value - b._Value;
+
+        public static GearsValue operator *(GearsValue a, GearsValue b) => a._Value * b._Value;
+
+        public static GearsValue operator /(GearsValue a, GearsValue b) => a._Value / b._Value;
     }
 }

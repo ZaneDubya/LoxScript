@@ -59,9 +59,12 @@
     <Compile Include="Scanner.cs" />
     <Compile Include="Grammar\Token.cs" />
     <Compile Include="Grammar\TokenType.cs" />
+    <Compile Include="VirtualMachine\Exceptions.cs" />
     <Compile Include="VirtualMachine\Gears.cs" />
     <Compile Include="VirtualMachine\GearsChunk.cs" />
-    <Compile Include="VirtualMachine\GearsOpCode.cs" />
+    <Compile Include="VirtualMachine\EGearsOpCode.cs" />
+    <Compile Include="VirtualMachine\EGearsResult.cs" />
+    <Compile Include="VirtualMachine\GearsContext.cs" />
     <Compile Include="VirtualMachine\GearsValue.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -34,6 +34,9 @@ namespace LoxScript.VirtualMachine {
         // === Code Bytes and Lines ==================================================================================
         // ===========================================================================================================
 
+        /// <summary>
+        /// Returns the next value, and advances index by the number of bytes read.
+        /// </summary>
         internal int Read(ref int index) {
             if (index < 0 || index >= Count) {
                 return -1; // runtime error?
@@ -49,7 +52,7 @@ namespace LoxScript.VirtualMachine {
             _Code[Count++] = value;
         }
 
-        internal void Write(GearsOpCode value) {
+        internal void Write(EGearsOpCode value) {
             Write((byte)value);
         }
 
