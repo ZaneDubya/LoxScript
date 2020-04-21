@@ -11,10 +11,10 @@ namespace LoxScript {
         private static bool _HadRuntimeError = false;
 
         static void Main(string[] args) {
-            // args = new string[] { "Tests/fib.txt" };
+            // args = new string[] { "Tests/classes.txt" };
             if (args.Length > 1) {
                 Console.WriteLine("Usage: loxscript [script]");
-                Environment.Exit(64);
+                Exit(64);
             }
             else if (args.Length == 1) {
                 RunFile(args[0]);
@@ -24,14 +24,21 @@ namespace LoxScript {
             }
         }
 
+        private static void Exit(int code, bool waitForKey = false) {
+            if (waitForKey) {
+                Console.ReadKey();
+            }
+            Environment.Exit(code);
+        }
+
         private static void RunFile(string path) {
             string source = ReadFile(path);
             Run(source);
             if (_HadError) {
-                Environment.Exit(65);
+                Exit(65, true);
             }
             if (_HadRuntimeError) {
-                Environment.Exit(70);
+                Exit(70, true);
             }
         }
 
@@ -64,14 +71,14 @@ namespace LoxScript {
         private static string ReadFile(string path) {
             if (!File.Exists(path)) {
                 Console.WriteLine("File does not exist.");
-                Environment.Exit(64);
+                Exit(64);
             }
             try {
                 return File.ReadAllText(path);
             }
             catch {
                 Console.WriteLine("Error reading file.");
-                Environment.Exit(64);
+                Exit(64);
                 return null;
             }
         }
