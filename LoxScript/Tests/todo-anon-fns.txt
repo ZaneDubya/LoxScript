@@ -1,12 +1,12 @@
 ﻿// anonymous functions - not yet implemented
 
-func thrice(fn) {
+fun thrice(fn) {
   for (var i = 1; i <= 3; i = i + 1) {
     fn(i);
   }
 }
 
-thrice(func (a) {
+thrice(fun (a) {
   print a;
 });
 // "1".

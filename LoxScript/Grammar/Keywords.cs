@@ -13,7 +13,7 @@ namespace LoxScript.Grammar {
             _Keywords["else"] = TokenType.ELSE;
             _Keywords["false"] = TokenType.FALSE;
             _Keywords["for"] = TokenType.FOR;
-            _Keywords["func"] = TokenType.FUNCTION;
+            _Keywords["fun"] = TokenType.FUNCTION;
             _Keywords["if"] = TokenType.IF;
             _Keywords["nil"] = TokenType.NIL;
             _Keywords["or"] = TokenType.OR;
