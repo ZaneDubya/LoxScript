@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.28307.902
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoxScript", "LoxScript\LoxScript.csproj", "{BAACB847-DD68-4037-9D94-FB987397E01C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateAst", "GenerateAst\GenerateAst.csproj", "{B4BA5A2C-273E-4DDE-850B-9E2AB25C408C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerateGrammar", "GenerateGrammar\GenerateGrammar.csproj", "{B4BA5A2C-273E-4DDE-850B-9E2AB25C408C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

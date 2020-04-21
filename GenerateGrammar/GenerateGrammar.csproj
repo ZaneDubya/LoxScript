@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{B4BA5A2C-273E-4DDE-850B-9E2AB25C408C}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>GenerateAst</RootNamespace>
-    <AssemblyName>GenerateAst</AssemblyName>
+    <RootNamespace>GenerateGrammar</RootNamespace>
+    <AssemblyName>GenerateGrammar</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="GrammarCollection.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
