@@ -1,5 +1,6 @@
 ﻿using LoxScript.Grammar;
 using LoxScript.Interpreter;
+using LoxScript.VirtualMachine;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,6 +12,7 @@ namespace LoxScript {
         private static bool _HadRuntimeError = false;
 
         static void Main(string[] args) {
+            Gears gears = new Gears();
             // args = new string[] { "Tests/classes.txt" };
             if (args.Length > 1) {
                 Console.WriteLine("Usage: loxscript [script]");
