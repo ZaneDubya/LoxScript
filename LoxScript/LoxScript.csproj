@@ -60,21 +60,12 @@
     <Compile Include="Grammar\Token.cs" />
     <Compile Include="Grammar\TokenType.cs" />
     <Compile Include="VirtualMachine\Gears.cs" />
+    <Compile Include="VirtualMachine\GearsChunk.cs" />
+    <Compile Include="VirtualMachine\GearsOpCode.cs" />
+    <Compile Include="VirtualMachine\GearsValue.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Tests\classes.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Tests\todo-anon-fns.txt" />
-    <Content Include="Tests\count.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Tests\fib.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
