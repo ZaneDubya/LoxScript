@@ -3,6 +3,9 @@ using System;
 using System.Collections.Generic;
 
 namespace LoxScript.Interpreter {
+    /// <summary>
+    /// Engine is an abstract syntax tree interpreter for the Lox language.
+    /// </summary>
     class Engine : Expr.IVisitor<object>, Stmt.IVisitor {
         private readonly EngineEnvironment _Globals = new EngineEnvironment();
         private readonly Dictionary<Expr, int> _Locals = new Dictionary<Expr, int>();

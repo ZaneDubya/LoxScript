@@ -59,6 +59,7 @@
     <Compile Include="Scanner.cs" />
     <Compile Include="Grammar\Token.cs" />
     <Compile Include="Grammar\TokenType.cs" />
+    <Compile Include="VirtualMachine\Gears.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
