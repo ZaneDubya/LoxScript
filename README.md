@@ -18,4 +18,4 @@ At runtime, LoxScript either reads input from the console or a file. [LoxScript/
 
 ## Interpreter
 
-The LoxScript interpreter is called (Engine)[LoxScript/Engine]. Engine walks the AST, executing each node using the Visitor pattern.
+The LoxScript interpreter is called (Engine)[LoxScript/Interpreter]. Engine walks the AST, executing each node using the Visitor pattern.
