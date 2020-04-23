@@ -4,9 +4,9 @@ using System;
 using System.Collections.Generic;
 using static LoxScript.Parsing.TokenType;
 
-namespace LoxScript {
+namespace LoxScript.Interpreter {
     /// <summary>
-    /// TODO: Add comma operator, ternary operator, error production on each binary operator without a left-hand operator.
+    /// Parses a TokenList into a list of statements that is executed by Engine.
     /// </summary>
     class Parser {
         private readonly TokenList _Tokens;

@@ -57,11 +57,12 @@
     <Compile Include="Grammar\Keywords.cs" />
     <Compile Include="Interpreter\EngineResolver.cs" />
     <Compile Include="Program.cs" />
-    <Compile Include="Parser.cs" />
+    <Compile Include="Interpreter\Parser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Scanning\Scanner.cs" />
     <Compile Include="Scanning\Token.cs" />
     <Compile Include="Scanning\TokenType.cs" />
+    <Compile Include="VirtualMachine\Compiler.cs" />
     <Compile Include="VirtualMachine\Exceptions.cs" />
     <Compile Include="VirtualMachine\Gears.cs" />
     <Compile Include="VirtualMachine\GearsChunk.cs" />

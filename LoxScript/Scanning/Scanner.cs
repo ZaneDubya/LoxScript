@@ -24,7 +24,7 @@ namespace LoxScript.Parsing {
                 _Start = _Current;
                 ScanToken();
             }
-            _Tokens.Add(new Token(TokenType.EOF, _Line));
+            AddToken(TokenType.EOF);
             return _Tokens;
         }
 
@@ -79,6 +79,7 @@ namespace LoxScript.Parsing {
                         while (Peek() != '\n' && !IsAtEnd) {
                             Advance();
                         }
+                        _Start = _Current;
                     }
                     else if (Match('*')) {
                         while (!IsAtEnd) {
