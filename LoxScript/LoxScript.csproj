@@ -22,6 +22,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -31,6 +32,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -43,6 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Scanning\TokenList.cs" />
     <Compile Include="Interpreter\IEngineCallable.cs" />
     <Compile Include="Interpreter\EngineFunction.cs" />
     <Compile Include="Interpreter\EngineClassDeclaration.cs" />
@@ -56,9 +59,9 @@
     <Compile Include="Program.cs" />
     <Compile Include="Parser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Scanner.cs" />
-    <Compile Include="Grammar\Token.cs" />
-    <Compile Include="Grammar\TokenType.cs" />
+    <Compile Include="Scanning\Scanner.cs" />
+    <Compile Include="Scanning\Token.cs" />
+    <Compile Include="Scanning\TokenType.cs" />
     <Compile Include="VirtualMachine\Exceptions.cs" />
     <Compile Include="VirtualMachine\Gears.cs" />
     <Compile Include="VirtualMachine\GearsChunk.cs" />

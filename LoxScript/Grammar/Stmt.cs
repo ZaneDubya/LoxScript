@@ -1,7 +1,7 @@
-using LoxScript.Grammar;
+using LoxScript.Parsing;
 using System.Collections.Generic;
 
-namespace LoxScript {
+namespace LoxScript.Grammar {
     abstract class Stmt {
 
         internal interface IVisitor {

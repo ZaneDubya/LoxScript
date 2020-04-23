@@ -1,13 +1,16 @@
 ﻿using LoxScript.Grammar;
-using System.Collections.Generic;
 
-namespace LoxScript {
+namespace LoxScript.Parsing {
+    /// <summary>
+    /// Scanner transforms an input source file into TokenList.
+    /// Tokens defined by reserved keywords are recognized by checking against Grammar/Keywords.cs
+    /// </summary>
     internal class Scanner {
         private string _Source;
         private int _Start = 0;
         private int _Current = 0;
         private int _Line = 1;
-        private List<Token> _Tokens = new List<Token>();
+        private TokenList _Tokens = new TokenList();
 
         private bool IsAtEnd => _Current >= _Source.Length;
 
@@ -15,13 +18,13 @@ namespace LoxScript {
             _Source = source;
         }
 
-        internal List<Token> ScanTokens() {
+        internal TokenList ScanTokens() {
             while (!IsAtEnd) {
                 // we are at the beginning of the next lexeme
                 _Start = _Current;
                 ScanToken();
             }
-            _Tokens.Add(new Token(TokenType.EOF, "", null, _Line));
+            _Tokens.Add(new Token(TokenType.EOF, _Line));
             return _Tokens;
         }
 
@@ -156,8 +159,7 @@ namespace LoxScript {
                     Advance();
                 }
             }
-            AddToken(TokenType.NUMBER,
-                double.Parse(_Source.Substring(_Start, _Current - _Start)));
+            AddToken(TokenType.NUMBER);
         }
 
         /// <summary>
@@ -185,9 +187,7 @@ namespace LoxScript {
             }
             // The closing ".                                       
             Advance();
-            // Trim the surrounding quotes.                         
-            string value = _Source.Substring(_Start + 1, _Current - _Start - 2);
-            AddToken(TokenType.STRING, value);
+            AddToken(TokenType.STRING);
         }
 
         /// <summary>
@@ -224,15 +224,8 @@ namespace LoxScript {
         /// grabs the text of the current lexeme and creates a new token for it.
         /// </summary>
         private void AddToken(TokenType type) {
-            AddToken(type, null);
-        }
-
-        /// <summary>
-        /// grabs the text of the current lexeme and creates a new token for it.
-        /// </summary>
-        private void AddToken(TokenType type, object literal) {
             string text = _Source.Substring(_Start, _Current - _Start);
-            _Tokens.Add(new Token(type, text, literal, _Line));
+            _Tokens.Add(new Token(type, _Line, _Source, _Start, _Current - _Start));
         }
     }
 }

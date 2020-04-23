@@ -1,21 +1,22 @@
 ﻿using LoxScript.Grammar;
+using LoxScript.Parsing;
 using System;
 using System.Collections.Generic;
-using static LoxScript.Grammar.TokenType;
+using static LoxScript.Parsing.TokenType;
 
 namespace LoxScript {
     /// <summary>
     /// TODO: Add comma operator, ternary operator, error production on each binary operator without a left-hand operator.
     /// </summary>
     class Parser {
-        private readonly List<Token> _Tokens;
+        private readonly TokenList _Tokens;
 
         /// <summary>
         /// Points to the next token eagerly waiting to be used.
         /// </summary>
         private int _Current = 0;
 
-        internal Parser(List<Token> tokens) {
+        internal Parser(TokenList tokens) {
             _Tokens = tokens;
         }
 
@@ -455,8 +456,11 @@ namespace LoxScript {
             if (Match(NIL)) {
                 return new Expr.Literal(null);
             }
-            if (Match(NUMBER, STRING)) {
-                return new Expr.Literal(Previous().Literal);
+            if (Match(NUMBER)) {
+                return new Expr.Literal(Previous().LiteralAsNumber);
+            }
+            if (Match(STRING)) {
+                return new Expr.Literal(Previous().LiteralAsString);
             }
             if (Match(SUPER)) {
                 Token keyword = Previous();

@@ -88,10 +88,10 @@ namespace GenerateGrammar {
 
         private static string DefineAst(string baseName, bool hasVisitorType, IEnumerable<string> types) {
             StringBuilder writer = new StringBuilder();
-            writer.AppendLine("using LoxScript.Grammar;");
+            writer.AppendLine("using LoxScript.Parsing;");
             writer.AppendLine("using System.Collections.Generic;");
             writer.AppendLine();
-            writer.AppendLine("namespace LoxScript {");
+            writer.AppendLine("namespace LoxScript.Grammar {");
             writer.AppendLine($"    abstract class {baseName} {{");
             writer.AppendLine();
             // the visitor interface:

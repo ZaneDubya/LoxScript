@@ -1,4 +1,4 @@
-﻿using LoxScript.Grammar;
+﻿using LoxScript.Parsing;
 using System.Collections.Generic;
 
 namespace LoxScript.Interpreter {

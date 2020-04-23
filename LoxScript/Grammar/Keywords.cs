@@ -1,9 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using LoxScript.Parsing;
+using System.Collections.Generic;
 
 namespace LoxScript.Grammar {
     static class Keywords {
         internal const string This = "this";
-        internal const string Ctor = "init"; // intend to replace this with class-specific ctor.
+        internal const string Ctor = "init";
 
         private readonly static Dictionary<string, TokenType> _Keywords = new Dictionary<string, TokenType>();
 

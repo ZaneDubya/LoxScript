@@ -1,6 +1,6 @@
 ﻿using LoxScript.Grammar;
 using LoxScript.Interpreter;
-using LoxScript.VirtualMachine;
+using LoxScript.Parsing;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,14 +12,15 @@ namespace LoxScript {
         private static bool _HadRuntimeError = false;
 
         static void Main(string[] args) {
-            Gears gears = new Gears();
-            // args = new string[] { "Tests/classes.txt" };
+            // Gears gears = new Gears();
+            args = new string[] { "../../../Tests/test.txt" };
             if (args.Length > 1) {
                 Console.WriteLine("Usage: loxscript [script]");
                 Exit(64);
             }
             else if (args.Length == 1) {
                 RunFile(args[0]);
+                Exit(0, true);
             }
             else {
                 RunPrompt();
@@ -53,7 +54,7 @@ namespace LoxScript {
         }
 
         private static void Run(string source) {
-            List<Token> tokens = new Scanner(source).ScanTokens();
+            TokenList tokens = new Scanner(source).ScanTokens();
             List<Stmt> statements = new Parser(tokens).Parse();
             // Stop if there was a syntax error.
             if (_HadError) {

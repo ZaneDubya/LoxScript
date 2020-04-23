@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using LoxScript.Grammar;
+using LoxScript.Parsing;
 
 namespace LoxScript.Interpreter {
     class EngineResolver : Expr.IVisitor<object>, Stmt.IVisitor {
@@ -218,7 +219,7 @@ namespace LoxScript.Interpreter {
         }
 
         public object VisitLiteralExpr(Expr.Literal expr) {
-            // Nothing to traverse, since a literal doesn't mention any variables or contain subexpressions.
+            // Nothing to traverse since a literal doesn't mention any variables or contain subexpressions.
             return null;
         }
 
