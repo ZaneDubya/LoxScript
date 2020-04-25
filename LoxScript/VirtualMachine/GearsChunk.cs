@@ -5,7 +5,7 @@ namespace LoxScript.VirtualMachine {
     /// A wrapper around an array of bytes.
     /// </summary>
     class GearsChunk {
-        private const int InitialConstantCapcity = 4;
+        private const int InitialConstantCapcity = 1;
         private const int InitialChunkCapcity = 8;
         private const int GrowCapacityFactor = 2;
 
@@ -54,6 +54,10 @@ namespace LoxScript.VirtualMachine {
 
         internal void Write(EGearsOpCode value) {
             Write((byte)value);
+        }
+
+        internal void WriteAt(int offset, byte value) {
+            _Code[offset] = value;
         }
 
         internal int LineAt(int index) {

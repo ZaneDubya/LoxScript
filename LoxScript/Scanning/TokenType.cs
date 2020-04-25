@@ -1,7 +1,10 @@
-﻿namespace LoxScript.Parsing {
+﻿namespace LoxScript.Scanning {
     enum TokenType {
         // End of file.
         EOF,
+
+        // Error
+        ERROR,
 
         // Single-character tokens.                      
         LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,

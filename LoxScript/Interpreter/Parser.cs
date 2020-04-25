@@ -1,8 +1,8 @@
 ﻿using LoxScript.Grammar;
-using LoxScript.Parsing;
+using LoxScript.Scanning;
 using System;
 using System.Collections.Generic;
-using static LoxScript.Parsing.TokenType;
+using static LoxScript.Scanning.TokenType;
 
 namespace LoxScript.Interpreter {
     /// <summary>
@@ -72,7 +72,6 @@ namespace LoxScript.Interpreter {
         /// classDecl   → "class" IDENTIFIER ( "&lt;" IDENTIFIER )? 
         ///               "{" function* "}" ;
         /// </summary>
-        /// <returns></returns>
         private Stmt ClassDeclaration() {
             Token name = Consume(IDENTIFIER, "Expect class name.");
             Expr.Variable superClass = null;
@@ -516,7 +515,9 @@ namespace LoxScript.Interpreter {
         /// Returns true if the current token is of the given type
         /// </summary>
         private bool Check(TokenType type) {
-            if (IsAtEnd()) return false;
+            if (IsAtEnd()) {
+                return false;
+            }
             return Peek().Type == type;
         }
 

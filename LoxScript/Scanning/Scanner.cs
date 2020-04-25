@@ -1,6 +1,6 @@
 ﻿using LoxScript.Grammar;
 
-namespace LoxScript.Parsing {
+namespace LoxScript.Scanning {
     /// <summary>
     /// Scanner transforms an input source file into TokenList.
     /// Tokens defined by reserved keywords are recognized by checking against Grammar/Keywords.cs

@@ -25,17 +25,17 @@ namespace LoxScript.VirtualMachine {
 
         // --- Is this a ... -----------------------------------------------------------------------------------------
 
-        private bool IsNumber => (_AsLong & QNAN) != QNAN;
+        public bool IsNumber => (_AsLong & QNAN) != QNAN;
 
-        private bool IsNil => _AsLong == TAG_NIL;
+        public bool IsNil => _AsLong == TAG_NIL;
 
-        private bool IsFalse => _AsLong == TAG_FALSE;
+        public bool IsFalse => _AsLong == TAG_FALSE;
 
-        private bool IsTrue => _AsLong == TAG_TRUE;
+        public bool IsTrue => _AsLong == TAG_TRUE;
 
-        private bool IsBool => (_AsLong & TAG_FALSE) == TAG_FALSE;
+        public bool IsBool => (_AsLong & TAG_FALSE) == TAG_FALSE;
 
-        private bool IsObjectPtr => (_AsLong & TAG_OBJECTPTR) == TAG_OBJECTPTR;
+        public bool IsObjectPtr => (_AsLong & TAG_OBJECTPTR) == TAG_OBJECTPTR;
 
         // --- Return as a ... ---------------------------------------------------------------------------------------
 

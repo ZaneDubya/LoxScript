@@ -5,6 +5,67 @@
         /// </summary>
         OP_CONSTANT,
 
+        // Types of Values literal-ops
+        OP_NIL,
+        OP_TRUE,
+        OP_FALSE,
+
+        /// <summary>
+        /// Global Variables pop-op
+        /// </summary>
+        OP_POP,
+
+        /// <summary>
+        /// Local Variables get-local-op
+        /// </summary>
+        OP_GET_LOCAL,
+
+        /// <summary>
+        /// Local Variables set-local-op
+        /// </summary>
+        OP_SET_LOCAL,
+
+        /// <summary>
+        /// Global Variables get-global-op
+        /// </summary>
+        OP_GET_GLOBAL,
+
+        /// <summary>
+        /// Global Variables define-global-op
+        /// </summary>
+        OP_DEFINE_GLOBAL,
+
+        /// <summary>
+        /// Global Variables set-global-op
+        /// </summary>
+        OP_SET_GLOBAL,
+
+        /// <summary>
+        /// Closures upvalue-ops
+        /// </summary>
+        OP_GET_UPVALUE,
+
+        OP_SET_UPVALUE,
+
+        /// <summary>
+        /// Classes and Instances property-ops
+        /// </summary>
+        OP_GET_PROPERTY,
+
+        OP_SET_PROPERTY,
+
+        /// <summary>
+        /// Superclasses get-super-op
+        /// </summary>
+        OP_GET_SUPER,
+
+        /// <summary>
+        /// Types of Values comparison-ops
+        /// </summary>
+        OP_EQUAL,
+        OP_GREATER,
+        OP_LESS,
+
         /// <summary>
         /// Pops two values from the stack, adds them, and pushes the result to the stack.
         /// </summary>
@@ -25,14 +86,40 @@
         /// </summary>
         OP_DIVIDE,
 
+        OP_NOT,
+
         /// <summary>
         /// Pops a value on the stack, negates it, and pushes it back onto the stack.
         /// </summary>
         OP_NEGATE,
 
+        OP_PRINT,
+
+        OP_JUMP,
+
+        OP_JUMP_IF_FALSE,
+
+        OP_LOOP,
+
+        OP_CALL,
+
+        OP_INVOKE,
+
+        OP_SUPER_INVOKE,
+
+        OP_CLOSURE,
+
+        OP_CLOSE_UPVALUE,
+
         /// <summary>
         /// Pops a value from the stack and returns it as the result of the current function.
         /// </summary>
-        OP_RETURN 
+        OP_RETURN,
+            
+        OP_CLASS,
+
+        OP_INHERIT,
+
+        OP_METHOD
     }
 }

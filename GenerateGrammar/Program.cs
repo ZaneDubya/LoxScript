@@ -88,7 +88,7 @@ namespace GenerateGrammar {
 
         private static string DefineAst(string baseName, bool hasVisitorType, IEnumerable<string> types) {
             StringBuilder writer = new StringBuilder();
-            writer.AppendLine("using LoxScript.Parsing;");
+            writer.AppendLine("using LoxScript.Scanning;");
             writer.AppendLine("using System.Collections.Generic;");
             writer.AppendLine();
             writer.AppendLine("namespace LoxScript.Grammar {");

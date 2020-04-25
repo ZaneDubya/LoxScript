@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace LoxScript.Parsing {
+namespace LoxScript.Scanning {
     /// <summary>
     /// A list of tokens.
     /// </summary>

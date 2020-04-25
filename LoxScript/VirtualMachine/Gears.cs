@@ -1,5 +1,4 @@
 ﻿using System;
-using static LoxScript.VirtualMachine.EGearsResult;
 using static LoxScript.VirtualMachine.EGearsOpCode;
 
 namespace LoxScript.VirtualMachine {
@@ -9,7 +8,7 @@ namespace LoxScript.VirtualMachine {
     class Gears {
 
         internal Gears() {
-            GearsChunk chunk = new GearsChunk("test chunk");
+            /*GearsChunk chunk = new GearsChunk("test chunk");
             chunk.Write(OP_CONSTANT);
             chunk.Write((byte)chunk.AddConstant(1.2));
             chunk.Write(OP_CONSTANT);
@@ -18,10 +17,10 @@ namespace LoxScript.VirtualMachine {
             chunk.Write(OP_NEGATE);
             chunk.Write(OP_RETURN);
             Run(chunk);
-            Disassemble(chunk);
+            Disassemble(chunk);*/
         }
 
-        internal EGearsResult Run(GearsChunk chunk) {
+        internal bool Run(GearsChunk chunk) {
             GearsContext context = new GearsContext();
             while(true) {
                 int instruction = chunk.Read(ref context.IP);
@@ -32,33 +31,82 @@ namespace LoxScript.VirtualMachine {
                         Console.WriteLine($"const => {context.Peek()}");
                         break;
                     case OP_ADD:
-                        context.Push(context.Pop() + context.Pop());
-                        Console.WriteLine($"add => {context.Peek()}");
+                        BINARY_ADD(chunk, context);
                         break;
                     case OP_SUBTRACT:
-                        context.Push(context.Pop() - context.Pop());
-                        Console.WriteLine($"subtrac => {context.Peek()}");
+                        BINARY_SUBTRACT(chunk, context);
                         break;
                     case OP_MULTIPLY:
-                        context.Push(context.Pop() * context.Pop());
-                        Console.WriteLine($"multiply => {context.Peek()}");
+                        BINARY_MULTIPLY(chunk, context);
                         break;
                     case OP_DIVIDE:
-                        context.Push(context.Pop() / context.Pop());
-                        Console.WriteLine($"divide => {context.Peek()}");
+                        BINARY_DIVIDE(chunk, context);
                         break;
                     case OP_NEGATE:
-                        context.Push(-context.Pop());
-                        Console.WriteLine($"negate => {context.Peek()}");
+                        BINARY_NEGATE(chunk, context);
+                        break;
+                    case OP_PRINT:
+                        Console.WriteLine($"print => {context.Peek()}");
                         break;
                     case OP_RETURN:
-                        Console.WriteLine($"return => {context.Pop()}");
-                        return INTERPRET_OK;
+                        Console.WriteLine($"return");
+                        return true;
                     default:
                         // todo: throw runtime error
-                        return INTERPRET_RUNTIME_ERROR;
+                        return false;
                 }
             }
+        }
+
+        // === Operations ============================================================================================
+        // ===========================================================================================================
+
+        private void BINARY_ADD(GearsChunk chunk, GearsContext context) {
+            if (!context.Peek(0).IsNumber || !context.Peek(1).IsNumber) {
+                throw new RuntimeException(chunk.LineAt(context.IP - 1), "Operands must be numbers.");
+            }
+            GearsValue b = context.Pop();
+            GearsValue a = context.Pop();
+            context.Push(a + b);
+            Console.WriteLine($"add => {context.Peek()}");
+        }
+
+        private void BINARY_SUBTRACT(GearsChunk chunk, GearsContext context) {
+            if (!context.Peek(0).IsNumber || !context.Peek(1).IsNumber) {
+                throw new RuntimeException(chunk.LineAt(context.IP - 1), "Operands must be numbers.");
+            }
+            GearsValue b = context.Pop();
+            GearsValue a = context.Pop();
+            context.Push(a - b);
+            Console.WriteLine($"subtract => {context.Peek()}");
+        }
+
+        private void BINARY_MULTIPLY(GearsChunk chunk, GearsContext context) {
+            if (!context.Peek(0).IsNumber || !context.Peek(1).IsNumber) {
+                throw new RuntimeException(chunk.LineAt(context.IP - 1), "Operands must be numbers.");
+            }
+            GearsValue b = context.Pop();
+            GearsValue a = context.Pop();
+            context.Push(a * b);
+            Console.WriteLine($"multiply => {context.Peek()}");
+        }
+
+        private void BINARY_DIVIDE(GearsChunk chunk, GearsContext context) {
+            if (!context.Peek(0).IsNumber || !context.Peek(1).IsNumber) {
+                throw new RuntimeException(chunk.LineAt(context.IP - 1), "Operands must be numbers.");
+            }
+            GearsValue b = context.Pop();
+            GearsValue a = context.Pop();
+            context.Push(a / b);
+            Console.WriteLine($"divide => {context.Peek()}");
+        }
+
+        private void BINARY_NEGATE(GearsChunk chunk, GearsContext context) {
+            if (!context.Peek(0).IsNumber) {
+                throw new RuntimeException(chunk.LineAt(context.IP - 1), "Operand must be number.");
+            }
+            context.Push(-context.Pop());
+            Console.WriteLine($"negate => {context.Peek()}");
         }
 
         // === Disassembly ===========================================================================================
@@ -107,5 +155,26 @@ namespace LoxScript.VirtualMachine {
             Console.WriteLine(name);
             return offset;
         }
+
+        // === Error reporting =======================================================================================
+        // ===========================================================================================================
+
+        /// <summary>
+        /// Throw this when vm encounters an error
+        /// </summary>
+        private class RuntimeException : Exception {
+            private readonly int _Line;
+            private readonly string _Message;
+
+            internal RuntimeException(int line, string message) {
+                _Line = line;
+                _Message = message;
+            }
+
+            internal void Print() {
+                Program.Error(_Line, _Message);
+            }
+        }
+
     }
 }

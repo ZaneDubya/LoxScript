@@ -1,5 +1,5 @@
 ﻿using LoxScript.Grammar;
-using LoxScript.Parsing;
+using LoxScript.Scanning;
 using System;
 using System.Collections.Generic;
 
