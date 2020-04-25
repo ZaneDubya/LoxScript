@@ -39,13 +39,20 @@ namespace LoxScript.VirtualMachine {
 
         public bool IsBool => (_AsLong & TAG_FALSE) == TAG_FALSE;
 
-        public bool IsObjectPtr => (_AsLong & TAG_OBJECTPTR) == TAG_OBJECTPTR;
+        public bool IsObjPtr => (_AsLong & TAG_OBJECTPTR) == TAG_OBJECTPTR;
+
+        public bool IsObjType(GearsContext context, GearsObj.ObjType type) => IsObjPtr && AsObject(context).Type == type;
 
         // --- Return as a ... ---------------------------------------------------------------------------------------
 
         public bool AsBool => IsTrue ? true : false; // todo: is this correct?
 
-        public int AsObjectPtr => IsObjectPtr ? (int)(_AsLong & ~(TAG_OBJECTPTR)) : -1;
+        /// <summary>
+        /// This is a pointer to data that lives on the Gear's heap.
+        /// </summary>
+        public int AsObjPtr => IsObjPtr ? (int)(_AsLong & ~(TAG_OBJECTPTR)) : -1;
+
+        public GearsObj AsObject(GearsContext context) => new GearsObj(); // todo: fix with reference to context's heap...
 
         // --- Ctor and ToString -------------------------------------------------------------------------------------
 
@@ -67,8 +74,8 @@ namespace LoxScript.VirtualMachine {
             else if (IsNumber) {
                 return _Value.ToString();
             }
-            else if (IsObjectPtr) {
-                return AsObjectPtr.ToString();
+            else if (IsObjPtr) {
+                return AsObjPtr.ToString();
             }
             else {
                 throw new Exception("Unknown GearsValue type!");

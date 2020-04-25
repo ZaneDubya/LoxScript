@@ -580,6 +580,7 @@ namespace LoxScript.VirtualMachine {
                 return;
             }
             if (Match(STRING)) {
+                EmitConstant(OBJ Previous().LiteralAsString);
                 return; // !!! return new Expr.Literal(Previous().LiteralAsString);
             }
             if (Match(SUPER)) {
