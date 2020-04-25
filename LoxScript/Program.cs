@@ -58,7 +58,9 @@ namespace LoxScript {
             TokenList tokens = new Scanner(source).ScanTokens();
             List<Stmt> statements = new Parser(tokens).Parse();
             if (Compiler.TryCompile("code", tokens, out GearsChunk chunk, out string status)) {
-                new Gears().Run(chunk);
+                Gears gears = new Gears();
+                gears.Disassemble(chunk);
+                gears.Run(chunk);
             }
             Console.ReadLine();
             Exit(1);

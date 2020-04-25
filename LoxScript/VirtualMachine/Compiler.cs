@@ -433,26 +433,34 @@ namespace LoxScript.VirtualMachine {
         /// equality    → comparison ( ( "!=" | "==" ) comparison )* ;
         /// </summary>
         private void Equality() {
-            Comparison(); // !!! Expr expr = 
+            Comparison();
             while (Match(BANG_EQUAL, EQUAL_EQUAL)) {
                 Token op = Previous();
-                Comparison(); // !!! Expr right = 
-                // !!! expr = new Expr.Binary(expr, op, right);
+                Comparison();
+                switch (op.Type) {
+                    case BANG_EQUAL: EmitBytes((byte)OP_EQUAL, (byte)OP_NOT); break;
+                    case EQUAL_EQUAL: EmitBytes((byte)OP_EQUAL); break;
+                }
             }
-            return; // !!! return expr;
+            return;
         }
 
         /// <summary>
         /// comparison → addition ( ( ">" | ">=" | "&lt;" | "&lt;=" ) addition )* ;
         /// </summary>
         private void Comparison() {
-            Addition(); // !!! Expr expr = 
+            Addition();
             while (Match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
                 Token op = Previous();
-                Addition(); // !!! Expr right =
-                // !!! expr = new Expr.Binary(expr, op, right);
+                Addition();
+                switch (op.Type) {
+                    case GREATER: EmitBytes((byte)OP_GREATER); break;
+                    case GREATER_EQUAL: EmitBytes((byte)OP_LESS, (byte)OP_NOT); break;
+                    case LESS: EmitBytes((byte)OP_LESS); break; 
+                    case LESS_EQUAL: EmitBytes((byte)OP_GREATER, (byte)OP_NOT); break; 
+                }
             }
-            return; // !!! return expr;
+            return;
         }
 
         /// <summary>
@@ -556,13 +564,16 @@ namespace LoxScript.VirtualMachine {
         /// </summary>
         private void Primary() {
             if (Match(FALSE)) {
-                return; // !!! return new Expr.Literal(false);
+                EmitBytes((byte)OP_FALSE);
+                return;
             }
             if (Match(TRUE)) {
-                return; // !!! return new Expr.Literal(true);
+                EmitBytes((byte)OP_TRUE);
+                return;
             }
             if (Match(NIL)) {
-                return; // !!! return new Expr.Literal(null);
+                EmitBytes((byte)OP_NIL);
+                return;
             }
             if (Match(NUMBER)) {
                 EmitConstant(Previous().LiteralAsNumber);

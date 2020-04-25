@@ -4,6 +4,10 @@ using System.Runtime.InteropServices;
 namespace LoxScript.VirtualMachine {
     [StructLayout(LayoutKind.Explicit)]
     struct GearsValue : IEquatable<GearsValue> {
+        public static readonly GearsValue NilValue = new GearsValue(TAG_NIL);
+        public static readonly GearsValue FalseValue = new GearsValue(TAG_FALSE);
+        public static readonly GearsValue TrueValue = new GearsValue(TAG_TRUE);
+
         /// <summary>
         /// Every value that is not a number will use a special "Not a number" representation. NaN is defined
         /// by having 13 bits (defined by IEE 754) set. No valid double will have these bits set. The bits are:
@@ -39,11 +43,15 @@ namespace LoxScript.VirtualMachine {
 
         // --- Return as a ... ---------------------------------------------------------------------------------------
 
-        private bool AsBool => IsTrue ? true : false; // todo: is this correct?
+        public bool AsBool => IsTrue ? true : false; // todo: is this correct?
 
-        private int AsObjectPtr => IsObjectPtr ? (int)(_AsLong & ~(TAG_OBJECTPTR)) : -1;
+        public int AsObjectPtr => IsObjectPtr ? (int)(_AsLong & ~(TAG_OBJECTPTR)) : -1;
 
         // --- Ctor and ToString -------------------------------------------------------------------------------------
+
+        public GearsValue(ulong value) : this() {
+            _AsLong = value;
+        }
 
         public GearsValue(double value) : this() {
             _Value = value;
@@ -73,16 +81,21 @@ namespace LoxScript.VirtualMachine {
             if (IsNumber && other.IsNumber) {
                 return _Value == other._Value;
             }
-            return _AsLong == other._AsLong;
+            return false;
         }
 
+        /// <summary>
+        /// Implicit conversion from bool to GearsValue (no cast operator required).
+        /// </summary>
+        public static implicit operator GearsValue(bool value) => new GearsValue(value ? TAG_TRUE : TAG_FALSE);
+        
         /// <summary>
         /// Implicit conversion from double to GearsValue (no cast operator required).
         /// </summary>
         public static implicit operator GearsValue(double value) => new GearsValue(value);
 
         /// <summary>
-        /// Explicit conversion from MoneyAmount to double (requires cast operator).
+        /// Explicit conversion from GearsValue to double (requires cast operator).
         /// </summary>
         public static explicit operator double(GearsValue value) => value._Value;
 
@@ -97,5 +110,9 @@ namespace LoxScript.VirtualMachine {
         public static GearsValue operator *(GearsValue a, GearsValue b) => a._Value * b._Value;
 
         public static GearsValue operator /(GearsValue a, GearsValue b) => a._Value / b._Value;
+
+        public static GearsValue operator <(GearsValue a, GearsValue b) => a._Value < b._Value;
+
+        public static GearsValue operator >(GearsValue a, GearsValue b) => a._Value > b._Value;
     }
 }
