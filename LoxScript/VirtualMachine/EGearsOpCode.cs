@@ -1,9 +1,14 @@
 ﻿namespace LoxScript.VirtualMachine {
     enum EGearsOpCode {
         /// <summary>
-        /// 'Loads' the indexed constant onto the stack.
+        /// Loads the indexed constant onto the stack.
         /// </summary>
         OP_CONSTANT,
+
+        /// <summary>
+        /// Loads the indexed string into the heap, and loads an object pointing to that string onto the stack.
+        /// </summary>
+        OP_STRING,
 
         // Types of Values literal-ops
         OP_NIL,

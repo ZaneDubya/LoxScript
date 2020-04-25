@@ -26,8 +26,11 @@ namespace LoxScript.VirtualMachine {
                 int instruction = chunk.Read(ref context.IP);
                 switch ((EGearsOpCode)instruction) {
                     case OP_CONSTANT:
-                        context.Push(chunk.GetConstant(chunk.Read(ref context.IP)));
+                        context.Push(chunk.GetConstantValue(chunk.Read(ref context.IP)));
                         Console.WriteLine($"const => {context.Peek()}");
+                        break;
+                    case OP_STRING:
+                        context.Push(GearsValue.CreateObjPtr(context.AddObject(new GearsObjString(chunk.GetConstantString(chunk.Read(ref context.IP))))));
                         break;
                     case OP_NIL:
                         context.Push(GearsValue.NilValue);
@@ -71,7 +74,7 @@ namespace LoxScript.VirtualMachine {
                         BINARY_NEGATE(chunk, context);
                         break;
                     case OP_PRINT:
-                        Console.WriteLine($"print => {context.Peek()}");
+                        Console.WriteLine($"print => {context.Peek().ToString(context)}");
                         break;
                     case OP_RETURN:
                         Console.WriteLine($"return");
@@ -180,7 +183,7 @@ namespace LoxScript.VirtualMachine {
         public void Disassemble(GearsChunk chunk) {
             Console.WriteLine($"=== {chunk.Name} ===");
             int offset = 0;
-            while (offset < chunk.Count) {
+            while (offset < chunk.CodeSize) {
                 offset = DisassembleInstruction(chunk, offset);
             }
         }
@@ -227,7 +230,7 @@ namespace LoxScript.VirtualMachine {
 
         private int DisassembleConstantInstruction(string name, GearsChunk chunk, int offset) {
             int constantIndex = chunk.Read(ref offset);
-            GearsValue value = chunk.GetConstant(constantIndex);
+            GearsValue value = chunk.GetConstantValue(constantIndex);
             Console.WriteLine($"{name} #{constantIndex} ({value})");
             return offset;
         }

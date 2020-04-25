@@ -12,12 +12,20 @@ namespace LoxScript.VirtualMachine {
         public ObjType Type;
 
         public enum ObjType {
-            Free,
             ObjString,
         }
+
+        public override string ToString() => "GearsObj";
     }
 
     class GearsObjString : GearsObj {
-        public string Value;
+        public readonly string Value;
+
+        public GearsObjString(string value) {
+            Type = ObjType.ObjString;
+            Value = value;
+        }
+
+        public override string ToString() => Value;
     }
 }

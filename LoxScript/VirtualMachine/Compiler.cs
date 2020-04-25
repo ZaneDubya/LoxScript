@@ -84,7 +84,7 @@ namespace LoxScript.VirtualMachine {
 
         private void EmitLoop(int loopStart) {
             EmitBytes((byte)OP_LOOP);
-            int offset = Chunk.Count - loopStart + 2;
+            int offset = Chunk.CodeSize - loopStart + 2;
             if (offset > ushort.MaxValue) {
                 throw new CompilerException(Peek(), "Loop body too large.");
             }
@@ -93,7 +93,7 @@ namespace LoxScript.VirtualMachine {
 
         private int EmitJump(EGearsOpCode instruction) {
             EmitBytes((byte)instruction, 0xff, 0xff);
-            return Chunk.Count - 2;
+            return Chunk.CodeSize - 2;
         }
 
         private void EmitReturn() {
@@ -110,7 +110,19 @@ namespace LoxScript.VirtualMachine {
             EmitBytes((byte)OP_CONSTANT, MakeConstant(value));
         }
 
+        private void EmitString(string value) {
+            EmitBytes((byte)OP_STRING, MakeConstant(value));
+        }
+
         private byte MakeConstant(double value) {
+            int index = Chunk.AddConstant(value);
+            if (index > byte.MaxValue) {
+                throw new CompilerException(Peek(), "Too many constants in one chunk.");
+            }
+            return (byte)index;
+        }
+
+        private byte MakeConstant(string value) {
             int index = Chunk.AddConstant(value);
             if (index > byte.MaxValue) {
                 throw new CompilerException(Peek(), "Too many constants in one chunk.");
@@ -120,7 +132,7 @@ namespace LoxScript.VirtualMachine {
 
         private void PatchJump(int offset) {
             // -2 to adjust for the bytecode for the jump offset itself.
-            int jump = Chunk.Count - offset - 2;
+            int jump = Chunk.CodeSize - offset - 2;
             if (jump > ushort.MaxValue) {
                 throw new CompilerException(Peek(), "Too much code to jump over.");
             }
@@ -580,7 +592,7 @@ namespace LoxScript.VirtualMachine {
                 return;
             }
             if (Match(STRING)) {
-                EmitConstant(OBJ Previous().LiteralAsString);
+                EmitString(Previous().LiteralAsString);
                 return; // !!! return new Expr.Literal(Previous().LiteralAsString);
             }
             if (Match(SUPER)) {

@@ -5,8 +5,12 @@ namespace LoxScript.VirtualMachine {
     [StructLayout(LayoutKind.Explicit)]
     struct GearsValue : IEquatable<GearsValue> {
         public static readonly GearsValue NilValue = new GearsValue(TAG_NIL);
+
         public static readonly GearsValue FalseValue = new GearsValue(TAG_FALSE);
+
         public static readonly GearsValue TrueValue = new GearsValue(TAG_TRUE);
+
+        public static GearsValue CreateObjPtr(int index) => new GearsValue(TAG_OBJECTPTR | (uint)index);
 
         /// <summary>
         /// Every value that is not a number will use a special "Not a number" representation. NaN is defined
@@ -52,7 +56,9 @@ namespace LoxScript.VirtualMachine {
         /// </summary>
         public int AsObjPtr => IsObjPtr ? (int)(_AsLong & ~(TAG_OBJECTPTR)) : -1;
 
-        public GearsObj AsObject(GearsContext context) => new GearsObj(); // todo: fix with reference to context's heap...
+        public GearsObj AsObject(GearsContext context) => context.GetObject(AsObjPtr); // todo: fix with reference to context's heap...
+
+        public byte[] AsBytes => BitConverter.GetBytes(_AsLong);
 
         // --- Ctor and ToString -------------------------------------------------------------------------------------
 
@@ -64,7 +70,9 @@ namespace LoxScript.VirtualMachine {
             _Value = value;
         }
 
-        public override string ToString() {
+        public override string ToString() => ToString(null);
+
+        public string ToString(GearsContext context) {
             if (IsBool) {
                 return AsBool ? "true" : "false";
             }
@@ -75,7 +83,10 @@ namespace LoxScript.VirtualMachine {
                 return _Value.ToString();
             }
             else if (IsObjPtr) {
-                return AsObjPtr.ToString();
+                if (context != null) {
+                    return AsObject(context).ToString();
+                }
+                return $"obj@{AsObjPtr.ToString()}";
             }
             else {
                 throw new Exception("Unknown GearsValue type!");
