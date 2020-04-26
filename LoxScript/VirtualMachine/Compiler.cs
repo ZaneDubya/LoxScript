@@ -338,11 +338,16 @@ namespace LoxScript.VirtualMachine {
         }
 
         private void WhileStatement() {
+            int loopStart = Chunk.CodeSize; // code point just before the condition
             Consume(LEFT_PAREN, "Expect '(' after 'while'.");
-            Expression(); // !!! Expr condition = 
+            Expression();
             Consume(RIGHT_PAREN, "Expect ')' after condition.");
-            Statement(); // !!! Stmt body = 
-            return; // !!! return new Stmt.While(condition, body);
+            int exitJump = EmitJump(OP_JUMP_IF_FALSE);
+            EmitBytes((byte)OP_POP);
+            Statement();
+            EmitLoop(loopStart);
+            PatchJump(exitJump);
+            EmitBytes((byte)OP_POP);
         }
 
         private void Block() {
@@ -415,7 +420,6 @@ namespace LoxScript.VirtualMachine {
                 And();
                 PatchJump(endJump);
             }
-            return;
         }
 
         /// <summary>
@@ -430,7 +434,6 @@ namespace LoxScript.VirtualMachine {
                 Equality();
                 PatchJump(endJump);
             }
-            return; // !!! return expr;
         }
 
         /// <summary>
@@ -447,7 +450,6 @@ namespace LoxScript.VirtualMachine {
                     case EQUAL_EQUAL: EmitBytes((byte)OP_EQUAL); break;
                 }
             }
-            return;
         }
 
         /// <summary>
@@ -466,31 +468,29 @@ namespace LoxScript.VirtualMachine {
                     case LESS_EQUAL: EmitBytes((byte)OP_GREATER, (byte)OP_NOT); break; 
                 }
             }
-            return;
         }
 
         /// <summary>
         /// addition → multiplication ( ( "-" | "+" ) multiplication )* ;
         /// </summary>
         private void Addition() {
-            Multiplication(); // gets the left operand
+            Multiplication();
             while (Match(MINUS, PLUS)) {
                 _CanAssign = false;
                 Token op = Previous();
-                Multiplication(); // gets the right operand
+                Multiplication();
                 switch (op.Type) {
                     case PLUS: EmitBytes((byte)OP_ADD); break;
                     case MINUS: EmitBytes((byte)OP_SUBTRACT); break;
                 }
             }
-            return;
         }
 
         /// <summary>
         /// multiplication → unary ( ( "/" | "*" ) unary )* ;
         /// </summary>
         private void Multiplication() {
-            Unary(); // !!! Expr expr = 
+            Unary();
             while (Match(SLASH, STAR)) {
                 _CanAssign = false;
                 Token op = Previous();
@@ -500,7 +500,6 @@ namespace LoxScript.VirtualMachine {
                     case STAR: EmitBytes((byte)OP_MULTIPLY); break;
                 }
             }
-            return; // !!! return expr;
         }
 
         /// <summary>
@@ -590,7 +589,7 @@ namespace LoxScript.VirtualMachine {
             }
             if (Match(STRING)) {
                 EmitString(Previous().LiteralAsString);
-                return; // !!! return new Expr.Literal(Previous().LiteralAsString);
+                return;
             }
             if (Match(SUPER)) {
                 Token keyword = Previous();
@@ -606,9 +605,9 @@ namespace LoxScript.VirtualMachine {
                 return; // !!! return new Expr.Variable(Previous());
             }
             if (Match(LEFT_PAREN)) {
-                Expression(); // Expr expr = 
+                Expression();
                 Consume(RIGHT_PAREN, "Expect ')' after expression.");
-                return; // !!! return new Expr.Grouping(expr);
+                return;
             }
             throw new CompilerException(Peek(), "Expect expression.");
         }

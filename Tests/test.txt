@@ -42,6 +42,17 @@ else { print "correct"; }
 if (true or false) { print "correct"; }
 else { print "true or false incorrect"; }*/
 
+// === Loop Statement: PASS ==================================================
+/*print "Loop Test: Should count from 0-9";
+var i = 0;
+while (i < 10) {
+    print i;
+    i = i + 1;
+}*/
+
+// === For Statement: TEST ===================================================
+print "For Test: Should count from 0-0";
+for (var i = 0; i < 10; i = i + 1) { print i; }
 
 // testing assignment of field on expression. FAIL
 // menu.brunch(sunday).beverage = "mimosa";

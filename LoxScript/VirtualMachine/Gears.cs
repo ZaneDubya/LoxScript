@@ -68,7 +68,6 @@ namespace LoxScript.VirtualMachine {
                         break;
                     case OP_EQUAL:
                         context.Push(AreValuesEqual(context.Pop(), context.Pop()));
-                        Console.WriteLine($"false");
                         break;
                     case OP_GREATER:
                         BINARY_GREATER(chunk, context);
@@ -90,7 +89,7 @@ namespace LoxScript.VirtualMachine {
                         break;
                     case OP_NOT:
                         context.Push(IsFalsey(context.Pop()));
-                        Console.WriteLine($"not => {context.Peek()}");
+                        // Console.WriteLine($"not => {context.Peek()}");
                         break;
                     case OP_NEGATE:
                         BINARY_NEGATE(chunk, context);
@@ -108,6 +107,11 @@ namespace LoxScript.VirtualMachine {
                             if (IsFalsey(context.Peek())) {
                                 context.IP += offset;
                             }
+                            break;
+                        }
+                    case OP_LOOP: {
+                            int offset = (chunk.Read(ref context.IP) << 8) | chunk.Read(ref context.IP);
+                            context.IP -= offset;
                             break;
                         }
                     case OP_RETURN:
@@ -175,7 +179,7 @@ namespace LoxScript.VirtualMachine {
             GearsValue b = context.Pop();
             GearsValue a = context.Pop();
             context.Push(a > b);
-            Console.WriteLine($"greater? {context.Peek()}");
+            // Console.WriteLine($"greater? {context.Peek()}");
         }
 
         private void BINARY_LESS(GearsChunk chunk, GearsContext context) {
@@ -185,7 +189,7 @@ namespace LoxScript.VirtualMachine {
             GearsValue b = context.Pop();
             GearsValue a = context.Pop();
             context.Push(a < b);
-            Console.WriteLine($"less? {context.Peek()}");
+            // Console.WriteLine($"less? {context.Peek()}");
         }
 
         private void BINARY_ADD(GearsChunk chunk, GearsContext context) {
@@ -195,7 +199,7 @@ namespace LoxScript.VirtualMachine {
             GearsValue b = context.Pop();
             GearsValue a = context.Pop();
             context.Push(a + b);
-            Console.WriteLine($"add => {context.Peek()}");
+            // Console.WriteLine($"add => {context.Peek()}");
         }
 
         private void BINARY_SUBTRACT(GearsChunk chunk, GearsContext context) {
@@ -205,7 +209,7 @@ namespace LoxScript.VirtualMachine {
             GearsValue b = context.Pop();
             GearsValue a = context.Pop();
             context.Push(a - b);
-            Console.WriteLine($"subtract => {context.Peek()}");
+            // Console.WriteLine($"subtract => {context.Peek()}");
         }
 
         private void BINARY_MULTIPLY(GearsChunk chunk, GearsContext context) {
@@ -215,7 +219,7 @@ namespace LoxScript.VirtualMachine {
             GearsValue b = context.Pop();
             GearsValue a = context.Pop();
             context.Push(a * b);
-            Console.WriteLine($"multiply => {context.Peek()}");
+            // Console.WriteLine($"multiply => {context.Peek()}");
         }
 
         private void BINARY_DIVIDE(GearsChunk chunk, GearsContext context) {
@@ -225,7 +229,7 @@ namespace LoxScript.VirtualMachine {
             GearsValue b = context.Pop();
             GearsValue a = context.Pop();
             context.Push(a / b);
-            Console.WriteLine($"divide => {context.Peek()}");
+            // Console.WriteLine($"divide => {context.Peek()}");
         }
 
         private void BINARY_NEGATE(GearsChunk chunk, GearsContext context) {
@@ -233,7 +237,7 @@ namespace LoxScript.VirtualMachine {
                 throw new RuntimeException(chunk.LineAt(context.IP - 1), "Operand must be a number.");
             }
             context.Push(-context.Pop());
-            Console.WriteLine($"negate => {context.Peek()}");
+            // Console.WriteLine($"negate => {context.Peek()}");
         }
 
         // === Disassembly ===========================================================================================
@@ -297,6 +301,8 @@ namespace LoxScript.VirtualMachine {
                     return DisassembleTwoByteInstruction("OP_JUMP", chunk, offset);
                 case OP_JUMP_IF_FALSE:
                     return DisassembleTwoByteInstruction("OP_JUMP_IF_FALSE", chunk, offset);
+                case OP_LOOP:
+                    return DisassembleTwoByteInstruction("OP_LOOP", chunk, offset);
                 case OP_RETURN:
                     return DisassembleSimpleInstruction("OP_RETURN", chunk, offset);
                 default:
