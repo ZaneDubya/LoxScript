@@ -302,14 +302,18 @@ namespace LoxScript.VirtualMachine {
         /// </summary>
         private void IfStatement() {
             Consume(LEFT_PAREN, "Expect '(' after 'if'.");
-            Expression(); // !!! Expr condition = 
+            Expression();
             Consume(RIGHT_PAREN, "Expect ')' after if condition.");
-            Statement(); // !!! Stmt thenBranch = 
-            // !!! Stmt elseBranch = null;
+            int thenJump = EmitJump(OP_JUMP_IF_FALSE);
+            EmitBytes((byte)OP_POP);
+            Statement(); // then statement
+            int elseJump = EmitJump(OP_JUMP);
+            PatchJump(thenJump);
+            EmitBytes((byte)OP_POP);
             if (Match(ELSE)) {
-                Statement(); // !!! elseBranch = 
+                Statement();
             }
-            return; // !!! return new Stmt.If(condition, thenBranch, elseBranch);
+            PatchJump(elseJump);
         }
 
         /// <summary>
@@ -713,6 +717,10 @@ namespace LoxScript.VirtualMachine {
             }
         }
 
+        private void EmitConstant(double value) {
+            EmitBytes((byte)OP_CONSTANT, MakeConstant(value));
+        }
+
         private void EmitLoop(int loopStart) {
             EmitBytes((byte)OP_LOOP);
             int offset = Chunk.CodeSize - loopStart + 2;
@@ -735,10 +743,6 @@ namespace LoxScript.VirtualMachine {
                 EmitBytes((byte)OP_NIL);
             }*/
             EmitBytes((byte)OP_RETURN);
-        }
-
-        private void EmitConstant(double value) {
-            EmitBytes((byte)OP_CONSTANT, MakeConstant(value));
         }
 
         private void EmitString(string value) {

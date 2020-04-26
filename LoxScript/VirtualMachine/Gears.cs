@@ -98,6 +98,18 @@ namespace LoxScript.VirtualMachine {
                     case OP_PRINT:
                         Console.WriteLine($"print => {context.Peek().ToString(context)}");
                         break;
+                    case OP_JUMP: {
+                            int offset = (chunk.Read(ref context.IP) << 8) | chunk.Read(ref context.IP);
+                            context.IP += offset;
+                            break;
+                        }
+                    case OP_JUMP_IF_FALSE: {
+                            int offset = (chunk.Read(ref context.IP) << 8) | chunk.Read(ref context.IP);
+                            if (IsFalsey(context.Peek())) {
+                                context.IP += offset;
+                            }
+                            break;
+                        }
                     case OP_RETURN:
                         Console.WriteLine($"return");
                         return true;
@@ -281,6 +293,10 @@ namespace LoxScript.VirtualMachine {
                     return DisassembleSimpleInstruction("OP_NEGATE", chunk, offset);
                 case OP_PRINT:
                     return DisassembleSimpleInstruction("OP_PRINT", chunk, offset);
+                case OP_JUMP:
+                    return DisassembleTwoByteInstruction("OP_JUMP", chunk, offset);
+                case OP_JUMP_IF_FALSE:
+                    return DisassembleTwoByteInstruction("OP_JUMP_IF_FALSE", chunk, offset);
                 case OP_RETURN:
                     return DisassembleSimpleInstruction("OP_RETURN", chunk, offset);
                 default:
@@ -296,6 +312,12 @@ namespace LoxScript.VirtualMachine {
 
         private int DisassembleByteInstruction(string name, GearsChunk chunk, int offset) {
             int index = chunk.Read(ref offset);
+            Console.WriteLine($"{name} ({index})");
+            return offset;
+        }
+
+        private int DisassembleTwoByteInstruction(string name, GearsChunk chunk, int offset) {
+            int index = (chunk.Read(ref offset) << 8) + chunk.Read(ref offset);
             Console.WriteLine($"{name} ({index})");
             return offset;
         }

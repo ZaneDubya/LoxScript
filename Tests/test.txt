@@ -20,6 +20,15 @@ var a = "global";
 }
 print a;*/
 
+/* testing if ... */
+if (false) {
+    print 1;
+}
+else {
+    print 2;
+}
+print "end";
+
 
 // testing assignment of field on expression. FAIL
 // menu.brunch(sunday).beverage = "mimosa";
