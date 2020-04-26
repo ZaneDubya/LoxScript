@@ -47,6 +47,16 @@ namespace LoxScript.VirtualMachine {
                     case OP_POP:
                         context.Pop();
                         break;
+                    case OP_GET_LOCAL: {
+                            int slot = chunk.Read(ref context.IP);
+                            context.Push(context.StackGet(slot));
+                            break;
+                        }
+                    case OP_SET_LOCAL: {
+                            int slot = chunk.Read(ref context.IP);
+                            context.StackSet(slot, context.Peek());
+                            break;
+                        }
                     case OP_GET_GLOBAL:
                         GLOBAL_GET(chunk, context);
                         break;
@@ -241,6 +251,10 @@ namespace LoxScript.VirtualMachine {
                     return DisassembleSimpleInstruction("OP_FALSE", chunk, offset);
                 case OP_POP:
                     return DisassembleSimpleInstruction("OP_POP", chunk, offset);
+                case OP_GET_LOCAL:
+                    return DisassembleByteInstruction("OP_GET_LOCAL", chunk, offset);
+                case OP_SET_LOCAL:
+                    return DisassembleByteInstruction("OP_SET_LOCAL", chunk, offset);
                 case OP_DEFINE_GLOBAL:
                     return DisassembleConstantInstruction("OP_DEF_GLOBAL", chunk, offset, true);
                 case OP_GET_GLOBAL:
@@ -275,6 +289,17 @@ namespace LoxScript.VirtualMachine {
             }
         }
 
+        private int DisassembleSimpleInstruction(string name, GearsChunk chunk, int offset) {
+            Console.WriteLine(name);
+            return offset;
+        }
+
+        private int DisassembleByteInstruction(string name, GearsChunk chunk, int offset) {
+            int index = chunk.Read(ref offset);
+            Console.WriteLine($"{name} ({index})");
+            return offset;
+        }
+
         private int DisassembleConstantInstruction(string name, GearsChunk chunk, int offset, bool asString) {
             int constantIndex = chunk.Read(ref offset);
             if (asString) {
@@ -285,11 +310,6 @@ namespace LoxScript.VirtualMachine {
                 GearsValue value = chunk.GetConstantValue(constantIndex);
                 Console.WriteLine($"{name} #{constantIndex} ({value})");
             }
-            return offset;
-        }
-
-        private int DisassembleSimpleInstruction(string name, GearsChunk chunk, int offset) {
-            Console.WriteLine(name);
             return offset;
         }
 

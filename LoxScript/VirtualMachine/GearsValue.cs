@@ -73,7 +73,13 @@ namespace LoxScript.VirtualMachine {
         public override string ToString() => ToString(null);
 
         public string ToString(GearsContext context) {
-            if (IsBool) {
+            if (IsObjPtr) {
+                if (context != null) {
+                    return AsObject(context).ToString();
+                }
+                return $"obj@{AsObjPtr.ToString()}";
+            }
+            else if (IsBool) {
                 return AsBool ? "true" : "false";
             }
             else if (IsNil) {
@@ -81,12 +87,6 @@ namespace LoxScript.VirtualMachine {
             }
             else if (IsNumber) {
                 return _Value.ToString();
-            }
-            else if (IsObjPtr) {
-                if (context != null) {
-                    return AsObject(context).ToString();
-                }
-                return $"obj@{AsObjPtr.ToString()}";
             }
             else {
                 throw new Exception("Unknown GearsValue type!");

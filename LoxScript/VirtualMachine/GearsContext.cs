@@ -33,6 +33,20 @@
         // === Stack ================================================================================================
         // ==========================================================================================================
 
+        internal GearsValue StackGet(int index) {
+            if (index < 0 || index >= _StackTop) {
+                return -1; // todo, throw runtime exception, stack exception
+            }
+            return _Stack[index];
+        }
+
+        internal void StackSet(int index, GearsValue value) {
+            if (index < 0 || index >= _StackTop) {
+                return; // todo, throw runtime exception, stack exception
+            }
+            _Stack[index] = value;
+        }
+
         internal void Push(GearsValue value) {
             if (_StackTop >= STACK_MAX) {
                 // todo: throw runtime exception stack space
