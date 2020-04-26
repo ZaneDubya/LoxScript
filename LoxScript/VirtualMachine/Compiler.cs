@@ -73,82 +73,6 @@ namespace LoxScript.VirtualMachine {
             EmitReturn();
         }
 
-        // === Emit Infrastructure ===================================================================================
-        // ===========================================================================================================
-
-        private void EmitBytes(params byte[] bytes) {
-            foreach (byte b in bytes) {
-                Chunk.Write(b);
-            }
-        }
-
-        private void EmitLoop(int loopStart) {
-            EmitBytes((byte)OP_LOOP);
-            int offset = Chunk.CodeSize - loopStart + 2;
-            if (offset > ushort.MaxValue) {
-                throw new CompilerException(Peek(), "Loop body too large.");
-            }
-            EmitBytes((byte)((offset >> 8) & 0xff), (byte)(offset & 0xff));
-        }
-
-        private int EmitJump(EGearsOpCode instruction) {
-            EmitBytes((byte)instruction, 0xff, 0xff);
-            return Chunk.CodeSize - 2;
-        }
-
-        private void EmitReturn() {
-            /*if (_Type == EFunctionType.TYPE_INITIALIZER) {
-                EmitBytes((byte)OP_GET_LOCAL, 0);
-            }
-            else {
-                EmitBytes((byte)OP_NIL);
-            }*/
-            EmitBytes((byte)OP_RETURN);
-        }
-
-        private void EmitConstant(double value) {
-            EmitBytes((byte)OP_CONSTANT, MakeConstant(value));
-        }
-
-        private void EmitString(string value) {
-            EmitBytes((byte)OP_STRING, MakeConstant(value));
-        }
-
-        private byte MakeConstant(double value) {
-            int index = Chunk.AddConstant(value);
-            if (index > byte.MaxValue) {
-                throw new CompilerException(Peek(), "Too many constants in one chunk.");
-            }
-            return (byte)index;
-        }
-
-        private byte MakeConstant(string value) {
-            int index = Chunk.AddConstant(value);
-            if (index > byte.MaxValue) {
-                throw new CompilerException(Peek(), "Too many constants in one chunk.");
-            }
-            return (byte)index;
-        }
-
-        private void PatchJump(int offset) {
-            // -2 to adjust for the bytecode for the jump offset itself.
-            int jump = Chunk.CodeSize - offset - 2;
-            if (jump > ushort.MaxValue) {
-                throw new CompilerException(Peek(), "Too much code to jump over.");
-            }
-            Chunk.WriteAt(offset, (byte)((jump >> 8) & 0xff));
-            Chunk.WriteAt(offset + 1, (byte)(jump & 0xff));
-        }
-
-        private void BeginScope() {
-            _ScopeDepth += 1;
-        }
-
-        private void EndScope() {
-            _ScopeDepth -= 1;
-            // pop locals
-        }
-
         // === Declarations ==========================================================================================
         // ===========================================================================================================
 
@@ -689,6 +613,82 @@ namespace LoxScript.VirtualMachine {
         /// </summary>
         private Token Previous() {
             return _Tokens[_Current - 1];
+        }
+
+        // === Emit Infrastructure ===================================================================================
+        // ===========================================================================================================
+
+        private void EmitBytes(params byte[] bytes) {
+            foreach (byte b in bytes) {
+                Chunk.Write(b);
+            }
+        }
+
+        private void EmitLoop(int loopStart) {
+            EmitBytes((byte)OP_LOOP);
+            int offset = Chunk.CodeSize - loopStart + 2;
+            if (offset > ushort.MaxValue) {
+                throw new CompilerException(Peek(), "Loop body too large.");
+            }
+            EmitBytes((byte)((offset >> 8) & 0xff), (byte)(offset & 0xff));
+        }
+
+        private int EmitJump(EGearsOpCode instruction) {
+            EmitBytes((byte)instruction, 0xff, 0xff);
+            return Chunk.CodeSize - 2;
+        }
+
+        private void EmitReturn() {
+            /*if (_Type == EFunctionType.TYPE_INITIALIZER) {
+                EmitBytes((byte)OP_GET_LOCAL, 0);
+            }
+            else {
+                EmitBytes((byte)OP_NIL);
+            }*/
+            EmitBytes((byte)OP_RETURN);
+        }
+
+        private void EmitConstant(double value) {
+            EmitBytes((byte)OP_CONSTANT, MakeConstant(value));
+        }
+
+        private void EmitString(string value) {
+            EmitBytes((byte)OP_STRING, MakeConstant(value));
+        }
+
+        private byte MakeConstant(double value) {
+            int index = Chunk.AddConstant(value);
+            if (index > byte.MaxValue) {
+                throw new CompilerException(Peek(), "Too many constants in one chunk.");
+            }
+            return (byte)index;
+        }
+
+        private byte MakeConstant(string value) {
+            int index = Chunk.AddConstant(value);
+            if (index > byte.MaxValue) {
+                throw new CompilerException(Peek(), "Too many constants in one chunk.");
+            }
+            return (byte)index;
+        }
+
+        private void PatchJump(int offset) {
+            // -2 to adjust for the bytecode for the jump offset itself.
+            int jump = Chunk.CodeSize - offset - 2;
+            if (jump > ushort.MaxValue) {
+                throw new CompilerException(Peek(), "Too much code to jump over.");
+            }
+            Chunk.WriteAt(offset, (byte)((jump >> 8) & 0xff));
+            Chunk.WriteAt(offset + 1, (byte)(jump & 0xff));
+        }
+
+        private void BeginScope() {
+            _ScopeDepth += 1;
+        }
+
+        private void EndScope() {
+            _ScopeDepth -= 1;
+            // pop locals
         }
 
         // === What type of function are we compiling? ===============================================================
