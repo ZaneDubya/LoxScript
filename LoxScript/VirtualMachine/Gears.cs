@@ -27,22 +27,22 @@ namespace LoxScript.VirtualMachine {
                 switch ((EGearsOpCode)instruction) {
                     case OP_CONSTANT:
                         context.Push(chunk.GetConstantValue(chunk.Read(ref context.IP)));
-                        Console.WriteLine($"const => {context.Peek()}");
+                        // Console.WriteLine($"const => {context.Peek()}");
                         break;
                     case OP_STRING:
                         context.Push(GearsValue.CreateObjPtr(context.AddObject(new GearsObjString(chunk.GetConstantString(chunk.Read(ref context.IP))))));
                         break;
                     case OP_NIL:
                         context.Push(GearsValue.NilValue);
-                        Console.WriteLine($"nil");
+                        // Console.WriteLine($"nil");
                         break;
                     case OP_TRUE:
                         context.Push(GearsValue.TrueValue);
-                        Console.WriteLine($"true");
+                        // Console.WriteLine($"true");
                         break;
                     case OP_FALSE:
                         context.Push(GearsValue.FalseValue);
-                        Console.WriteLine($"false");
+                        // Console.WriteLine($"false");
                         break;
                     case OP_POP:
                         context.Pop();
@@ -96,7 +96,7 @@ namespace LoxScript.VirtualMachine {
                         BINARY_NEGATE(chunk, context);
                         break;
                     case OP_PRINT:
-                        Console.WriteLine($"print => {context.Peek().ToString(context)}");
+                        Console.WriteLine($"print => {context.Pop().ToString(context)}");
                         break;
                     case OP_JUMP: {
                             int offset = (chunk.Read(ref context.IP) << 8) | chunk.Read(ref context.IP);

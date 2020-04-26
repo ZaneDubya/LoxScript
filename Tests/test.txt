@@ -20,14 +20,27 @@ var a = "global";
 }
 print a;*/
 
-/* testing if ... */
-if (false) {
+/* testing if. PASS
+if (true) {
     print 1;
 }
 else {
     print 2;
-}
-print "end";
+}*/
+
+/* testing and/or. PASS
+if (true and true) { print "correct"; }
+else { print "true and true incorrect"; }
+if (false and false) { print "false and false incorrect"; }
+else { print "correct"; }
+if (false and true) { print "false and true incorrect"; }
+else { print "correct"; }
+if (false or true) { print "correct"; }
+else { print "false or true incorrect"; }
+if (true and false) { print "true and false incorrect"; }
+else { print "correct"; }
+if (true or false) { print "correct"; }
+else { print "true or false incorrect"; }*/
 
 
 // testing assignment of field on expression. FAIL

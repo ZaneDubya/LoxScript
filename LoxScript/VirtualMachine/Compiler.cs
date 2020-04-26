@@ -405,26 +405,30 @@ namespace LoxScript.VirtualMachine {
         /// logic_or    → logic_and ( "or" logic_and)* ;
         /// </summary>
         private void Or() {
-            And(); // Expr expr = 
+            And();
             while (Match(OR)) {
                 _CanAssign = false;
-                Token op = Previous();
-                And(); // Expr right = 
-                // !!! expr = new Expr.Logical(expr, op, right);
+                int elseJump = EmitJump(OP_JUMP_IF_FALSE);
+                int endJump = EmitJump(OP_JUMP);
+                PatchJump(elseJump);
+                EmitBytes((byte)OP_POP);
+                And();
+                PatchJump(endJump);
             }
-            return; // !!! return expr;
+            return;
         }
 
         /// <summary>
         /// logic_and   → equality ( "and" equality )* ;
         /// </summary>
         private void And() {
-            Equality(); // !!! Expr expr = 
+            Equality();
             while (Match(AND)) {
                 _CanAssign = false;
-                Token op = Previous();
-                Equality(); // !!! Expr right = 
-                // !!! expr = new Expr.Logical(expr, op, right);
+                int endJump = EmitJump(OP_JUMP_IF_FALSE);
+                EmitBytes((byte)OP_POP);
+                Equality();
+                PatchJump(endJump);
             }
             return; // !!! return expr;
         }
