@@ -56,7 +56,6 @@ namespace LoxScript {
 
         private static void Run(string source) {
             TokenList tokens = new Scanner(source).ScanTokens();
-            List<Stmt> statements = new Parser(tokens).Parse();
             if (Compiler.TryCompile("code", tokens, out GearsChunk chunk, out string status)) {
                 Gears gears = new Gears();
                 gears.Disassemble(chunk);
@@ -64,6 +63,7 @@ namespace LoxScript {
             }
             Console.ReadLine();
             Exit(1);
+            List<Stmt> statements = new Parser(tokens).Parse();
             // Stop if there was a syntax error.
             if (_HadError) {
                 return;

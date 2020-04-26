@@ -88,6 +88,9 @@ namespace LoxScript.Scanning {
                                 Advance();
                                 break;
                             }
+                            else if (Peek() == '\n') {
+                                _Line += 1;
+                            }
                             Advance();
                         }
                     }
@@ -226,6 +229,7 @@ namespace LoxScript.Scanning {
         /// </summary>
         private void AddToken(TokenType type) {
             string text = _Source.Substring(_Start, _Current - _Start);
+            // bool srcHasParens = text[0] == '\"';
             _Tokens.Add(new Token(type, _Line, _Source, _Start, _Current - _Start));
         }
     }

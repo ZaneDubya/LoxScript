@@ -20,10 +20,10 @@
 
         internal Token(TokenType type, int line, string source, int srcStart, int srcLength) {
             Type = type;
+            Line = line;
             _Source = source;
             _SrcStart = srcStart;
             _SrcLength = srcLength;
-            Line = line;
         }
 
         public override string ToString() => $"{Type} {Lexeme}";

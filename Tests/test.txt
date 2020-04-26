@@ -1,2 +1,15 @@
-print "hello world";
-print (-1 + 2) * 3 - -4;
+// testing print, operator precedence, number and string constants
+// print test + 1;
+// print "hello world";
+// print (-1 + 2) * 3 - -4;
+
+// testing assignment.
+// var a = 1;
+// This invalid assignment fails as expected:
+// var a = 1; var b = 2; var c = 3; var d = 4; a * b = c + d;
+
+// testing assignment of field on expression. DOES NOT YET COMPILE.
+menu.brunch(sunday).beverage = "mimosa";
+
+
+

@@ -30,7 +30,6 @@ namespace LoxScript.VirtualMachine {
         public GearsChunk Chunk;
         public string Message;
 
-
         /// <summary>
         /// What type of function are we compiling?
         /// </summary>
@@ -39,6 +38,10 @@ namespace LoxScript.VirtualMachine {
         private readonly TokenList _Tokens;
 
         private int _Current = 0;
+
+        private bool _HadError = false;
+
+        private bool _CanAssign = false;
 
         private int _ScopeDepth = 0;
 
@@ -61,12 +64,13 @@ namespace LoxScript.VirtualMachine {
                     Declaration();
                 }
                 catch (CompilerException e) {
+                    _HadError = true;
                     e.Print();
-                    return false;
+                    Synchronize();
                 }
             }
             EndCompiler();
-            return true;
+            return !_HadError;
         }
 
         private void EndCompiler() {
@@ -151,12 +155,33 @@ namespace LoxScript.VirtualMachine {
         }
 
         private void VarDeclaration() {
-            Token name = Consume(IDENTIFIER, "Expect variable name.");
+            byte global = ParseVariable("Expect variable name.");
             if (Match(EQUAL)) {
-                Expression(); // !!! initializer = 
+                Expression(); // var x = value;
+            }
+            else {
+                EmitBytes((byte)OP_NIL); // equivalent to var x = nil;
             }
             Consume(SEMICOLON, "Expect ';' after variable declaration.");
-            return; // !!! return new Stmt.Var(name, initializer);
+            DefineVariable(global);
+            return;
+        }
+
+        private byte ParseVariable(string errorMsg) {
+            Token name = Consume(IDENTIFIER, errorMsg);
+            return IdentifierConstant(name);
+        }
+
+        /// <summary>
+        /// Adds the given token's lexeme to the chunk's constant table as a string.
+        /// Returns the index of that constant in the cosntant table.
+        /// </summary>
+        private byte IdentifierConstant(Token name) {
+            return MakeConstant(name.Lexeme);
+        }
+
+        private void DefineVariable(byte global) {
+            EmitBytes((byte)OP_DEFINE_GLOBAL, global);
         }
 
         // === Statements ============================================================================================
@@ -265,7 +290,7 @@ namespace LoxScript.VirtualMachine {
         /// printStmt → "print" expression ";" ;
         /// </summary>
         private void PrintStatement() {
-            Expression(); // !!! Expr value = 
+            Expression();
             Consume(SEMICOLON, "Expect ';' after value.");
             EmitBytes((byte)OP_PRINT);
         }
@@ -303,9 +328,11 @@ namespace LoxScript.VirtualMachine {
         /// exprStmt  → expression ";" ;
         /// </summary>
         private void ExpressionStatement() {
-            Expression(); // !!! Expr expr = 
+            // semantically, an expression statement evaluates the expression and discards the result.
+            Expression();
             Consume(SEMICOLON, "Expect ';' after expression.");
-            return; // !!! return new Stmt.Expres(expr);
+            EmitBytes((byte)OP_POP);
+            return;
         }
 
         // === Expressions ===========================================================================================
@@ -315,7 +342,7 @@ namespace LoxScript.VirtualMachine {
         /// expression  → assignment ;
         /// </summary>
         private void Expression() {
-            Assignment(); // !!! THIS is where I am now
+            Assignment();
         }
 
         /// <summary>
@@ -323,20 +350,26 @@ namespace LoxScript.VirtualMachine {
         ///             | logic_or ;
         /// </summary>
         private void Assignment() {
+            _CanAssign = true;
+            Token target = Peek();
             Or(); // Expr expr = 
-            if (Match(EQUAL)) {
+            /*if (Match(EQUAL)) {
                 Token equals = Previous();
-                Assignment(); // !!! Expr value = 
+                Assignment();
                 // Make sure the left-hand expression is a valid assignment target. If not, fail with a syntax error.
+                if (target.Type == IDENTIFIER) {
+
+                    return;
+                }
                 // !!! if (expr is Expr.Variable varExpr) {
                 // !!!    Token name = varExpr.Name;
                     return; // !!! return new Expr.Assign(name, value);
                 // !!! }
                 // !!! else if (expr is Expr.Get getExpr) {
-                    return; // !!! return new Expr.Set(getExpr.Obj, getExpr.Name, value);
+                // !!!     return new Expr.Set(getExpr.Obj, getExpr.Name, value);
                 // !!! }
                 throw new CompilerException(equals, "Invalid assignment target.");
-            }
+            }*/
             //!!! return expr;
         }
 
@@ -347,6 +380,7 @@ namespace LoxScript.VirtualMachine {
         private void Or() {
             And(); // Expr expr = 
             while (Match(OR)) {
+                _CanAssign = false;
                 Token op = Previous();
                 And(); // Expr right = 
                 // !!! expr = new Expr.Logical(expr, op, right);
@@ -361,6 +395,7 @@ namespace LoxScript.VirtualMachine {
         private void And() {
             Equality(); // !!! Expr expr = 
             while (Match(AND)) {
+                _CanAssign = false;
                 Token op = Previous();
                 Equality(); // !!! Expr right = 
                 // !!! expr = new Expr.Logical(expr, op, right);
@@ -374,6 +409,7 @@ namespace LoxScript.VirtualMachine {
         private void Equality() {
             Comparison();
             while (Match(BANG_EQUAL, EQUAL_EQUAL)) {
+                _CanAssign = false;
                 Token op = Previous();
                 Comparison();
                 switch (op.Type) {
@@ -390,6 +426,7 @@ namespace LoxScript.VirtualMachine {
         private void Comparison() {
             Addition();
             while (Match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
+                _CanAssign = false;
                 Token op = Previous();
                 Addition();
                 switch (op.Type) {
@@ -408,6 +445,7 @@ namespace LoxScript.VirtualMachine {
         private void Addition() {
             Multiplication(); // gets the left operand
             while (Match(MINUS, PLUS)) {
+                _CanAssign = false;
                 Token op = Previous();
                 Multiplication(); // gets the right operand
                 switch (op.Type) {
@@ -424,6 +462,7 @@ namespace LoxScript.VirtualMachine {
         private void Multiplication() {
             Unary(); // !!! Expr expr = 
             while (Match(SLASH, STAR)) {
+                _CanAssign = false;
                 Token op = Previous();
                 Unary();
                 switch (op.Type) {
@@ -439,6 +478,7 @@ namespace LoxScript.VirtualMachine {
         /// </summary>
         private void Unary() {
             if (Match(BANG, MINUS)) {
+                _CanAssign = false;
                 Token op = Previous();
                 Unary();
                 switch (op.Type) {
@@ -532,6 +572,7 @@ namespace LoxScript.VirtualMachine {
                 return; // !!! return new Expr.This(Previous());
             }
             if (Match(IDENTIFIER)) {
+                NamedVariable(Previous());
                 return; // !!! return new Expr.Variable(Previous());
             }
             if (Match(LEFT_PAREN)) {
@@ -540,6 +581,20 @@ namespace LoxScript.VirtualMachine {
                 return; // !!! return new Expr.Grouping(expr);
             }
             throw new CompilerException(Peek(), "Expect expression.");
+        }
+
+        private void NamedVariable(Token name) {
+            int arg = IdentifierConstant(name);
+            if (Match(EQUAL)) {
+                if (!_CanAssign) {
+                    throw new CompilerException(name, $"Invalid assignment target '{name}'.");
+                }
+                Expression();
+                EmitBytes((byte)OP_SET_GLOBAL, (byte)arg);
+            }
+            else {
+                EmitBytes((byte)OP_GET_GLOBAL, (byte)arg);
+            }
         }
 
         // === Parser Infrastructure =================================================================================

@@ -13,11 +13,13 @@
         private const int HEAP_MAX = 256;
         private GearsObj[] _Heap;
 
+        internal readonly GearsHashTable Globals;
         internal int IP;
 
         internal GearsContext() {
             _Stack = new GearsValue[STACK_MAX];
             _Heap = new GearsObj[HEAP_MAX];
+            Globals = new GearsHashTable();
             Reset();
         }
 
@@ -28,8 +30,8 @@
             }
         }
 
-        // === Stack ===
-        // =============
+        // === Stack ================================================================================================
+        // ==========================================================================================================
 
         internal void Push(GearsValue value) {
             if (_StackTop >= STACK_MAX) {
@@ -52,8 +54,8 @@
             return _Stack[_StackTop - 1 - offset];
         }
 
-        // === Heap =====
-        // ==============
+        // === Heap ==================================================================================================
+        // ===========================================================================================================
 
         internal int AddObject(GearsObj obj) {
             for (int i = 0; i < _Heap.Length; i++) {

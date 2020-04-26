@@ -67,6 +67,7 @@
     <Compile Include="VirtualMachine\GearsChunk.cs" />
     <Compile Include="VirtualMachine\EGearsOpCode.cs" />
     <Compile Include="VirtualMachine\GearsContext.cs" />
+    <Compile Include="VirtualMachine\GearsHashTable.cs" />
     <Compile Include="VirtualMachine\GearsObj.cs" />
     <Compile Include="VirtualMachine\GearsValue.cs" />
   </ItemGroup>

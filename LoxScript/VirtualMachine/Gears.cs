@@ -44,6 +44,18 @@ namespace LoxScript.VirtualMachine {
                         context.Push(GearsValue.FalseValue);
                         Console.WriteLine($"false");
                         break;
+                    case OP_POP:
+                        context.Pop();
+                        break;
+                    case OP_GET_GLOBAL:
+                        GLOBAL_GET(chunk, context);
+                        break;
+                    case OP_DEFINE_GLOBAL:
+                        GLOBAL_DEFINE(chunk, context);
+                        break;
+                    case OP_SET_GLOBAL:
+                        GLOBAL_SET(chunk, context);
+                        break;
                     case OP_EQUAL:
                         context.Push(AreValuesEqual(context.Pop(), context.Pop()));
                         Console.WriteLine($"false");
@@ -104,6 +116,31 @@ namespace LoxScript.VirtualMachine {
         /// </summary>
         private bool IsFalsey(GearsValue value) {
             return value.IsNil || (value.IsBool && !value.AsBool);
+        }
+
+        // === Variables ============================================================================================
+        // ===========================================================================================================
+
+        private void GLOBAL_DEFINE(GearsChunk chunk, GearsContext context) {
+            string name = chunk.GetConstantString(chunk.Read(ref context.IP));
+            context.Globals.Set(name, context.Peek(0));
+            context.Pop();
+        }
+
+        private void GLOBAL_GET(GearsChunk chunk, GearsContext context) {
+            string name = chunk.GetConstantString(chunk.Read(ref context.IP));
+            if (!context.Globals.TryGet(name, out GearsValue value)) {
+                throw new RuntimeException(chunk.LineAt(context.IP - 1), $"Undefined variable '{name}'.");
+            }
+            context.Push(value);
+        }
+
+        private void GLOBAL_SET(GearsChunk chunk, GearsContext context) {
+            string name = chunk.GetConstantString(chunk.Read(ref context.IP));
+            if (!context.Globals.ContainsKey(name)) {
+                throw new RuntimeException(chunk.LineAt(context.IP - 1), $"Undefined variable '{name}'.");
+            }
+            context.Globals.Set(name, context.Peek());
         }
 
         // === Operations ============================================================================================
@@ -193,13 +230,23 @@ namespace LoxScript.VirtualMachine {
             int instruction = chunk.Read(ref offset);
             switch ((EGearsOpCode)instruction) {
                 case OP_CONSTANT:
-                    return DisassembleConstantInstruction("OP_CONSTANT", chunk, offset);
+                    return DisassembleConstantInstruction("OP_CONSTANT", chunk, offset, false);
+                case OP_STRING:
+                    return DisassembleConstantInstruction("OP_STRING", chunk, offset, true);
                 case OP_NIL:
                     return DisassembleSimpleInstruction("OP_NIL", chunk, offset);
                 case OP_TRUE:
                     return DisassembleSimpleInstruction("OP_TRUE", chunk, offset);
                 case OP_FALSE:
                     return DisassembleSimpleInstruction("OP_FALSE", chunk, offset);
+                case OP_POP:
+                    return DisassembleSimpleInstruction("OP_POP", chunk, offset);
+                case OP_DEFINE_GLOBAL:
+                    return DisassembleConstantInstruction("OP_DEF_GLOBAL", chunk, offset, true);
+                case OP_GET_GLOBAL:
+                    return DisassembleConstantInstruction("OP_GET_GLOBAL", chunk, offset, true);
+                case OP_SET_GLOBAL:
+                    return DisassembleConstantInstruction("OP_SET_GLOBAL", chunk, offset, true);
                 case OP_EQUAL:
                     return DisassembleSimpleInstruction("OP_EQUAL", chunk, offset);
                 case OP_GREATER:
@@ -228,10 +275,16 @@ namespace LoxScript.VirtualMachine {
             }
         }
 
-        private int DisassembleConstantInstruction(string name, GearsChunk chunk, int offset) {
+        private int DisassembleConstantInstruction(string name, GearsChunk chunk, int offset, bool asString) {
             int constantIndex = chunk.Read(ref offset);
-            GearsValue value = chunk.GetConstantValue(constantIndex);
-            Console.WriteLine($"{name} #{constantIndex} ({value})");
+            if (asString) {
+                string value = chunk.GetConstantString(constantIndex);
+                Console.WriteLine($"{name} #{constantIndex} ({value})");
+            }
+            else {
+                GearsValue value = chunk.GetConstantValue(constantIndex);
+                Console.WriteLine($"{name} #{constantIndex} ({value})");
+            }
             return offset;
         }
 
