@@ -40,12 +40,12 @@ namespace LoxScript.Interpreter {
             return statements;
         }
 
-        // === Declarations and Statements ===========================================================================
+        // === Declarations ==========================================================================================
         // ===========================================================================================================
 
         /// <summary>
         /// declaration → "class" class
-        ///             | "func" function
+        ///             | "fun" function
         ///             | varDecl
         ///             | statement ;
         /// </summary>
@@ -123,13 +123,8 @@ namespace LoxScript.Interpreter {
             return new Stmt.Var(name, initializer);
         }
 
-        private Stmt WhileStatement() {
-            Consume(LEFT_PAREN, "Expect '(' after 'while'.");
-            Expr condition = Expression();
-            Consume(RIGHT_PAREN, "Expect ')' after condition.");
-            Stmt body = Statement();
-            return new Stmt.While(condition, body);
-        }
+        // === Statements ============================================================================================
+        // ===========================================================================================================
 
         /// <summary>
         /// statement   → exprStmt
@@ -246,6 +241,14 @@ namespace LoxScript.Interpreter {
             }
             Consume(SEMICOLON, "Expect ';' after return value.");
             return new Stmt.Return(keyword, value);
+        }
+
+        private Stmt WhileStatement() {
+            Consume(LEFT_PAREN, "Expect '(' after 'while'.");
+            Expr condition = Expression();
+            Consume(RIGHT_PAREN, "Expect ')' after condition.");
+            Stmt body = Statement();
+            return new Stmt.While(condition, body);
         }
 
         private List<Stmt> Block() {

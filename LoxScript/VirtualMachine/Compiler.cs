@@ -149,12 +149,12 @@ namespace LoxScript.VirtualMachine {
             // pop locals
         }
 
-        // === Declarations and Statements ===========================================================================
+        // === Declarations ==========================================================================================
         // ===========================================================================================================
 
         /// <summary>
         /// declaration → "class" class
-        ///             | "func" function
+        ///             | "fun" function
         ///             | varDecl
         ///             | statement ;
         /// </summary>
@@ -235,13 +235,8 @@ namespace LoxScript.VirtualMachine {
             return; // !!! return new Stmt.Var(name, initializer);
         }
 
-        private void WhileStatement() {
-            Consume(LEFT_PAREN, "Expect '(' after 'while'.");
-            Expression(); // !!! Expr condition = 
-            Consume(RIGHT_PAREN, "Expect ')' after condition.");
-            Statement(); // !!! Stmt body = 
-            return; // !!! return new Stmt.While(condition, body);
-        }
+        // === Statements ============================================================================================
+        // ===========================================================================================================
 
         /// <summary>
         /// statement   → exprStmt
@@ -361,6 +356,14 @@ namespace LoxScript.VirtualMachine {
             }
             Consume(SEMICOLON, "Expect ';' after return value.");
             return; // !!! return new Stmt.Return(keyword, value);
+        }
+
+        private void WhileStatement() {
+            Consume(LEFT_PAREN, "Expect '(' after 'while'.");
+            Expression(); // !!! Expr condition = 
+            Consume(RIGHT_PAREN, "Expect ')' after condition.");
+            Statement(); // !!! Stmt body = 
+            return; // !!! return new Stmt.While(condition, body);
         }
 
         private void Block() {
