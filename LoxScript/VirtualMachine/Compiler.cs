@@ -257,44 +257,48 @@ namespace LoxScript.VirtualMachine {
         ///                         expression? ")" statement ;
         /// </summary>
         private void ForStatement() {
+            BeginScope();
             Consume(LEFT_PAREN, "Expect '(' after 'for'.");
             // initializer:
             if (Match(SEMICOLON)) {
-                // !!! initializer = null;
+                // no initializer.
             }
             else if (Match(VAR)) {
-                VarDeclaration(); // !!! initializer = 
+                VarDeclaration();
             }
             else {
-                ExpressionStatement(); // !!! initializer = 
+                ExpressionStatement();
             }
-            // condition:
-            if (!Check(SEMICOLON)) {
-                Expression(); // !!! condition = 
+            // loop just before the condition:
+            int loopStart = Chunk.CodeSize;
+            // loop condition:
+            int exitJump = -1;
+            if (!Match(SEMICOLON)) {
+                Expression();
+                Consume(SEMICOLON, "Expect ';' after loop condition.");
+                // jump out of the for loop if the condition if false.
+                exitJump = EmitJump(OP_JUMP_IF_FALSE);
+                EmitBytes((byte)OP_POP);
             }
-            Consume(SEMICOLON, "Expect ';' after loop condition.");
             // increment:
-            if (!Check(RIGHT_PAREN)) {
-                Expression(); // !!! increment = 
+            if (!Match(RIGHT_PAREN)) {
+                int bodyJump = EmitJump(OP_JUMP);
+                int incrementStart = Chunk.CodeSize;
+                Expression();
+                EmitBytes((byte)OP_POP);
+                Consume(RIGHT_PAREN, "Expect ')' after for clauses.");
+                EmitLoop(loopStart);
+                loopStart = incrementStart;
+                PatchJump(bodyJump);
             }
-            Consume(RIGHT_PAREN, "Expect ')' after for clauses.");
             // body:
-            Statement(); // !!! Stmt body = 
-            // add increment, which must execute following the body in every iterlation of the loop:
-            // !!! if (increment != null) {
-                // !!! add increment to the very end of body:
-                // !!! body = new Stmt.Block(new List<Stmt>() { body, new Stmt.Expres(increment) });
-            // !!! }
-            // add condition that will be checked for every iteration of the loop. If no condition, force to true:
-            // !!! if (condition == null) {
-                new Expr.Literal(true); // !!! default condition
-            // !!! }
-            // !!! body = new Stmt.While(condition, body);
-            // add initializer, which runs once before the entire loop:
-            // !!! if (initializer != null) {
-            // !!!    body = new Stmt.Block(new List<Stmt>() { initializer, body });
-            // !!! }
-            // !!!! return body;
+            Statement();
+            EmitLoop(loopStart);
+            if (exitJump != -1) {
+                // we only do this if there is a condition clause that might skip the for loop entirely.
+                PatchJump(exitJump);
+                EmitBytes((byte)OP_POP);
+            }
         }
 
         /// <summary>
