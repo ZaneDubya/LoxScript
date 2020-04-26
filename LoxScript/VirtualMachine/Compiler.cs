@@ -404,7 +404,6 @@ namespace LoxScript.VirtualMachine {
         /// <summary>
         /// logic_or    → logic_and ( "or" logic_and)* ;
         /// </summary>
-        /// <returns></returns>
         private void Or() {
             And(); // Expr expr = 
             while (Match(OR)) {
@@ -419,7 +418,6 @@ namespace LoxScript.VirtualMachine {
         /// <summary>
         /// logic_and   → equality ( "and" equality )* ;
         /// </summary>
-        /// <returns></returns>
         private void And() {
             Equality(); // !!! Expr expr = 
             while (Match(AND)) {
@@ -678,7 +676,6 @@ namespace LoxScript.VirtualMachine {
         /// <summary>
         /// consumes the current token and returns it.
         /// </summary>
-        /// <returns></returns>
         private Token Advance() {
             if (!IsAtEnd()) {
                 _CurrentToken++;
@@ -696,7 +693,6 @@ namespace LoxScript.VirtualMachine {
         /// <summary>
         /// returns the current token we have yet to consume
         /// </summary>
-        /// <returns></returns>
         private Token Peek() {
             return _Tokens[_CurrentToken];
         }

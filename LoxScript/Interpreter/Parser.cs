@@ -304,7 +304,6 @@ namespace LoxScript.Interpreter {
         /// <summary>
         /// logic_or    → logic_and ( "or" logic_and)* ;
         /// </summary>
-        /// <returns></returns>
         private Expr Or() {
             Expr expr = And();
             while (Match(OR)) {
@@ -318,7 +317,6 @@ namespace LoxScript.Interpreter {
         /// <summary>
         /// logic_and   → equality ( "and" equality )* ;
         /// </summary>
-        /// <returns></returns>
         private Expr And() {
             Expr expr = Equality();
             while (Match(AND)) {
@@ -527,7 +525,6 @@ namespace LoxScript.Interpreter {
         /// <summary>
         /// consumes the current token and returns it.
         /// </summary>
-        /// <returns></returns>
         private Token Advance() {
             if (!IsAtEnd()) {
                 _Current++;
@@ -545,7 +542,6 @@ namespace LoxScript.Interpreter {
         /// <summary>
         /// returns the current token we have yet to consume
         /// </summary>
-        /// <returns></returns>
         private Token Peek() {
             return _Tokens[_Current];
         }
