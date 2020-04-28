@@ -1,3 +1,5 @@
+# Language changes
+
 Syntactic sugar:
 - Add ++, --, +=, -=, /=, *=, and modulus % and %=
 
@@ -30,3 +32,9 @@ Classes
 Inheritance:
 - Replace inherits extender '<' with ':'
 - Replace "super" with "base"
+
+# VM Changes
+- Functions, methods, class definitions, etc should all exist in one chunk.
+- If that means that some data should exist in a metadata byte array, that's fine.
+- Figuring out what function is currently running shouldn't rely on stack slot zero (as in 24.2.1).
+- The call stack should be on the stack, not in a separate frames array (as in 24.3.3). Should instead have a "BP" (base pointer) that points to the function definition of the currently called script. Parameters would follow the base. Frame pointer would point to the bottom of the local stack for the current function. Then stack pointer would point to the top of the stack.

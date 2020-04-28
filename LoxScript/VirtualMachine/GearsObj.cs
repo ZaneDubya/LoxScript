@@ -28,4 +28,26 @@ namespace LoxScript.VirtualMachine {
 
         public override string ToString() => Value;
     }
+
+    /// <summary>
+    /// A function is a first class variable, and so must be an object.
+    /// </summary>
+    class GearsObjFunction : GearsObj {
+        public readonly string Name;
+
+        /// <summary>
+        /// The number of parameters expected by the function.
+        /// </summary>
+        public readonly int Arity;
+
+        public readonly GearsChunk Chunk;
+
+        public GearsObjFunction(string name, int arity) {
+            Name = name;
+            Arity = arity;
+            Chunk = new GearsChunk(name);
+        }
+
+        public override string ToString() => $"<fn {Name}>";
+    }
 }

@@ -15,32 +15,36 @@ namespace LoxScript.VirtualMachine {
         /// If compilation fails, status will be the error message.
         /// </summary>
         public static bool TryCompile(string name, TokenList tokens, out GearsChunk chunk, out string status) {
-            chunk = null;
             Compiler compiler = new Compiler();
-            if (compiler.Compile(name, tokens)) {
-                chunk = compiler.Chunk;
+            if (compiler.Compile(name, tokens, out chunk)) {
+                status = null;
+                return true;
             }
+            chunk = null;
             status = compiler.Message;
-            return chunk != null;
+            return false;
         }
 
         // === Instance ==============================================================================================
         // ===========================================================================================================
 
-        public GearsChunk Chunk;
         public string Message = null;
 
         // tokens, errors, and can assign:
         private TokenList _Tokens;
         private int _CurrentToken = 0;
         private bool _HadError = false;
+
+        // Compiling code to:
+        private GearsObjFunction _Function;
+        private EFunctionType _FunctionType;
         private bool _CanAssign = false;
 
-        // scope and locals:
+        // scope and locals (locals are references to variables in scope; these are stored on the stack at runtime):
         private const int SCOPE_GLOBAL = 0;
         private const int SCOPE_NONE = -1;
         private const int MAX_LOCALS = 256;
-        private CompilerLocal[] Locals = new CompilerLocal[MAX_LOCALS];
+        private CompilerLocal[] LocalVarData = new CompilerLocal[MAX_LOCALS];
         private int _LocalCount = 0;
         private int _ScopeDepth = SCOPE_GLOBAL;
 
@@ -48,15 +52,17 @@ namespace LoxScript.VirtualMachine {
             Message = null;
         }
 
+        private GearsChunk Chunk => _Function.Chunk;
+
         // === Declarations and Statements ===========================================================================
         // ===========================================================================================================
 
         /// <summary>
         /// program     → declaration* EOF ;
         /// </summary>
-        internal bool Compile(string name, TokenList tokens) {
+        internal bool Compile(string name, TokenList tokens, out GearsChunk chunk) {
             _Tokens = tokens;
-            Chunk = new GearsChunk(name);
+            InitCompiler(EFunctionType.TYPE_SCRIPT, name, 0);
             while (!IsAtEnd()) {
                 try {
                     Declaration();
@@ -67,12 +73,22 @@ namespace LoxScript.VirtualMachine {
                     Synchronize();
                 }
             }
-            EndCompiler();
+            GearsObjFunction function = EndCompiler();
+            chunk = function.Chunk;
             return !_HadError;
         }
 
-        private void EndCompiler() {
+        private void InitCompiler(EFunctionType type, string name, int arity) {
+            _Function = new GearsObjFunction(name, arity);
+            _FunctionType = type;
+            // reserve stack slow zero for VM's own internal use.
+            // Give it an empty name so the user can't write an identifier that refers to it:
+            LocalVarData[_LocalCount++] = new CompilerLocal(string.Empty, 0);
+        }
+
+        private GearsObjFunction EndCompiler() {
             EmitReturn();
+            return _Function;
         }
 
         // === Declarations ==========================================================================================
@@ -187,10 +203,10 @@ namespace LoxScript.VirtualMachine {
                 return;
             }
             for (int i = _LocalCount - 1; i >= 0; i--) {
-                if (Locals[i].Depth != SCOPE_NONE && Locals[i].Depth < _ScopeDepth) {
+                if (LocalVarData[i].Depth != SCOPE_NONE && LocalVarData[i].Depth < _ScopeDepth) {
                     break;
                 }
-                if (name.Lexeme == Locals[i].Name.Lexeme) {
+                if (name.Lexeme == LocalVarData[i].Name) {
                     throw new CompilerException(name, "Cannot redefine a local variable in the same scope.");
                 }
             }
@@ -206,7 +222,7 @@ namespace LoxScript.VirtualMachine {
         }
 
         private void MakeInitialized() {
-            Locals[_LocalCount - 1].Depth = _ScopeDepth;
+            LocalVarData[_LocalCount - 1].Depth = _ScopeDepth;
         }
 
         // === Statements ============================================================================================
@@ -782,15 +798,15 @@ namespace LoxScript.VirtualMachine {
         // ===========================================================================================================
 
         struct CompilerLocal {
-            public readonly Token Name;
+            public readonly string Name;
             public int Depth;
 
-            public CompilerLocal(Token name, int depth) {
+            public CompilerLocal(string name, int depth) {
                 Name = name;
                 Depth = depth;
             }
 
-            public override string ToString() => $"{Name.Lexeme}";
+            public override string ToString() => $"{Name}";
         }
 
         private void BeginScope() {
@@ -799,7 +815,7 @@ namespace LoxScript.VirtualMachine {
 
         private void EndScope() {
             _ScopeDepth -= 1;
-            while (_LocalCount > 0 && Locals[_LocalCount - 1].Depth > _ScopeDepth) {
+            while (_LocalCount > 0 && LocalVarData[_LocalCount - 1].Depth > _ScopeDepth) {
                 EmitBytes((byte)OP_POP); // todo: pop many at once?
                 _LocalCount -= 1;
             }
@@ -809,13 +825,13 @@ namespace LoxScript.VirtualMachine {
             if (_LocalCount >= MAX_LOCALS) {
                 throw new CompilerException(name, "Too many local variables in scope.");
             }
-            Locals[_LocalCount++] = new CompilerLocal(name, SCOPE_NONE);
+            LocalVarData[_LocalCount++] = new CompilerLocal(name.Lexeme, SCOPE_NONE);
         }
 
         private int ResolveLocal(Token name) {
             for (int i = _LocalCount - 1; i >= 0; i--) {
-                if (Locals[i].Name.Lexeme == name.Lexeme) {
-                    if (Locals[i].Depth == -1) {
+                if (LocalVarData[i].Name == name.Lexeme) {
+                    if (LocalVarData[i].Depth == -1) {
                         throw new CompilerException(name, "Cannot read local variable in its own initializer.");
                     }
                     return i;
@@ -829,8 +845,8 @@ namespace LoxScript.VirtualMachine {
 
         private enum EFunctionType {
             TYPE_FUNCTION,
-            TYPE_INITIALIZER,
-            TYPE_METHOD,
+            // TYPE_INITIALIZER,
+            // TYPE_METHOD,
             TYPE_SCRIPT
         }
 
