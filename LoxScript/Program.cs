@@ -62,7 +62,7 @@ namespace LoxScript {
                 gears.Run(fn);
             }
             Console.ReadLine();
-            Exit(1);
+            // Exit(1);
             List<Stmt> statements = new Parser(tokens).Parse();
             // Stop if there was a syntax error.
             if (_HadError) {

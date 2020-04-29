@@ -56,28 +56,32 @@ for (var i = 0; i < 10; i = i + 1) { print i; }
 print "For Test: Should count from 0-9";
 for (var i = 0; i < 10; i = i + 1) { print i; }*/
 
-// === Functions: TEST =======================================================
-var start = clock();
-fun sum(a, b, c) {
+// === Functions: PASS =======================================================
+/*fun sum(a, b, c) {
     return a + b + c;
 }
 print 4 + sum(50, 60, 70);
 
-/*fun areWeHavingItYet(n) {
-  print "Yes we are!";
+fun areWeHavingItYet(n) {
+    print n;
+    print "Yes we are!";
 }
 areWeHavingItYet("Are we having fun yet?");
 print areWeHavingItYet;*/
 
-// === Functions and Fibonacci Benchmark =====================================
-/*fun fibonacci(n) {
-  if (n <= 1) return n;
-  return fibonacci(n - 2) + fibonacci(n - 1);
+// === Fibonacci Benchmark ===================================================
+fun fibonacci(n) {
+    if (n <= 1) {
+        return n;
+    }
+    return fibonacci(n - 2) + fibonacci(n - 1);
 }
 
-for (var i = 0; i < 5; i = i + 1) {
-  print fibonacci(i);
-}*/
+var start = clock();
+for (var i = 0; i < 30; i = i + 1) {
+    print fibonacci(i);
+}
+print clock() - start;
 
 // testing assignment of field on expression. FAIL
 // menu.brunch(sunday).beverage = "mimosa";

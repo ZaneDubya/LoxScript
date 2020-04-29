@@ -1,4 +1,6 @@
-﻿namespace LoxScript.VirtualMachine {
+﻿using System;
+
+namespace LoxScript.VirtualMachine {
     /// <summary>
     /// An object is a heap-allocated object. It can represent a string, function, class, etc.
     /// </summary>
@@ -73,14 +75,30 @@
         public override string ToString() => Name == null ? "<script>" : $"<fn {Name}>";
     }
 
-    class GearsObjNativeFunction : GearsObj {
+    delegate GearsValue GearsNativeFunction(GearsValue[] args);
 
-        public GearsObjNativeFunction(string value) {
+    class GearsObjNativeFunction : GearsObj {
+        public readonly string Name;
+
+        /// <summary>
+        /// The number of parameters expected by the function.
+        /// </summary>
+        public int Arity;
+
+        private GearsNativeFunction _OnInvoke;
+
+        public GearsObjNativeFunction(string name, int arity, GearsNativeFunction onInvoke) {
             Type = ObjType.ObjNative;
+            Name = name;
+            Arity = arity;
+            _OnInvoke = onInvoke;
         }
 
-        public override string ToString() => "<native>";
+        public GearsValue Invoke(params GearsValue[] args) {
+            return _OnInvoke(args);
+        }
 
+        public override string ToString() => $"<native {Name}>";
     }
 
     class GearsObjString : GearsObj {

@@ -27,7 +27,6 @@ namespace LoxScript.VirtualMachine {
         // === Instance ==============================================================================================
         // ===========================================================================================================
 
-
         // input and error:
         private TokenList _Tokens;
         private string _ErrorMessage = null;

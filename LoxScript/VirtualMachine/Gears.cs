@@ -8,16 +8,20 @@ namespace LoxScript.VirtualMachine {
     class Gears {
 
         internal Gears() {
-            DefineNative("clock", NativeFnClock);
         }
 
-        private void DefineNative(string name, object nativeFnClock) {
-            throw new NotImplementedException();
+        private GearsValue NativeFnClock(GearsValue[] args) {
+            return new GearsValue((double)DateTimeOffset.Now.ToUnixTimeMilliseconds());
+        }
+
+        private void DefineNative(GearsContext context , string name, int arity, GearsNativeFunction onInvoke) {
+            context.Globals.Set(name, GearsValue.CreateObjPtr(context.AddObject(new GearsObjNativeFunction(name, arity, onInvoke))));
         }
 
         internal bool Run(GearsObjFunction fn) {
             GearsContext context = new GearsContext(fn);
-            while(true) {
+            DefineNative(context, "clock", 0, NativeFnClock);
+            while (true) {
                 EGearsOpCode instruction = (EGearsOpCode)context.ReadByte();
                 switch (instruction) {
                     case OP_CONSTANT:
@@ -170,6 +174,7 @@ namespace LoxScript.VirtualMachine {
                                 }
                                 else if (callee.IsObjType(context, GearsObj.ObjType.ObjNative)) {
                                     CallNative(context, context.GetObject(callee.AsObjPtr) as GearsObjNativeFunction, argCount);
+                                    break;
                                 }
                             }
                         }
@@ -199,7 +204,15 @@ namespace LoxScript.VirtualMachine {
         }
 
         private void CallNative(GearsContext context, GearsObjNativeFunction fn, int argCount) {
-            string name = context.ReadConstantString();
+            if (fn.Arity != argCount) {
+                throw new RuntimeException(0, $"{fn} expects {fn.Arity} arguments but was passed {argCount}.");
+            }
+            GearsValue[] args = new GearsValue[argCount];
+            for (int i = argCount - 1; i >= 0; i++) {
+                args[i] = context.Pop();
+            }
+            context.Pop(); // pop the function signature
+            context.Push(fn.Invoke(args));
         }
 
         private GearsValue AreValuesEqual(GearsValue a, GearsValue b) {
@@ -252,9 +265,9 @@ namespace LoxScript.VirtualMachine {
                 case OP_POP:
                     return DisassembleSimpleInstruction("OP_POP", chunk, offset);
                 case OP_GET_LOCAL:
-                    return DisassembleByteInstruction("OP_GET_LOCAL", chunk, offset);
+                    return DisassembleTwoByteInstruction("OP_GET_LOCAL", chunk, offset);
                 case OP_SET_LOCAL:
-                    return DisassembleByteInstruction("OP_SET_LOCAL", chunk, offset);
+                    return DisassembleTwoByteInstruction("OP_SET_LOCAL", chunk, offset);
                 case OP_DEFINE_GLOBAL:
                     return DisassembleConstantInstruction("OP_DEF_GLOBAL", chunk, offset, OP_STRING);
                 case OP_GET_GLOBAL:
@@ -292,7 +305,7 @@ namespace LoxScript.VirtualMachine {
                 case OP_RETURN:
                     return DisassembleSimpleInstruction("OP_RETURN", chunk, offset);
                 default:
-                    Console.WriteLine($"Unknown opcode {instruction:X2}");
+                    Console.WriteLine($"Unknown opcode {instruction}");
                     return offset;
             }
         }
