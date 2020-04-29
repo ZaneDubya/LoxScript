@@ -7,7 +7,13 @@ namespace LoxScript.VirtualMachine {
     /// </summary>
     class Gears {
 
-        internal Gears() { }
+        internal Gears() {
+            DefineNative("clock", NativeFnClock);
+        }
+
+        private void DefineNative(string name, object nativeFnClock) {
+            throw new NotImplementedException();
+        }
 
         internal bool Run(GearsObjFunction fn) {
             GearsContext context = new GearsContext(fn);
@@ -162,6 +168,9 @@ namespace LoxScript.VirtualMachine {
                                     Call(context, context.GetObject(callee.AsObjPtr) as GearsObjFunction, argCount);
                                     break;
                                 }
+                                else if (callee.IsObjType(context, GearsObj.ObjType.ObjNative)) {
+                                    CallNative(context, context.GetObject(callee.AsObjPtr) as GearsObjNativeFunction, argCount);
+                                }
                             }
                         }
                         throw new RuntimeException(context.LineAtLast(), "Can only call functions and classes.");
@@ -186,8 +195,11 @@ namespace LoxScript.VirtualMachine {
             if (fn.Arity != argCount) {
                 throw new RuntimeException(0, $"{fn} expects {fn.Arity} arguments but was passed {argCount}.");
             }
-            // todo: don't allow stack overflow when adding frames
             context.PushFrame(new GearsCallFrame(fn, bp: context.SP - (fn.Arity + 1)));
+        }
+
+        private void CallNative(GearsContext context, GearsObjNativeFunction fn, int argCount) {
+            string name = context.ReadConstantString();
         }
 
         private GearsValue AreValuesEqual(GearsValue a, GearsValue b) {

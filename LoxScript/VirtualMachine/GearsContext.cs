@@ -35,6 +35,9 @@
         internal GearsCallFrame Frame => _Frames[_FrameCount - 1];
 
         internal void PushFrame(GearsCallFrame frame) {
+            if (_FrameCount == FRAMES_MAX) {
+                throw new Gears.RuntimeException(0, "Stack frame overflow.");
+            }
             _Frames[_FrameCount++] = frame;
         }
 
@@ -44,7 +47,10 @@
         internal bool PopFrame() {
             _StackTop -= Frame.Function.Arity + 1;
             _FrameCount -= 1;
-            return _FrameCount <= 0;
+            if (_FrameCount < 0) {
+                throw new Gears.RuntimeException(0, "Stack frame underflow.");
+            }
+            return _FrameCount == 0;
         }
 
         internal void ModIP(int value) {

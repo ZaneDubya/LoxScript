@@ -6,22 +6,12 @@
         public ObjType Type;
 
         public enum ObjType {
-            ObjString,
             ObjFunction,
+            ObjNative,
+            ObjString,
         }
 
         public override string ToString() => "GearsObj";
-    }
-
-    class GearsObjString : GearsObj {
-        public readonly string Value;
-
-        public GearsObjString(string value) {
-            Type = ObjType.ObjString;
-            Value = value;
-        }
-
-        public override string ToString() => Value;
     }
 
     /// <summary>
@@ -81,5 +71,26 @@
         }
 
         public override string ToString() => Name == null ? "<script>" : $"<fn {Name}>";
+    }
+
+    class GearsObjNativeFunction : GearsObj {
+
+        public GearsObjNativeFunction(string value) {
+            Type = ObjType.ObjNative;
+        }
+
+        public override string ToString() => "<native>";
+
+    }
+
+    class GearsObjString : GearsObj {
+        public readonly string Value;
+
+        public GearsObjString(string value) {
+            Type = ObjType.ObjString;
+            Value = value;
+        }
+
+        public override string ToString() => Value;
     }
 }
