@@ -7,121 +7,180 @@ namespace LoxScript.VirtualMachine {
     /// </summary>
     class Gears {
 
-        internal Gears() {
-            /*GearsChunk chunk = new GearsChunk("test chunk");
-            chunk.Write(OP_CONSTANT);
-            chunk.Write((byte)chunk.AddConstant(1.2));
-            chunk.Write(OP_CONSTANT);
-            chunk.Write((byte)chunk.AddConstant(2.4));
-            chunk.Write(OP_DIVIDE);
-            chunk.Write(OP_NEGATE);
-            chunk.Write(OP_RETURN);
-            Run(chunk);
-            Disassemble(chunk);*/
-        }
+        internal Gears() { }
 
-        internal bool Run(GearsChunk chunk) {
-            GearsContext context = new GearsContext();
+        internal bool Run(GearsObjFunction fn) {
+            GearsContext context = new GearsContext(fn);
             while(true) {
-                int instruction = chunk.Read(ref context.IP);
-                switch ((EGearsOpCode)instruction) {
+                EGearsOpCode instruction = (EGearsOpCode)context.ReadByte();
+                switch (instruction) {
                     case OP_CONSTANT:
-                        context.Push(chunk.GetConstantValue(chunk.Read(ref context.IP)));
-                        // Console.WriteLine($"const => {context.Peek()}");
+                        context.Push(context.ReadConstant());
                         break;
                     case OP_STRING:
-                        context.Push(GearsValue.CreateObjPtr(context.AddObject(new GearsObjString(chunk.GetConstantString(chunk.Read(ref context.IP))))));
+                        context.Push(GearsValue.CreateObjPtr(context.AddObject(new GearsObjString(context.ReadConstantString()))));
+                        break;
+                    case OP_FUNCTION:
+                        context.Push(GearsValue.CreateObjPtr(context.AddObject(new GearsObjFunction(context))));
                         break;
                     case OP_NIL:
                         context.Push(GearsValue.NilValue);
-                        // Console.WriteLine($"nil");
                         break;
                     case OP_TRUE:
                         context.Push(GearsValue.TrueValue);
-                        // Console.WriteLine($"true");
                         break;
                     case OP_FALSE:
                         context.Push(GearsValue.FalseValue);
-                        // Console.WriteLine($"false");
                         break;
                     case OP_POP:
                         context.Pop();
                         break;
                     case OP_GET_LOCAL: {
-                            int slot = chunk.Read(ref context.IP);
-                            context.Push(context.StackGet(slot));
-                            break;
+                            int slot = context.ReadShort();
+                            context.Push(context.StackGet(slot + context.Frame.BP));
                         }
+                        break;
                     case OP_SET_LOCAL: {
-                            int slot = chunk.Read(ref context.IP);
-                            context.StackSet(slot, context.Peek());
+                            int slot = context.ReadShort();
+                            context.StackSet(slot + context.Frame.BP, context.Peek());
+                        }
+                        break;
+                    case OP_GET_GLOBAL: {
+                            string name = context.ReadConstantString();
+                            if (!context.Globals.TryGet(name, out GearsValue value)) {
+                                throw new RuntimeException(context.LineAtLast(), $"Undefined variable '{name}'.");
+                            }
+                            context.Push(value);
+                        }
+                        break;
+                    case OP_DEFINE_GLOBAL: {
+                            string name = context.ReadConstantString();
+                            context.Globals.Set(name, context.Peek(0));
+                            context.Pop();
+                        }
+                        break;
+                    case OP_SET_GLOBAL: {
+                            string name = context.ReadConstantString();
+                            if (!context.Globals.ContainsKey(name)) {
+                                throw new RuntimeException(context.LineAtLast(), $"Undefined variable '{name}'.");
+                            }
+                            context.Globals.Set(name, context.Peek());
                             break;
                         }
-                    case OP_GET_GLOBAL:
-                        GLOBAL_GET(chunk, context);
-                        break;
-                    case OP_DEFINE_GLOBAL:
-                        GLOBAL_DEFINE(chunk, context);
-                        break;
-                    case OP_SET_GLOBAL:
-                        GLOBAL_SET(chunk, context);
-                        break;
                     case OP_EQUAL:
                         context.Push(AreValuesEqual(context.Pop(), context.Pop()));
                         break;
-                    case OP_GREATER:
-                        BINARY_GREATER(chunk, context);
+                    case OP_GREATER: {
+                            if (!context.Peek(0).IsNumber || !context.Peek(1).IsNumber) {
+                                throw new RuntimeException(context.LineAtLast(), "Operands must be numbers.");
+                            }
+                            GearsValue b = context.Pop();
+                            GearsValue a = context.Pop();
+                            context.Push(a > b);
+                        }
                         break;
-                    case OP_LESS:
-                        BINARY_LESS(chunk, context);
+                    case OP_LESS: {
+                            if (!context.Peek(0).IsNumber || !context.Peek(1).IsNumber) {
+                                throw new RuntimeException(context.LineAtLast(), "Operands must be numbers.");
+                            }
+                            GearsValue b = context.Pop();
+                            GearsValue a = context.Pop();
+                            context.Push(a < b);
+                        }
                         break;
-                    case OP_ADD:
-                        BINARY_ADD(chunk, context);
+                    case OP_ADD: {
+                            if (!context.Peek(0).IsNumber || !context.Peek(1).IsNumber) {
+                                throw new RuntimeException(context.LineAtLast(), "Operands must be numbers.");
+                            }
+                            GearsValue b = context.Pop();
+                            GearsValue a = context.Pop();
+                            context.Push(a + b);
+                        }
                         break;
-                    case OP_SUBTRACT:
-                        BINARY_SUBTRACT(chunk, context);
+                    case OP_SUBTRACT: {
+                            if (!context.Peek(0).IsNumber || !context.Peek(1).IsNumber) {
+                                throw new RuntimeException(context.LineAtLast(), "Operands must be numbers.");
+                            }
+                            GearsValue b = context.Pop();
+                            GearsValue a = context.Pop();
+                            context.Push(a - b);
+                        }
                         break;
-                    case OP_MULTIPLY:
-                        BINARY_MULTIPLY(chunk, context);
+                    case OP_MULTIPLY: {
+                            if (!context.Peek(0).IsNumber || !context.Peek(1).IsNumber) {
+                                throw new RuntimeException(context.LineAtLast(), "Operands must be numbers.");
+                            }
+                            GearsValue b = context.Pop();
+                            GearsValue a = context.Pop();
+                            context.Push(a * b);
+                        }
                         break;
-                    case OP_DIVIDE:
-                        BINARY_DIVIDE(chunk, context);
+                    case OP_DIVIDE: {
+                            if (!context.Peek(0).IsNumber || !context.Peek(1).IsNumber) {
+                                throw new RuntimeException(context.LineAtLast(), "Operands must be numbers.");
+                            }
+                            GearsValue b = context.Pop();
+                            GearsValue a = context.Pop();
+                            context.Push(a / b);
+                        }
                         break;
                     case OP_NOT:
                         context.Push(IsFalsey(context.Pop()));
-                        // Console.WriteLine($"not => {context.Peek()}");
                         break;
-                    case OP_NEGATE:
-                        BINARY_NEGATE(chunk, context);
+                    case OP_NEGATE: {
+                            if (!context.Peek(0).IsNumber) {
+                                throw new RuntimeException(context.LineAtLast(), "Operand must be a number.");
+                            }
+                            context.Push(-context.Pop());
+                        }
                         break;
                     case OP_PRINT:
-                        Console.WriteLine($"print => {context.Pop().ToString(context)}");
+                        Console.WriteLine(context.Pop().ToString(context));
                         break;
                     case OP_JUMP: {
-                            int offset = (chunk.Read(ref context.IP) << 8) | chunk.Read(ref context.IP);
-                            context.IP += offset;
-                            break;
+                            int offset = context.ReadShort();
+                            context.ModIP(offset);
                         }
+                        break;
                     case OP_JUMP_IF_FALSE: {
-                            int offset = (chunk.Read(ref context.IP) << 8) | chunk.Read(ref context.IP);
+                            int offset = context.ReadShort();
                             if (IsFalsey(context.Peek())) {
-                                context.IP += offset;
+                                context.ModIP(offset);
                             }
-                            break;
                         }
+                        break;
                     case OP_LOOP: {
-                            int offset = (chunk.Read(ref context.IP) << 8) | chunk.Read(ref context.IP);
-                            context.IP -= offset;
-                            break;
+                            int offset = context.ReadShort();
+                            context.ModIP(-offset);
                         }
+                        break;
+                    case OP_CALL: {
+                            int argCount = context.ReadByte();
+                            GearsValue callee = context.Peek(argCount);
+                            if (callee.IsObjPtr) {
+                                if (callee.IsObjType(context, GearsObj.ObjType.ObjFunction)) {
+                                    Call(context, context.GetObject(callee.AsObjPtr) as GearsObjFunction, argCount);
+                                    break;
+                                }
+                            }
+                        }
+                        throw new RuntimeException(context.LineAtLast(), "Can only call functions and classes.");
                     case OP_RETURN:
-                        Console.WriteLine($"return");
+                        Console.WriteLine($"return (sp:{context.SP})");
                         return true;
                     default:
-                        // todo: throw runtime error
-                        return false;
+                        throw new RuntimeException(0, $"Unknown opcode 0x{instruction:X2}");
                 }
             }
+        }
+
+        private void Call(GearsContext context, GearsObjFunction fn, int argCount) {
+            Console.WriteLine($"call {fn.Name}({fn.Arity}) with {argCount} args");
+            if (fn.Arity != argCount) {
+                throw new RuntimeException(0, $"{fn} expects {fn.Arity} arguments but was passed {argCount}.");
+            }
+            // todo: don't allow stack overflow when adding frames
+            context.AddFrame(new GearsCallFrame(fn, bp: context.SP - (fn.Arity + 1)));
         }
 
         private GearsValue AreValuesEqual(GearsValue a, GearsValue b) {
@@ -144,102 +203,6 @@ namespace LoxScript.VirtualMachine {
             return value.IsNil || (value.IsBool && !value.AsBool);
         }
 
-        // === Variables ============================================================================================
-        // ===========================================================================================================
-
-        private void GLOBAL_DEFINE(GearsChunk chunk, GearsContext context) {
-            string name = chunk.GetConstantString(chunk.Read(ref context.IP));
-            context.Globals.Set(name, context.Peek(0));
-            context.Pop();
-        }
-
-        private void GLOBAL_GET(GearsChunk chunk, GearsContext context) {
-            string name = chunk.GetConstantString(chunk.Read(ref context.IP));
-            if (!context.Globals.TryGet(name, out GearsValue value)) {
-                throw new RuntimeException(chunk.LineAt(context.IP - 1), $"Undefined variable '{name}'.");
-            }
-            context.Push(value);
-        }
-
-        private void GLOBAL_SET(GearsChunk chunk, GearsContext context) {
-            string name = chunk.GetConstantString(chunk.Read(ref context.IP));
-            if (!context.Globals.ContainsKey(name)) {
-                throw new RuntimeException(chunk.LineAt(context.IP - 1), $"Undefined variable '{name}'.");
-            }
-            context.Globals.Set(name, context.Peek());
-        }
-
-        // === Operations ============================================================================================
-        // ===========================================================================================================
-
-        private void BINARY_GREATER(GearsChunk chunk, GearsContext context) {
-            if (!context.Peek(0).IsNumber || !context.Peek(1).IsNumber) {
-                throw new RuntimeException(chunk.LineAt(context.IP - 1), "Operands must be numbers.");
-            }
-            GearsValue b = context.Pop();
-            GearsValue a = context.Pop();
-            context.Push(a > b);
-            // Console.WriteLine($"greater? {context.Peek()}");
-        }
-
-        private void BINARY_LESS(GearsChunk chunk, GearsContext context) {
-            if (!context.Peek(0).IsNumber || !context.Peek(1).IsNumber) {
-                throw new RuntimeException(chunk.LineAt(context.IP - 1), "Operands must be numbers.");
-            }
-            GearsValue b = context.Pop();
-            GearsValue a = context.Pop();
-            context.Push(a < b);
-            // Console.WriteLine($"less? {context.Peek()}");
-        }
-
-        private void BINARY_ADD(GearsChunk chunk, GearsContext context) {
-            if (!context.Peek(0).IsNumber || !context.Peek(1).IsNumber) {
-                throw new RuntimeException(chunk.LineAt(context.IP - 1), "Operands must be numbers.");
-            }
-            GearsValue b = context.Pop();
-            GearsValue a = context.Pop();
-            context.Push(a + b);
-            // Console.WriteLine($"add => {context.Peek()}");
-        }
-
-        private void BINARY_SUBTRACT(GearsChunk chunk, GearsContext context) {
-            if (!context.Peek(0).IsNumber || !context.Peek(1).IsNumber) {
-                throw new RuntimeException(chunk.LineAt(context.IP - 1), "Operands must be numbers.");
-            }
-            GearsValue b = context.Pop();
-            GearsValue a = context.Pop();
-            context.Push(a - b);
-            // Console.WriteLine($"subtract => {context.Peek()}");
-        }
-
-        private void BINARY_MULTIPLY(GearsChunk chunk, GearsContext context) {
-            if (!context.Peek(0).IsNumber || !context.Peek(1).IsNumber) {
-                throw new RuntimeException(chunk.LineAt(context.IP - 1), "Operands must be numbers.");
-            }
-            GearsValue b = context.Pop();
-            GearsValue a = context.Pop();
-            context.Push(a * b);
-            // Console.WriteLine($"multiply => {context.Peek()}");
-        }
-
-        private void BINARY_DIVIDE(GearsChunk chunk, GearsContext context) {
-            if (!context.Peek(0).IsNumber || !context.Peek(1).IsNumber) {
-                throw new RuntimeException(chunk.LineAt(context.IP - 1), "Operands must be numbers.");
-            }
-            GearsValue b = context.Pop();
-            GearsValue a = context.Pop();
-            context.Push(a / b);
-            // Console.WriteLine($"divide => {context.Peek()}");
-        }
-
-        private void BINARY_NEGATE(GearsChunk chunk, GearsContext context) {
-            if (!context.Peek(0).IsNumber) {
-                throw new RuntimeException(chunk.LineAt(context.IP - 1), "Operand must be a number.");
-            }
-            context.Push(-context.Pop());
-            // Console.WriteLine($"negate => {context.Peek()}");
-        }
-
         // === Disassembly ===========================================================================================
         // ===========================================================================================================
 
@@ -253,12 +216,14 @@ namespace LoxScript.VirtualMachine {
 
         private int DisassembleInstruction(GearsChunk chunk, int offset) {
             Console.Write($"{offset:X4}  ");
-            int instruction = chunk.Read(ref offset);
-            switch ((EGearsOpCode)instruction) {
+            EGearsOpCode instruction = (EGearsOpCode)chunk.Read(ref offset);
+            switch (instruction) {
                 case OP_CONSTANT:
-                    return DisassembleConstantInstruction("OP_CONSTANT", chunk, offset, false);
+                    return DisassembleConstantInstruction("OP_CONSTANT", chunk, offset, OP_CONSTANT);
                 case OP_STRING:
-                    return DisassembleConstantInstruction("OP_STRING", chunk, offset, true);
+                    return DisassembleConstantInstruction("OP_STRING", chunk, offset, OP_STRING);
+                case OP_FUNCTION:
+                    return DisassembleConstantInstruction("OP_FUNCTION", chunk, offset, OP_FUNCTION);
                 case OP_NIL:
                     return DisassembleSimpleInstruction("OP_NIL", chunk, offset);
                 case OP_TRUE:
@@ -272,11 +237,11 @@ namespace LoxScript.VirtualMachine {
                 case OP_SET_LOCAL:
                     return DisassembleByteInstruction("OP_SET_LOCAL", chunk, offset);
                 case OP_DEFINE_GLOBAL:
-                    return DisassembleConstantInstruction("OP_DEF_GLOBAL", chunk, offset, true);
+                    return DisassembleConstantInstruction("OP_DEF_GLOBAL", chunk, offset, OP_STRING);
                 case OP_GET_GLOBAL:
-                    return DisassembleConstantInstruction("OP_GET_GLOBAL", chunk, offset, true);
+                    return DisassembleConstantInstruction("OP_GET_GLOBAL", chunk, offset, OP_STRING);
                 case OP_SET_GLOBAL:
-                    return DisassembleConstantInstruction("OP_SET_GLOBAL", chunk, offset, true);
+                    return DisassembleConstantInstruction("OP_SET_GLOBAL", chunk, offset, OP_STRING);
                 case OP_EQUAL:
                     return DisassembleSimpleInstruction("OP_EQUAL", chunk, offset);
                 case OP_GREATER:
@@ -303,6 +268,8 @@ namespace LoxScript.VirtualMachine {
                     return DisassembleTwoByteInstruction("OP_JUMP_IF_FALSE", chunk, offset);
                 case OP_LOOP:
                     return DisassembleTwoByteInstruction("OP_LOOP", chunk, offset);
+                case OP_CALL:
+                    return DisassembleByteInstruction("OP_CALL", chunk, offset);
                 case OP_RETURN:
                     return DisassembleSimpleInstruction("OP_RETURN", chunk, offset);
                 default:
@@ -328,15 +295,24 @@ namespace LoxScript.VirtualMachine {
             return offset;
         }
 
-        private int DisassembleConstantInstruction(string name, GearsChunk chunk, int offset, bool asString) {
-            int constantIndex = chunk.Read(ref offset);
-            if (asString) {
-                string value = chunk.GetConstantString(constantIndex);
-                Console.WriteLine($"{name} #{constantIndex} ({value})");
-            }
-            else {
-                GearsValue value = chunk.GetConstantValue(constantIndex);
-                Console.WriteLine($"{name} #{constantIndex} ({value})");
+        private int DisassembleConstantInstruction(string name, GearsChunk chunk, int offset, EGearsOpCode constantType) {
+            int constantIndex = (chunk.Read(ref offset) << 8) + chunk.Read(ref offset);
+            switch (constantType) {
+                case OP_CONSTANT: {
+                        GearsValue value = chunk.ReadConstantValue(ref constantIndex);
+                        Console.WriteLine($"{name} @k[{constantIndex}] ({value})");
+                    }
+                    break;
+                case OP_STRING: {
+                        string value = chunk.ReadConstantString(ref constantIndex);
+                        Console.WriteLine($"{name} @k[{constantIndex}] ({value})");
+                    }
+                    break;
+                case OP_FUNCTION: {
+                        string value = chunk.ReadConstantString(ref constantIndex);
+                        Console.WriteLine($"{name} @k[{constantIndex}] ({value})");
+                    }
+                    break;
             }
             return offset;
         }
@@ -347,7 +323,7 @@ namespace LoxScript.VirtualMachine {
         /// <summary>
         /// Throw this when vm encounters an error
         /// </summary>
-        private class RuntimeException : Exception {
+        public class RuntimeException : Exception {
             private readonly int _Line;
             private readonly string _Message;
 
@@ -357,6 +333,7 @@ namespace LoxScript.VirtualMachine {
             }
 
             internal void Print() {
+                // todo: print stack trace 24.5.2
                 Program.Error(_Line, _Message);
             }
         }

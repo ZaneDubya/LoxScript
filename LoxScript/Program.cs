@@ -56,10 +56,10 @@ namespace LoxScript {
 
         private static void Run(string source) {
             TokenList tokens = new Scanner(source).ScanTokens();
-            if (Compiler.TryCompile("code", tokens, out GearsChunk chunk, out string status)) {
+            if (Compiler.TryCompile(tokens, out GearsObjFunction fn, out string status)) {
                 Gears gears = new Gears();
-                gears.Disassemble(chunk);
-                gears.Run(chunk);
+                gears.Disassemble(fn.Chunk);
+                gears.Run(fn);
             }
             Console.ReadLine();
             Exit(1);

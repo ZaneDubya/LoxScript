@@ -22,14 +22,35 @@ namespace LoxScript.VirtualMachine {
         /// </summary>
         internal int ConstantSize { get; private set; } = 0;
 
-        private byte[] _Code = null;
+        internal byte[] _Code = null;
 
-        private byte[] _Constants = null;
+        internal byte[] _Constants = null;
 
         private int[] _Lines = null; // todo: optimize with RLE.
 
-        internal GearsChunk(string name) {
+        internal GearsChunk(string name, byte[] code = null, byte[] constants = null) {
             Name = name;
+            if (code != null) {
+                _Code = code;
+                CodeSize = code.Length;
+            }
+            if (constants != null) {
+                _Constants = constants;
+                ConstantSize = constants.Length;
+            }
+        }
+
+        internal void Compress() {
+            if (CodeSize > 0) {
+                byte[] newCode = new byte[CodeSize];
+                Array.Copy(_Code, newCode, CodeSize);
+                _Code = newCode;
+            }
+            if (ConstantSize > 0) {
+                byte[] newConstants = new byte[ConstantSize];
+                Array.Copy(_Constants, newConstants, ConstantSize);
+                _Constants = newConstants;
+            }
         }
 
         // === Code Bytes and Lines ==================================================================================
@@ -45,16 +66,16 @@ namespace LoxScript.VirtualMachine {
             return _Code[index++];
         }
 
+        internal void Write(EGearsOpCode value) {
+            Write((byte)value);
+        }
+
         internal void Write(byte value) {
             int capacity = _Code?.Length ?? 0;
             if (capacity < CodeSize + 1) {
                 GrowChunkCapacity();
             }
             _Code[CodeSize++] = value;
-        }
-
-        internal void Write(EGearsOpCode value) {
-            Write((byte)value);
         }
 
         internal void WriteAt(int offset, byte value) {
@@ -87,68 +108,116 @@ namespace LoxScript.VirtualMachine {
         // === Constants =============================================================================================
         // ===========================================================================================================
 
-        internal GearsValue GetConstantValue(int offset) {
+        internal GearsValue ReadConstantValue(ref int offset) {
             if (offset < 0 || offset + 8 > ConstantSize) {
                 return -1; // todo: runtime error
             }
-            return new GearsValue(BitConverter.ToUInt64(_Constants, offset));
+            GearsValue value = new GearsValue(BitConverter.ToUInt64(_Constants, offset));
+            offset += 8;
+            return value;
         }
 
-        internal string GetConstantString(int offset) {
+        internal string ReadConstantString(ref int offset) {
             if (offset < 0) {
                 return null; // todo: runtime error
             }
             for (int i = offset; i < ConstantSize; i++) {
                 if (_Constants[i] == 0) {
-                    return Encoding.ASCII.GetString(_Constants, offset, i - offset);
+                    string value = Encoding.ASCII.GetString(_Constants, offset, i - offset);
+                    offset = i + 1;
+                    return value;
                 }
             }
             return null; // todo: runtime error
         }
 
-        /// <summary>
-        /// Adds a 'value' constant to the collection. Returns the index of the stored constant.
-        /// </summary>
-        internal int AddConstant(GearsValue value) {
-            int size = 8;
-            int capacity = _Constants?.Length ?? 0;
-            if (capacity < ConstantSize + size) {
-                GrowConstantCapacity(size);
+        internal byte ReadConstantByte(ref int offset) {
+            if (offset < 0 || offset + 1 > ConstantSize) {
+                return byte.MaxValue; // todo: runtime error
             }
+            byte value = _Constants[offset];
+            offset += 1;
+            return value;
+        }
+
+        internal byte[] ReadConstantBytes(ref int offset) {
+            if (offset < 0 || offset + 2 > ConstantSize) {
+                return null; // todo: runtime error
+            }
+            int size = ReadConstantShort(ref offset);
+            if (size == 0 || offset + size > ConstantSize) {
+                return null;
+            }
+            byte[] value = new byte[size];
+            Array.Copy(_Constants, offset, value, 0, size);
+            offset += size;
+            return value;
+        }
+
+        internal int ReadConstantShort(ref int offset) {
+            return (ReadConstantByte(ref offset) << 8) | ReadConstantByte(ref offset);
+        }
+
+        internal int WriteConstantValue(GearsValue value) {
+            CheckGrowConstantCapcity(8);
             int index = ConstantSize;
-            Array.Copy(value.AsBytes, 0, _Constants, index, size);
-            ConstantSize += size;
+            Array.Copy(value.AsBytes, 0, _Constants, index, 8);
+            ConstantSize += 8;
             return index;
         }
 
-        /// <summary>
-        /// Adds a 'value' constant to the collection. Returns the index of the stored constant.
-        /// </summary>
-        internal int AddConstant(string value) {
+        internal int WriteConstantString(string value) {
             byte[] ascii = Encoding.ASCII.GetBytes(value);
             int size = ascii.Length + 1;
-            int capacity = _Constants?.Length ?? 0;
-            if (capacity < ConstantSize + size) {
-                GrowConstantCapacity(size);
-            }
+            CheckGrowConstantCapcity(size);
             int index = ConstantSize;
             Array.Copy(ascii, 0, _Constants, index, ascii.Length);
             ConstantSize += size;
             return index;
         }
 
-        private void GrowConstantCapacity(int minSizeToAdd) {
-            int newCapacity = _Constants == null ? InitialConstantCapcity : _Constants.Length * GrowCapacityFactor;
-            while (newCapacity < ConstantSize + minSizeToAdd) {
-                newCapacity *= GrowCapacityFactor;
+        internal int WriteConstantByte(byte value) {
+            CheckGrowConstantCapcity(1);
+            int index = ConstantSize;
+            _Constants[ConstantSize] = value;
+            ConstantSize += 1;
+            return index;
+        }
+
+        internal int WriteConstantShort(int value) {
+            int index = ConstantSize;
+            WriteConstantByte((byte)((value >> 8) & 0xff));
+            WriteConstantByte((byte)(value & 0xff));
+            return index;
+        }
+
+        internal int WriteConstantBytes(byte[] value) {
+            int size = value.Length;
+            int capacity = _Constants?.Length ?? 0;
+            if (capacity < ConstantSize + size) {
+                CheckGrowConstantCapcity(size);
             }
-            if (_Constants == null) {
-                _Constants = new byte[newCapacity];
-            }
-            else {
-                byte[] newData = new byte[newCapacity];
-                Array.Copy(_Constants, newData, _Constants.Length);
-                _Constants = newData;
+            int index = ConstantSize;
+            Array.Copy(value, 0, _Constants, index, size);
+            ConstantSize += size;
+            return index;
+        }
+
+        private void CheckGrowConstantCapcity(int size) {
+            int capacity = _Constants?.Length ?? 0;
+            if (capacity < ConstantSize + size) {
+                int newCapacity = _Constants == null ? InitialConstantCapcity : _Constants.Length * GrowCapacityFactor;
+                while (newCapacity < ConstantSize + size) {
+                    newCapacity *= GrowCapacityFactor;
+                }
+                if (_Constants == null) {
+                    _Constants = new byte[newCapacity];
+                }
+                else {
+                    byte[] newData = new byte[newCapacity];
+                    Array.Copy(_Constants, newData, _Constants.Length);
+                    _Constants = newData;
+                }
             }
         }
     }

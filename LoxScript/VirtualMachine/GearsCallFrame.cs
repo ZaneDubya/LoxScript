@@ -1,13 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace LoxScript.VirtualMachine {
+﻿namespace LoxScript.VirtualMachine {
     class GearsCallFrame {
         public readonly GearsObjFunction Function;
-        public readonly int IP;
-        public GearsValue[] Slots;
+        public int IP;
+        public int BP;
+
+        public GearsCallFrame(GearsObjFunction fn, int ip = 0, int bp = 0) {
+            Function = fn;
+            IP = ip;
+            BP = bp;
+        }
     }
 }

@@ -10,6 +10,11 @@
         /// </summary>
         OP_STRING,
 
+        /// <summary>
+        /// Loads the indexed function into the heap, and loads an object pointing to that string onto the stack.
+        /// </summary>
+        OP_FUNCTION,
+
         // Types of Values literal-ops
         OP_NIL,
         OP_TRUE,

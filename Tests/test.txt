@@ -45,16 +45,38 @@ else { print "true or false incorrect"; }*/
 // === Loop Statement: PASS ==================================================
 /*print "Loop Test: Should count from 0-9";
 var i = 0;
-while (i < 10) {
+while (i < 100) {
     print i;
     i = i + 1;
 }*/
 
-// === For Statement: TEST ===================================================
-print "For Test: Should count from 0-9";
+// === For Statement: PASS ===================================================
+/*print "For Test: Should count from 0-9";
 for (var i = 0; i < 10; i = i + 1) { print i; }
-print "For Test: Should count from 9-0";
-for (var i = 9; i >= 0; i = i - 1) { print i; }
+print "For Test: Should count from 0-9";
+for (var i = 0; i < 10; i = i + 1) { print i; }*/
+
+// === Functions: TEST =======================================================
+fun sum(a, b, c) {
+    return a + b + c;
+}
+print 4 + sum(50, 60, 70);
+
+/*fun areWeHavingItYet(n) {
+  print "Yes we are!";
+}
+areWeHavingItYet("Are we having fun yet?");
+print areWeHavingItYet;*/
+
+// === Functions and Fibonacci Benchmark =====================================
+/*fun fibonacci(n) {
+  if (n <= 1) return n;
+  return fibonacci(n - 2) + fibonacci(n - 1);
+}
+
+for (var i = 0; i < 5; i = i + 1) {
+  print fibonacci(i);
+}*/
 
 // testing assignment of field on expression. FAIL
 // menu.brunch(sunday).beverage = "mimosa";

@@ -14,25 +14,24 @@ namespace LoxScript.VirtualMachine {
         /// If compilation is successful, compiler.Chunk will be set.
         /// If compilation fails, status will be the error message.
         /// </summary>
-        public static bool TryCompile(string name, TokenList tokens, out GearsChunk chunk, out string status) {
-            Compiler compiler = new Compiler();
-            if (compiler.Compile(name, tokens, out chunk)) {
+        public static bool TryCompile(TokenList tokens, out GearsObjFunction fn, out string status) {
+            Compiler compiler = new Compiler(tokens, EFunctionType.TYPE_SCRIPT, null);
+            if (compiler.Compile(out fn)) {
                 status = null;
                 return true;
             }
-            chunk = null;
-            status = compiler.Message;
+            fn = null;
+            status = compiler._ErrorMessage;
             return false;
         }
 
         // === Instance ==============================================================================================
         // ===========================================================================================================
 
-        public string Message = null;
 
-        // tokens, errors, and can assign:
+        // input and error:
         private TokenList _Tokens;
-        private int _CurrentToken = 0;
+        private string _ErrorMessage = null;
         private bool _HadError = false;
 
         // Compiling code to:
@@ -48,8 +47,13 @@ namespace LoxScript.VirtualMachine {
         private int _LocalCount = 0;
         private int _ScopeDepth = SCOPE_GLOBAL;
 
-        private Compiler() {
-            Message = null;
+        private Compiler(TokenList tokens, EFunctionType type, string name) {
+            _Tokens = tokens;
+            _FunctionType = type;
+            _Function = new GearsObjFunction(name, 0);
+            // reserve stack slow zero for VM's own internal use.
+            // Give it an empty name so the user can't write an identifier that refers to it:
+            LocalVarData[_LocalCount++] = new CompilerLocal(string.Empty, 0);
         }
 
         private GearsChunk Chunk => _Function.Chunk;
@@ -59,11 +63,10 @@ namespace LoxScript.VirtualMachine {
 
         /// <summary>
         /// program     → declaration* EOF ;
+        /// Called from TryCompile.
         /// </summary>
-        internal bool Compile(string name, TokenList tokens, out GearsChunk chunk) {
-            _Tokens = tokens;
-            InitCompiler(EFunctionType.TYPE_SCRIPT, name, 0);
-            while (!IsAtEnd()) {
+        internal bool Compile(out GearsObjFunction fn) {
+            while (!_Tokens.IsAtEnd()) {
                 try {
                     Declaration();
                 }
@@ -73,17 +76,8 @@ namespace LoxScript.VirtualMachine {
                     Synchronize();
                 }
             }
-            GearsObjFunction function = EndCompiler();
-            chunk = function.Chunk;
+            fn = EndCompiler();
             return !_HadError;
-        }
-
-        private void InitCompiler(EFunctionType type, string name, int arity) {
-            _Function = new GearsObjFunction(name, arity);
-            _FunctionType = type;
-            // reserve stack slow zero for VM's own internal use.
-            // Give it an empty name so the user can't write an identifier that refers to it:
-            LocalVarData[_LocalCount++] = new CompilerLocal(string.Empty, 0);
         }
 
         private GearsObjFunction EndCompiler() {
@@ -102,15 +96,15 @@ namespace LoxScript.VirtualMachine {
         /// </summary>
         private void Declaration() {
             try {
-                if (Match(CLASS)) {
+                if (_Tokens.Match(CLASS)) {
                     ClassDeclaration();
                     return;
                 }
-                if (Match(FUNCTION)) {
-                    Function("function");
+                if (_Tokens.Match(FUNCTION)) {
+                    FunctionDeclaration("function");
                     return;
                 }
-                if (Match(VAR)) {
+                if (_Tokens.Match(VAR)) {
                     VarDeclaration();
                     return;
                 }
@@ -127,18 +121,18 @@ namespace LoxScript.VirtualMachine {
         ///               "{" function* "}" ;
         /// </summary>
         private void ClassDeclaration() {
-            Token name = Consume(IDENTIFIER, "Expect class name.");
+            Token name = _Tokens.Consume(IDENTIFIER, "Expect class name.");
             Expr.Variable superClass = null;
-            if (Match(LESS)) {
-                Consume(IDENTIFIER, "Expect superclass name.");
-                superClass = new Expr.Variable(Previous());
+            if (_Tokens.Match(LESS)) {
+                _Tokens.Consume(IDENTIFIER, "Expect superclass name.");
+                superClass = new Expr.Variable(_Tokens.Previous());
             }
-            Consume(LEFT_BRACE, "Expect '{' before class body.");
-            while (!Check(RIGHT_BRACE) && !IsAtEnd()) {
+            _Tokens.Consume(LEFT_BRACE, "Expect '{' before class body.");
+            while (!_Tokens.Check(RIGHT_BRACE) && !_Tokens.IsAtEnd()) {
                 // !!! we are adding methods to the class...
-                Function("method");
+                FunctionDeclaration("method");
             }
-            Consume(RIGHT_BRACE, "Expect '}' after class body.");
+            _Tokens.Consume(RIGHT_BRACE, "Expect '}' after class body.");
             return; // !!! return new Stmt.Class(name, superClass, methods);
         }
 
@@ -146,43 +140,51 @@ namespace LoxScript.VirtualMachine {
         /// function    → IDENTIFIER "(" parameters? ")" block ;
         /// parameters  → IDENTIFIER( "," IDENTIFIER )* ;
         /// </summary>
-        private void Function(string kind) {
-            Token name = Consume(IDENTIFIER, $"Expect {kind} name.");
-            Consume(LEFT_PAREN, $"Expect '(' after {kind} name.");
+        private void FunctionDeclaration(string kind) {
+            int global = ParseVariable($"Expect {kind} name.");
+            MarkInitialized();
+            Compiler fnCompiler = new Compiler(_Tokens, EFunctionType.TYPE_FUNCTION, _Tokens.Previous().Lexeme);
+            fnCompiler.Function();
+            GearsObjFunction fn = fnCompiler.EndCompiler();
+            EmitConstant(fn);
+            DefineVariable(global);
+        }
+
+        private void Function() {
+            BeginScope();
+            _Tokens.Consume(LEFT_PAREN, $"Expect '(' after function name.");
             // parameter list:
-            int paramCount = 0;
-            if (!Check(RIGHT_PAREN)) {
+            if (!_Tokens.Check(RIGHT_PAREN)) {
                 do {
-                    if (paramCount >= 255) {
-                        throw new CompilerException(Peek(), "Cannot have more than 255 parameters.");
+                    int paramConstant = ParseVariable("Expect parameter name.");
+                    DefineVariable(paramConstant);
+                    if (++_Function.Arity >= 255) {
+                        throw new CompilerException(_Tokens.Peek(), "Cannot have more than 255 parameters.");
                     }
-                    // !!! add parameter:
-                    Consume(IDENTIFIER, "Expect parameter name.");
-                    paramCount += 1;
-                } while (Match(COMMA));
+                } while (_Tokens.Match(COMMA));
             }
-            Consume(RIGHT_PAREN, "Expect ')' after parameters.");
+            _Tokens.Consume(RIGHT_PAREN, "Expect ')' after parameters.");
             // body:
-            Consume(LEFT_BRACE, "Expect '{' before " + kind + " body.");
+            _Tokens.Consume(LEFT_BRACE, "Expect '{' before function body.");
             Block();
-            // !!! return new Stmt.Function(name, parameters, body);
+            // no need for end scope
         }
 
         private void VarDeclaration() {
-            byte global = ParseVariable("Expect variable name.");
-            if (Match(EQUAL)) {
+            int global = ParseVariable("Expect variable name.");
+            if (_Tokens.Match(EQUAL)) {
                 Expression(); // var x = value;
             }
             else {
-                EmitBytes((byte)OP_NIL); // equivalent to var x = nil;
+                Emit(OP_NIL); // equivalent to var x = nil;
             }
-            Consume(SEMICOLON, "Expect ';' after variable declaration.");
+            _Tokens.Consume(SEMICOLON, "Expect ';' after variable declaration.");
             DefineVariable(global);
             return;
         }
 
-        private byte ParseVariable(string errorMsg) {
-            Token name = Consume(IDENTIFIER, errorMsg);
+        private int ParseVariable(string errorMsg) {
+            Token name = _Tokens.Consume(IDENTIFIER, errorMsg);
             DeclareVariable(name);
             if (_ScopeDepth > SCOPE_GLOBAL) {
                 return 0;
@@ -192,9 +194,9 @@ namespace LoxScript.VirtualMachine {
 
         /// <summary>
         /// Adds the given token's lexeme to the chunk's constant table as a string.
-        /// Returns the index of that constant in the cosntant table.
+        /// Returns the index of that constant in the constant table.
         /// </summary>
-        private byte IdentifierConstant(Token name) {
+        private int IdentifierConstant(Token name) {
             return MakeConstant(name.Lexeme);
         }
 
@@ -213,15 +215,21 @@ namespace LoxScript.VirtualMachine {
             AddLocal(name);
         }
 
-        private void DefineVariable(byte global) {
+        private void DefineVariable(int global) {
             if (_ScopeDepth > SCOPE_GLOBAL) {
-                MakeInitialized();
+                MarkInitialized();
                 return;
             }
-            EmitBytes((byte)OP_DEFINE_GLOBAL, global);
+            Emit(OP_DEFINE_GLOBAL, (byte)((global >> 8) & 0xff), (byte)(global & 0xff));
         }
 
-        private void MakeInitialized() {
+        /// <summary>
+        /// Indicates that the last parsed local variable is initialized with a value.
+        /// </summary>
+        private void MarkInitialized() {
+            if (_ScopeDepth == SCOPE_GLOBAL) {
+                return;
+            }
             LocalVarData[_LocalCount - 1].Depth = _ScopeDepth;
         }
 
@@ -238,27 +246,27 @@ namespace LoxScript.VirtualMachine {
         ///             | block ;
         /// </summary>
         private void Statement() {
-            if (Match(FOR)) {
+            if (_Tokens.Match(FOR)) {
                 ForStatement();
                 return;
             }
-            if (Match(IF)) {
+            if (_Tokens.Match(IF)) {
                 IfStatement();
                 return;
             }
-            if (Match(PRINT)) {
+            if (_Tokens.Match(PRINT)) {
                 PrintStatement();
                 return;
             }
-            if (Match(RETURN)) {
+            if (_Tokens.Match(RETURN)) {
                 ReturnStatement();
                 return;
             }
-            if (Match(WHILE)) {
+            if (_Tokens.Match(WHILE)) {
                 WhileStatement();
                 return;
             }
-            if (Match(LEFT_BRACE)) {
+            if (_Tokens.Match(LEFT_BRACE)) {
                 BeginScope();
                 Block();
                 EndScope();
@@ -274,12 +282,12 @@ namespace LoxScript.VirtualMachine {
         /// </summary>
         private void ForStatement() {
             BeginScope();
-            Consume(LEFT_PAREN, "Expect '(' after 'for'.");
+            _Tokens.Consume(LEFT_PAREN, "Expect '(' after 'for'.");
             // initializer:
-            if (Match(SEMICOLON)) {
+            if (_Tokens.Match(SEMICOLON)) {
                 // no initializer.
             }
-            else if (Match(VAR)) {
+            else if (_Tokens.Match(VAR)) {
                 VarDeclaration();
             }
             else {
@@ -289,20 +297,20 @@ namespace LoxScript.VirtualMachine {
             int loopStart = Chunk.CodeSize;
             // loop condition:
             int exitJump = -1;
-            if (!Match(SEMICOLON)) {
+            if (!_Tokens.Match(SEMICOLON)) {
                 Expression();
-                Consume(SEMICOLON, "Expect ';' after loop condition.");
+                _Tokens.Consume(SEMICOLON, "Expect ';' after loop condition.");
                 // jump out of the for loop if the condition if false.
                 exitJump = EmitJump(OP_JUMP_IF_FALSE);
-                EmitBytes((byte)OP_POP);
+                Emit(OP_POP);
             }
             // increment:
-            if (!Match(RIGHT_PAREN)) {
+            if (!_Tokens.Match(RIGHT_PAREN)) {
                 int bodyJump = EmitJump(OP_JUMP);
                 int incrementStart = Chunk.CodeSize;
                 Expression();
-                EmitBytes((byte)OP_POP);
-                Consume(RIGHT_PAREN, "Expect ')' after for clauses.");
+                Emit(OP_POP);
+                _Tokens.Consume(RIGHT_PAREN, "Expect ')' after for clauses.");
                 EmitLoop(loopStart);
                 loopStart = incrementStart;
                 PatchJump(bodyJump);
@@ -313,24 +321,25 @@ namespace LoxScript.VirtualMachine {
             if (exitJump != -1) {
                 // we only do this if there is a condition clause that might skip the for loop entirely.
                 PatchJump(exitJump);
-                EmitBytes((byte)OP_POP);
+                Emit(OP_POP);
             }
+            EndScope();
         }
 
         /// <summary>
         /// Follows 'if' token.
         /// </summary>
         private void IfStatement() {
-            Consume(LEFT_PAREN, "Expect '(' after 'if'.");
+            _Tokens.Consume(LEFT_PAREN, "Expect '(' after 'if'.");
             Expression();
-            Consume(RIGHT_PAREN, "Expect ')' after if condition.");
+            _Tokens.Consume(RIGHT_PAREN, "Expect ')' after if condition.");
             int thenJump = EmitJump(OP_JUMP_IF_FALSE);
-            EmitBytes((byte)OP_POP);
+            Emit(OP_POP);
             Statement(); // then statement
             int elseJump = EmitJump(OP_JUMP);
             PatchJump(thenJump);
-            EmitBytes((byte)OP_POP);
-            if (Match(ELSE)) {
+            Emit(OP_POP);
+            if (_Tokens.Match(ELSE)) {
                 Statement();
             }
             PatchJump(elseJump);
@@ -341,40 +350,45 @@ namespace LoxScript.VirtualMachine {
         /// </summary>
         private void PrintStatement() {
             Expression();
-            Consume(SEMICOLON, "Expect ';' after value.");
-            EmitBytes((byte)OP_PRINT);
+            _Tokens.Consume(SEMICOLON, "Expect ';' after value.");
+            Emit(OP_PRINT);
         }
 
         /// <summary>
         /// returnStmt → "return" expression? ";" ;
         /// </summary>
         private void ReturnStatement() {
-            Previous(); // !!! Token keyword = 
-            if (!Check(SEMICOLON)) {
-                Expression(); // !!! value = 
+            if (_FunctionType == EFunctionType.TYPE_SCRIPT) {
+                throw new CompilerException(_Tokens.Previous(), "Can't return from top-level code.");
             }
-            Consume(SEMICOLON, "Expect ';' after return value.");
-            return; // !!! return new Stmt.Return(keyword, value);
+            if (_Tokens.Match(SEMICOLON)) {
+                EmitReturn();
+            }
+            else {
+                Expression();
+                _Tokens.Consume(SEMICOLON, "Expect ';' after return value.");
+                Emit(OP_RETURN);
+            }
         }
 
         private void WhileStatement() {
             int loopStart = Chunk.CodeSize; // code point just before the condition
-            Consume(LEFT_PAREN, "Expect '(' after 'while'.");
+            _Tokens.Consume(LEFT_PAREN, "Expect '(' after 'while'.");
             Expression();
-            Consume(RIGHT_PAREN, "Expect ')' after condition.");
+            _Tokens.Consume(RIGHT_PAREN, "Expect ')' after condition.");
             int exitJump = EmitJump(OP_JUMP_IF_FALSE);
-            EmitBytes((byte)OP_POP);
+            Emit(OP_POP);
             Statement();
             EmitLoop(loopStart);
             PatchJump(exitJump);
-            EmitBytes((byte)OP_POP);
+            Emit(OP_POP);
         }
 
         private void Block() {
-            while (!Check(RIGHT_BRACE) && !IsAtEnd()) {
+            while (!_Tokens.Check(RIGHT_BRACE) && !_Tokens.IsAtEnd()) {
                 Declaration();
             }
-            Consume(RIGHT_BRACE, "Expect '}' after block.");
+            _Tokens.Consume(RIGHT_BRACE, "Expect '}' after block.");
             return;
         }
 
@@ -384,8 +398,8 @@ namespace LoxScript.VirtualMachine {
         private void ExpressionStatement() {
             // semantically, an expression statement evaluates the expression and discards the result.
             Expression();
-            Consume(SEMICOLON, "Expect ';' after expression.");
-            EmitBytes((byte)OP_POP);
+            _Tokens.Consume(SEMICOLON, "Expect ';' after expression.");
+            Emit(OP_POP);
             return;
         }
 
@@ -406,7 +420,7 @@ namespace LoxScript.VirtualMachine {
         private void Assignment() {
             _CanAssign = true;
             Or(); // Expr expr = 
-            /*if (Match(EQUAL)) {
+            /*if (_Tokens.Match(EQUAL)) {
                 Token equals = Previous();
                 Assignment();
                 // Make sure the left-hand expression is a valid assignment target. If not, fail with a syntax error.
@@ -431,12 +445,12 @@ namespace LoxScript.VirtualMachine {
         /// </summary>
         private void Or() {
             And();
-            while (Match(OR)) {
+            while (_Tokens.Match(OR)) {
                 _CanAssign = false;
                 int elseJump = EmitJump(OP_JUMP_IF_FALSE);
                 int endJump = EmitJump(OP_JUMP);
                 PatchJump(elseJump);
-                EmitBytes((byte)OP_POP);
+                Emit(OP_POP);
                 And();
                 PatchJump(endJump);
             }
@@ -447,10 +461,10 @@ namespace LoxScript.VirtualMachine {
         /// </summary>
         private void And() {
             Equality();
-            while (Match(AND)) {
+            while (_Tokens.Match(AND)) {
                 _CanAssign = false;
                 int endJump = EmitJump(OP_JUMP_IF_FALSE);
-                EmitBytes((byte)OP_POP);
+                Emit(OP_POP);
                 Equality();
                 PatchJump(endJump);
             }
@@ -461,13 +475,13 @@ namespace LoxScript.VirtualMachine {
         /// </summary>
         private void Equality() {
             Comparison();
-            while (Match(BANG_EQUAL, EQUAL_EQUAL)) {
+            while (_Tokens.Match(BANG_EQUAL, EQUAL_EQUAL)) {
                 _CanAssign = false;
-                Token op = Previous();
+                Token op = _Tokens.Previous();
                 Comparison();
                 switch (op.Type) {
-                    case BANG_EQUAL: EmitBytes((byte)OP_EQUAL, (byte)OP_NOT); break;
-                    case EQUAL_EQUAL: EmitBytes((byte)OP_EQUAL); break;
+                    case BANG_EQUAL: Emit(OP_EQUAL, OP_NOT); break;
+                    case EQUAL_EQUAL: Emit(OP_EQUAL); break;
                 }
             }
         }
@@ -477,15 +491,15 @@ namespace LoxScript.VirtualMachine {
         /// </summary>
         private void Comparison() {
             Addition();
-            while (Match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
+            while (_Tokens.Match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
                 _CanAssign = false;
-                Token op = Previous();
+                Token op = _Tokens.Previous();
                 Addition();
                 switch (op.Type) {
-                    case GREATER: EmitBytes((byte)OP_GREATER); break;
-                    case GREATER_EQUAL: EmitBytes((byte)OP_LESS, (byte)OP_NOT); break;
-                    case LESS: EmitBytes((byte)OP_LESS); break; 
-                    case LESS_EQUAL: EmitBytes((byte)OP_GREATER, (byte)OP_NOT); break; 
+                    case GREATER: Emit(OP_GREATER); break;
+                    case GREATER_EQUAL: Emit(OP_LESS, OP_NOT); break;
+                    case LESS: Emit(OP_LESS); break; 
+                    case LESS_EQUAL: Emit(OP_GREATER, OP_NOT); break; 
                 }
             }
         }
@@ -495,13 +509,13 @@ namespace LoxScript.VirtualMachine {
         /// </summary>
         private void Addition() {
             Multiplication();
-            while (Match(MINUS, PLUS)) {
+            while (_Tokens.Match(MINUS, PLUS)) {
                 _CanAssign = false;
-                Token op = Previous();
+                Token op = _Tokens.Previous();
                 Multiplication();
                 switch (op.Type) {
-                    case PLUS: EmitBytes((byte)OP_ADD); break;
-                    case MINUS: EmitBytes((byte)OP_SUBTRACT); break;
+                    case PLUS: Emit(OP_ADD); break;
+                    case MINUS: Emit(OP_SUBTRACT); break;
                 }
             }
         }
@@ -511,13 +525,13 @@ namespace LoxScript.VirtualMachine {
         /// </summary>
         private void Multiplication() {
             Unary();
-            while (Match(SLASH, STAR)) {
+            while (_Tokens.Match(SLASH, STAR)) {
                 _CanAssign = false;
-                Token op = Previous();
+                Token op = _Tokens.Previous();
                 Unary();
                 switch (op.Type) {
-                    case SLASH: EmitBytes((byte)OP_DIVIDE); break;
-                    case STAR: EmitBytes((byte)OP_MULTIPLY); break;
+                    case SLASH: Emit(OP_DIVIDE); break;
+                    case STAR: Emit(OP_MULTIPLY); break;
                 }
             }
         }
@@ -526,13 +540,13 @@ namespace LoxScript.VirtualMachine {
         /// unary → ( "!" | "-" ) unary | call ;
         /// </summary>
         private void Unary() {
-            if (Match(BANG, MINUS)) {
+            if (_Tokens.Match(BANG, MINUS)) {
                 _CanAssign = false;
-                Token op = Previous();
+                Token op = _Tokens.Previous();
                 Unary();
                 switch (op.Type) {
-                    case MINUS: EmitBytes((byte)OP_NEGATE); break;
-                    case BANG: EmitBytes((byte)OP_NOT); break;
+                    case MINUS: Emit(OP_NEGATE); break;
+                    case BANG: Emit(OP_NOT); break;
                 }
                 return; // !!! return new Expr.Unary(op, right);
             }
@@ -547,20 +561,19 @@ namespace LoxScript.VirtualMachine {
         /// optional list of arguments inside.
         /// </summary>
         private void Call() {
-            Primary(); // !!! Expr expr = 
+            Primary();
             while (true) {
-                if (Match(LEFT_PAREN)) {
+                if (_Tokens.Match(LEFT_PAREN)) {
                     FinishCall(); // !!! expr = FinishCall(expr)
                 }
-                else if (Match(DOT)) {
-                    Token name = Consume(IDENTIFIER, "Expect a property name after '.'.");
+                else if (_Tokens.Match(DOT)) {
+                    Token name = _Tokens.Consume(IDENTIFIER, "Expect a property name after '.'.");
                     // !!! expr = new Expr.Get(expr, name);
                 }
                 else {
                     break;
                 }
             }
-            // !!! return expr;
         }
 
         /// <summary>
@@ -569,20 +582,19 @@ namespace LoxScript.VirtualMachine {
         /// Requires one or more argument expressions, followed by zero or more expressions each preceded by a comma.
         /// To handle zero-argument calls, the call rule itself considers the entire arguments production optional.
         /// </summary>
-        private void FinishCall() { // !!! parameter Expr callee
-            // List<Expr> arguments = new List<Expr>();
+        private void FinishCall() {
             int argumentCount = 0;
-            if (!Check(RIGHT_PAREN)) {
+            if (!_Tokens.Check(RIGHT_PAREN)) {
                 do {
                     if (argumentCount >= 255) {
-                        throw new CompilerException(Peek(), "Cannot have more than 255 arguments.");
+                        throw new CompilerException(_Tokens.Peek(), "Cannot have more than 255 arguments.");
                     }
-                    Expression(); // arguments.Add(Expression());
+                    Expression();
                     argumentCount += 1;
-                } while (Match(COMMA));
+                } while (_Tokens.Match(COMMA));
             }
-            Token paren = Consume(RIGHT_PAREN, "Expect ')' ending call operator parens (following any arguments).");
-            return; // !!! return new Expr.Call(callee, paren, arguments);
+            Token paren = _Tokens.Consume(RIGHT_PAREN, "Expect ')' ending call operator parens (following any arguments).");
+            Emit(OP_CALL, (byte)argumentCount);
         }
 
         /// <summary>
@@ -591,207 +603,160 @@ namespace LoxScript.VirtualMachine {
         ///         | "super" "." IDENTIFIER ;
         /// </summary>
         private void Primary() {
-            if (Match(FALSE)) {
-                EmitBytes((byte)OP_FALSE);
+            if (_Tokens.Match(FALSE)) {
+                Emit(OP_FALSE);
                 return;
             }
-            if (Match(TRUE)) {
-                EmitBytes((byte)OP_TRUE);
+            if (_Tokens.Match(TRUE)) {
+                Emit(OP_TRUE);
                 return;
             }
-            if (Match(NIL)) {
-                EmitBytes((byte)OP_NIL);
+            if (_Tokens.Match(NIL)) {
+                Emit(OP_NIL);
                 return;
             }
-            if (Match(NUMBER)) {
-                EmitConstant(Previous().LiteralAsNumber);
+            if (_Tokens.Match(NUMBER)) {
+                EmitConstant(_Tokens.Previous().LiteralAsNumber);
                 return;
             }
-            if (Match(STRING)) {
-                EmitString(Previous().LiteralAsString);
+            if (_Tokens.Match(STRING)) {
+                EmitConstant(_Tokens.Previous().LiteralAsString);
                 return;
             }
-            if (Match(SUPER)) {
-                Token keyword = Previous();
-                Consume(DOT, "Expect '.' after 'super'.");
-                Token method = Consume(IDENTIFIER, "Expect superclass method name.");
+            if (_Tokens.Match(SUPER)) {
+                Token keyword = _Tokens.Previous();
+                _Tokens.Consume(DOT, "Expect '.' after 'super'.");
+                Token method = _Tokens.Consume(IDENTIFIER, "Expect superclass method name.");
                 return; // !!! return new Expr.Super(keyword, method);
             }
-            if (Match(THIS)) {
+            if (_Tokens.Match(THIS)) {
                 return; // !!! return new Expr.This(Previous());
             }
-            if (Match(IDENTIFIER)) {
-                NamedVariable(Previous());
+            if (_Tokens.Match(IDENTIFIER)) {
+                NamedVariable(_Tokens.Previous());
                 return; // !!! return new Expr.Variable(Previous());
             }
-            if (Match(LEFT_PAREN)) {
+            if (_Tokens.Match(LEFT_PAREN)) {
                 Expression();
-                Consume(RIGHT_PAREN, "Expect ')' after expression.");
+                _Tokens.Consume(RIGHT_PAREN, "Expect ')' after expression.");
                 return;
             }
-            throw new CompilerException(Peek(), "Expect expression.");
+            throw new CompilerException(_Tokens.Peek(), "Expect expression.");
         }
 
         private void NamedVariable(Token name) {
             EGearsOpCode getOp, setOp;
-            int arg = ResolveLocal(name);
-            if (arg != -1) {
+            int index = ResolveLocal(name);
+            if (index != -1) {
                 getOp = OP_GET_LOCAL;
                 setOp = OP_SET_LOCAL;
             }
             else {
-                arg = IdentifierConstant(name);
+                index = IdentifierConstant(name);
                 getOp = OP_GET_GLOBAL;
                 setOp = OP_SET_GLOBAL;
             }
-            if (Match(EQUAL)) {
+            if (_Tokens.Match(EQUAL)) {
                 if (!_CanAssign) {
                     throw new CompilerException(name, $"Invalid assignment target '{name}'.");
                 }
                 Expression();
-                EmitBytes((byte)setOp, (byte)arg);
+                Emit((byte)setOp, (byte)((index >> 8) & 0xff), (byte)(index & 0xff));
             }
             else {
-                EmitBytes((byte)getOp, (byte)arg);
+                Emit((byte)getOp, (byte)((index >> 8) & 0xff), (byte)(index & 0xff));
             }
-        }
-
-        // === Parser Infrastructure =================================================================================
-        // ===========================================================================================================
-
-        /// <summary>
-        /// Checks to see if the next token is of the expected type.
-        /// If so, it consumes it and everything is groovy.
-        /// If some other token is there, then we’ve hit an error.
-        /// </summary>
-        private Token Consume(TokenType type, string message) {
-            if (Check(type)) {
-                return Advance();
-            }
-            throw new CompilerException(Peek(), message);
-        }
-
-        /// <summary>
-        /// Checks if the current token is any of the given types.
-        /// If so, consumes the token and returns true.
-        /// Otherwise, returns false and leaves the token as the current one.
-        /// </summary>
-        private bool Match(params TokenType[] types) {
-            foreach (TokenType type in types) {
-                if (Check(type)) {
-                    Advance();
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        /// <summary>
-        /// Returns true if the current token is of the given type
-        /// </summary>
-        private bool Check(TokenType type) {
-            if (IsAtEnd()) {
-                return false;
-            }
-            return Peek().Type == type;
-        }
-
-        /// <summary>
-        /// consumes the current token and returns it.
-        /// </summary>
-        private Token Advance() {
-            if (!IsAtEnd()) {
-                _CurrentToken++;
-            }
-            return Previous();
-        }
-
-        /// <summary>
-        /// checks if we’ve run out of tokens to parse.
-        /// </summary>
-        private bool IsAtEnd() {
-            return Peek().Type == EOF;
-        }
-
-        /// <summary>
-        /// returns the current token we have yet to consume
-        /// </summary>
-        private Token Peek() {
-            return _Tokens[_CurrentToken];
-        }
-
-        /// <summary>
-        /// returns the most recently consumed token.
-        /// </summary>
-        private Token Previous() {
-            return _Tokens[_CurrentToken - 1];
         }
 
         // === Emit Infrastructure ===================================================================================
         // ===========================================================================================================
 
-        private void EmitBytes(params byte[] bytes) {
-            foreach (byte b in bytes) {
-                Chunk.Write(b);
-            }
+        private void Emit(EGearsOpCode opcode0, EGearsOpCode opcode1, params byte[] data) {
+            Chunk.Write(opcode0);
+            Chunk.Write(opcode1);
+            Emit(data);
         }
 
-        private void EmitConstant(double value) {
-            EmitBytes((byte)OP_CONSTANT, MakeConstant(value));
+        private void Emit(EGearsOpCode opcode, params byte[] data) {
+            Chunk.Write(opcode);
+            Emit(data);
+        }
+
+        private void Emit(params byte[] data) {
+            foreach (byte i in data) {
+                Chunk.Write(i);
+            }
         }
 
         private void EmitLoop(int loopStart) {
-            EmitBytes((byte)OP_LOOP);
+            Emit(OP_LOOP);
             int offset = Chunk.CodeSize - loopStart + 2;
             if (offset > ushort.MaxValue) {
-                throw new CompilerException(Peek(), "Loop body too large.");
+                throw new CompilerException(_Tokens.Peek(), "Loop body too large.");
             }
-            EmitBytes((byte)((offset >> 8) & 0xff), (byte)(offset & 0xff));
+            Emit((byte)((offset >> 8) & 0xff), (byte)(offset & 0xff));
         }
 
         private int EmitJump(EGearsOpCode instruction) {
-            EmitBytes((byte)instruction, 0xff, 0xff);
+            Emit((byte)instruction, 0xff, 0xff);
             return Chunk.CodeSize - 2;
-        }
-
-        private void EmitReturn() {
-            /*if (_Type == EFunctionType.TYPE_INITIALIZER) {
-                EmitBytes((byte)OP_GET_LOCAL, 0);
-            }
-            else {
-                EmitBytes((byte)OP_NIL);
-            }*/
-            EmitBytes((byte)OP_RETURN);
-        }
-
-        private void EmitString(string value) {
-            EmitBytes((byte)OP_STRING, MakeConstant(value));
-        }
-
-        private byte MakeConstant(double value) {
-            int index = Chunk.AddConstant(value);
-            if (index > byte.MaxValue) {
-                throw new CompilerException(Peek(), "Too many constants in one chunk.");
-            }
-            return (byte)index;
-        }
-
-        private byte MakeConstant(string value) {
-            int index = Chunk.AddConstant(value);
-            if (index > byte.MaxValue) {
-                throw new CompilerException(Peek(), "Too many constants in one chunk.");
-            }
-            return (byte)index;
         }
 
         private void PatchJump(int offset) {
             // -2 to adjust for the bytecode for the jump offset itself.
             int jump = Chunk.CodeSize - offset - 2;
             if (jump > ushort.MaxValue) {
-                throw new CompilerException(Peek(), "Too much code to jump over.");
+                throw new CompilerException(_Tokens.Peek(), "Too much code to jump over.");
             }
             Chunk.WriteAt(offset, (byte)((jump >> 8) & 0xff));
             Chunk.WriteAt(offset + 1, (byte)(jump & 0xff));
+        }
+
+        /// <summary>
+        /// Lox implicitly returns nil when no return value is specified.
+        /// </summary>
+        private void EmitReturn() {
+            /*if (_FunctionType == EFunctionType.TYPE_INITIALIZER) {
+                Emit(OP_GET_LOCAL, 0);
+            }
+            else {*/
+                Emit(OP_NIL);
+            // }
+            Emit(OP_RETURN);
+        }
+
+        // === Constants =============================================================================================
+        // ===========================================================================================================
+
+        private void EmitConstant(GearsValue value) {
+            int index = MakeConstant(value);
+            Emit(OP_CONSTANT, (byte)((index >> 8) & 0xff), (byte)(index & 0xff));
+        }
+
+        private void EmitConstant(string value) {
+            int index = MakeConstant(value);
+            Emit(OP_STRING, (byte)((index >> 8) & 0xff), (byte)(index & 0xff));
+        }
+
+        private void EmitConstant(GearsObjFunction fn) {
+            int index = fn.Serialize(Chunk);
+            Emit(OP_FUNCTION, (byte)((index >> 8) & 0xff), (byte)(index & 0xff));
+        }
+
+        private int MakeConstant(GearsValue value) {
+            int index = Chunk.WriteConstantValue(value);
+            if (index > short.MaxValue) {
+                throw new CompilerException(_Tokens.Peek(), "Too many constants in one chunk.");
+            }
+            return index;
+        }
+
+        private int MakeConstant(string value) {
+            int index = Chunk.WriteConstantString(value);
+            if (index > short.MaxValue) {
+                throw new CompilerException(_Tokens.Peek(), "Too many constants in one chunk.");
+            }
+            return index;
         }
 
         // === Scope and Locals ======================================================================================
@@ -816,7 +781,7 @@ namespace LoxScript.VirtualMachine {
         private void EndScope() {
             _ScopeDepth -= 1;
             while (_LocalCount > 0 && LocalVarData[_LocalCount - 1].Depth > _ScopeDepth) {
-                EmitBytes((byte)OP_POP); // todo: pop many at once?
+                Emit(OP_POP); // todo: pop many at once?
                 _LocalCount -= 1;
             }
         }
@@ -859,12 +824,12 @@ namespace LoxScript.VirtualMachine {
         /// caused cascaded errors anyway and now we can parse the rest of the file starting at the next statement.
         /// </summary>
         private void Synchronize() {
-            Advance();
-            while (!IsAtEnd()) {
-                if (Previous().Type == SEMICOLON) {
+            _Tokens.Advance();
+            while (!_Tokens.IsAtEnd()) {
+                if (_Tokens.Previous().Type == SEMICOLON) {
                     return;
                 }
-                switch (Peek().Type) {
+                switch (_Tokens.Peek().Type) {
                     case CLASS:
                     case FUNCTION:
                     case VAR:
@@ -875,14 +840,14 @@ namespace LoxScript.VirtualMachine {
                     case RETURN:
                         return;
                 }
-                Advance();
+                _Tokens.Advance();
             }
         }
 
         /// <summary>
         /// Throw this when the parser is in a confused state and needs to panic and synchronize.
         /// </summary>
-        private class CompilerException : Exception {
+        public class CompilerException : Exception {
             private readonly Token _Token;
             private readonly string _Message;
 
