@@ -5,214 +5,217 @@ namespace LoxScript.VirtualMachine {
     /// <summary>
     /// Gears is a bytecode virtual machine for the Lox language.
     /// </summary>
-    class Gears {
+    class Gears : GearsContext {
 
-        internal Gears() {
+        internal Gears() : base() {
         }
 
         private GearsValue NativeFnClock(GearsValue[] args) {
             return new GearsValue((double)DateTimeOffset.Now.ToUnixTimeMilliseconds());
         }
 
-        private void DefineNative(GearsContext context , string name, int arity, GearsNativeFunction onInvoke) {
-            context.Globals.Set(name, GearsValue.CreateObjPtr(context.AddObject(new GearsObjNativeFunction(name, arity, onInvoke))));
+        private void DefineNative(string name, int arity, GearsNativeFunction onInvoke) {
+            Globals.Set(name, GearsValue.CreateObjPtr(AddObject(new GearsObjNativeFunction(name, arity, onInvoke))));
         }
 
         internal bool Run(GearsObjFunction fn) {
-            GearsContext context = new GearsContext(fn);
-            DefineNative(context, "clock", 0, NativeFnClock);
+            Reset(fn);
+            DefineNative("clock", 0, NativeFnClock);
             while (true) {
-                EGearsOpCode instruction = (EGearsOpCode)context.ReadByte();
+                EGearsOpCode instruction = (EGearsOpCode)ReadByte();
                 switch (instruction) {
                     case OP_CONSTANT:
-                        context.Push(context.ReadConstant());
+                        Push(ReadConstant());
                         break;
                     case OP_STRING:
-                        context.Push(GearsValue.CreateObjPtr(context.AddObject(new GearsObjString(context.ReadConstantString()))));
+                        Push(GearsValue.CreateObjPtr(AddObject(new GearsObjString(ReadConstantString()))));
                         break;
                     case OP_FUNCTION:
-                        context.Push(GearsValue.CreateObjPtr(context.AddObject(new GearsObjFunction(context))));
+                        Push(GearsValue.CreateObjPtr(AddObject(new GearsObjFunction(this))));
                         break;
                     case OP_NIL:
-                        context.Push(GearsValue.NilValue);
+                        Push(GearsValue.NilValue);
                         break;
                     case OP_TRUE:
-                        context.Push(GearsValue.TrueValue);
+                        Push(GearsValue.TrueValue);
                         break;
                     case OP_FALSE:
-                        context.Push(GearsValue.FalseValue);
+                        Push(GearsValue.FalseValue);
                         break;
                     case OP_POP:
-                        context.Pop();
+                        Pop();
                         break;
                     case OP_GET_LOCAL: {
-                            int slot = context.ReadShort();
-                            context.Push(context.StackGet(slot + context.Frame.BP));
+                            int slot = ReadShort();
+                            Push(StackGet(slot + BP));
                         }
                         break;
                     case OP_SET_LOCAL: {
-                            int slot = context.ReadShort();
-                            context.StackSet(slot + context.Frame.BP, context.Peek());
+                            int slot = ReadShort();
+                            StackSet(slot + BP, Peek());
                         }
                         break;
                     case OP_GET_GLOBAL: {
-                            string name = context.ReadConstantString();
-                            if (!context.Globals.TryGet(name, out GearsValue value)) {
-                                throw new RuntimeException(context.LineAtLast(), $"Undefined variable '{name}'.");
+                            string name = ReadConstantString();
+                            if (!Globals.TryGet(name, out GearsValue value)) {
+                                throw new RuntimeException(0, $"Undefined variable '{name}'.");
                             }
-                            context.Push(value);
+                            Push(value);
                         }
                         break;
                     case OP_DEFINE_GLOBAL: {
-                            string name = context.ReadConstantString();
-                            context.Globals.Set(name, context.Peek(0));
-                            context.Pop();
+                            string name = ReadConstantString();
+                            Globals.Set(name, Peek(0));
+                            Pop();
                         }
                         break;
                     case OP_SET_GLOBAL: {
-                            string name = context.ReadConstantString();
-                            if (!context.Globals.ContainsKey(name)) {
-                                throw new RuntimeException(context.LineAtLast(), $"Undefined variable '{name}'.");
+                            string name = ReadConstantString();
+                            if (!Globals.ContainsKey(name)) {
+                                throw new RuntimeException(0, $"Undefined variable '{name}'.");
                             }
-                            context.Globals.Set(name, context.Peek());
+                            Globals.Set(name, Peek());
                             break;
                         }
                     case OP_EQUAL:
-                        context.Push(AreValuesEqual(context.Pop(), context.Pop()));
+                        Push(AreValuesEqual(Pop(), Pop()));
                         break;
                     case OP_GREATER: {
-                            if (!context.Peek(0).IsNumber || !context.Peek(1).IsNumber) {
-                                throw new RuntimeException(context.LineAtLast(), "Operands must be numbers.");
+                            if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
+                                throw new RuntimeException(0, "Operands must be numbers.");
                             }
-                            GearsValue b = context.Pop();
-                            GearsValue a = context.Pop();
-                            context.Push(a > b);
+                            GearsValue b = Pop();
+                            GearsValue a = Pop();
+                            Push(a > b);
                         }
                         break;
                     case OP_LESS: {
-                            if (!context.Peek(0).IsNumber || !context.Peek(1).IsNumber) {
-                                throw new RuntimeException(context.LineAtLast(), "Operands must be numbers.");
+                            if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
+                                throw new RuntimeException(0, "Operands must be numbers.");
                             }
-                            GearsValue b = context.Pop();
-                            GearsValue a = context.Pop();
-                            context.Push(a < b);
+                            GearsValue b = Pop();
+                            GearsValue a = Pop();
+                            Push(a < b);
                         }
                         break;
                     case OP_ADD: {
-                            if (!context.Peek(0).IsNumber || !context.Peek(1).IsNumber) {
-                                throw new RuntimeException(context.LineAtLast(), "Operands must be numbers.");
+                            if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
+                                throw new RuntimeException(0, "Operands must be numbers.");
                             }
-                            GearsValue b = context.Pop();
-                            GearsValue a = context.Pop();
-                            context.Push(a + b);
+                            GearsValue b = Pop();
+                            GearsValue a = Pop();
+                            Push(a + b);
                         }
                         break;
                     case OP_SUBTRACT: {
-                            if (!context.Peek(0).IsNumber || !context.Peek(1).IsNumber) {
-                                throw new RuntimeException(context.LineAtLast(), "Operands must be numbers.");
+                            if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
+                                throw new RuntimeException(0, "Operands must be numbers.");
                             }
-                            GearsValue b = context.Pop();
-                            GearsValue a = context.Pop();
-                            context.Push(a - b);
+                            GearsValue b = Pop();
+                            GearsValue a = Pop();
+                            Push(a - b);
                         }
                         break;
                     case OP_MULTIPLY: {
-                            if (!context.Peek(0).IsNumber || !context.Peek(1).IsNumber) {
-                                throw new RuntimeException(context.LineAtLast(), "Operands must be numbers.");
+                            if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
+                                throw new RuntimeException(0, "Operands must be numbers.");
                             }
-                            GearsValue b = context.Pop();
-                            GearsValue a = context.Pop();
-                            context.Push(a * b);
+                            GearsValue b = Pop();
+                            GearsValue a = Pop();
+                            Push(a * b);
                         }
                         break;
                     case OP_DIVIDE: {
-                            if (!context.Peek(0).IsNumber || !context.Peek(1).IsNumber) {
-                                throw new RuntimeException(context.LineAtLast(), "Operands must be numbers.");
+                            if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
+                                throw new RuntimeException(0, "Operands must be numbers.");
                             }
-                            GearsValue b = context.Pop();
-                            GearsValue a = context.Pop();
-                            context.Push(a / b);
+                            GearsValue b = Pop();
+                            GearsValue a = Pop();
+                            Push(a / b);
                         }
                         break;
                     case OP_NOT:
-                        context.Push(IsFalsey(context.Pop()));
+                        Push(IsFalsey(Pop()));
                         break;
                     case OP_NEGATE: {
-                            if (!context.Peek(0).IsNumber) {
-                                throw new RuntimeException(context.LineAtLast(), "Operand must be a number.");
+                            if (!Peek(0).IsNumber) {
+                                throw new RuntimeException(0, "Operand must be a number.");
                             }
-                            context.Push(-context.Pop());
+                            Push(-Pop());
                         }
                         break;
                     case OP_PRINT:
-                        Console.WriteLine(context.Pop().ToString(context));
+                        Console.WriteLine(Pop().ToString(this));
                         break;
                     case OP_JUMP: {
-                            int offset = context.ReadShort();
-                            context.ModIP(offset);
+                            int offset = ReadShort();
+                            ModIP(offset);
                         }
                         break;
                     case OP_JUMP_IF_FALSE: {
-                            int offset = context.ReadShort();
-                            if (IsFalsey(context.Peek())) {
-                                context.ModIP(offset);
+                            int offset = ReadShort();
+                            if (IsFalsey(Peek())) {
+                                ModIP(offset);
                             }
                         }
                         break;
                     case OP_LOOP: {
-                            int offset = context.ReadShort();
-                            context.ModIP(-offset);
+                            int offset = ReadShort();
+                            ModIP(-offset);
                         }
                         break;
                     case OP_CALL: {
-                            int argCount = context.ReadByte();
-                            GearsValue callee = context.Peek(argCount);
-                            if (callee.IsObjPtr) {
-                                if (callee.IsObjType(context, GearsObj.ObjType.ObjFunction)) {
-                                    Call(context, context.GetObject(callee.AsObjPtr) as GearsObjFunction, argCount);
-                                    break;
-                                }
-                                else if (callee.IsObjType(context, GearsObj.ObjType.ObjNative)) {
-                                    CallNative(context, context.GetObject(callee.AsObjPtr) as GearsObjNativeFunction, argCount);
-                                    break;
-                                }
+                            int argCount = ReadByte();
+                            GearsValue ptr = Peek(argCount);
+                            if (!ptr.IsObjPtr) {
+                                throw new RuntimeException(0, "Attempted call to non-pointer.");
+                            }
+                            GearsObj obj = GetObject(ptr.AsObjPtr);
+                            if (obj.Type == GearsObj.ObjType.ObjFunction) {
+                                Call(obj as GearsObjFunction, argCount);
+                                break;
+                            }
+                            else if (obj.Type == GearsObj.ObjType.ObjNative) {
+                                CallNative(obj as GearsObjNativeFunction, argCount);
+                                break;
                             }
                         }
-                        throw new RuntimeException(context.LineAtLast(), "Can only call functions and classes.");
+                        throw new RuntimeException(0, "Can only call functions and classes.");
                     case OP_RETURN: {
-                            GearsValue result = context.Pop();
-                            if (context.PopFrame()) {
-                                if (context.SP != 0) {
-                                    Console.WriteLine($"Report error: SP is '{context.SP}', not '0'.");
+                            GearsValue result = Pop();
+                            if (PopFrame()) {
+                                if (SP != 0) {
+                                    Console.WriteLine($"Report error: SP is '{SP}', not '0'.");
                                 }
                                 return true;
                             }
-                            context.Push(result);
+                            Push(result);
                         }
                         break;
                     default:
-                        throw new RuntimeException(0, $"Unknown opcode 0x{instruction:X2}");
+                        throw new RuntimeException(0, $"Unknown opcode {instruction}");
                 }
             }
         }
 
-        private void Call(GearsContext context, GearsObjFunction fn, int argCount) {
+        private void Call(GearsObjFunction fn, int argCount) {
             if (fn.Arity != argCount) {
                 throw new RuntimeException(0, $"{fn} expects {fn.Arity} arguments but was passed {argCount}.");
             }
-            context.PushFrame(new GearsCallFrame(fn, bp: context.SP - (fn.Arity + 1)));
+            int bp = SP - (fn.Arity + 1);
+            PushFrame(new GearsCallFrame(fn, bp: bp));
         }
 
-        private void CallNative(GearsContext context, GearsObjNativeFunction fn, int argCount) {
+        private void CallNative(GearsObjNativeFunction fn, int argCount) {
             if (fn.Arity != argCount) {
                 throw new RuntimeException(0, $"{fn} expects {fn.Arity} arguments but was passed {argCount}.");
             }
             GearsValue[] args = new GearsValue[argCount];
             for (int i = argCount - 1; i >= 0; i++) {
-                args[i] = context.Pop();
+                args[i] = Pop();
             }
-            context.Pop(); // pop the function signature
-            context.Push(fn.Invoke(args));
+            Pop(); // pop the function signature
+            Push(fn.Invoke(args));
         }
 
         private GearsValue AreValuesEqual(GearsValue a, GearsValue b) {

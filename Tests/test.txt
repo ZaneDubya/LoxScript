@@ -1,13 +1,21 @@
-/* testing print, operator precedence, number and string constants. PASS
-print test + 1;
+// === Starting line: PASS ===================================================
+// ===========================================================================
+// Tests print, operator precedence, number and string constants.
+/*print test + 1;
 print "hello world";
 print (-1 + 2) * 3 - -4;*/
 
-/* testing assignment. PASS
-var a = 1;
-Invalid assignment should fail. PASS
+
+
+// === Assignment: PASS ======================================================
+// ===========================================================================
+/*var a = 1;
+// Note: Invalid assignment should fail. PASS
 var a = 1; var b = 2; var c = 3; var d = 4; a * b = c + d;*/
 
+
+// === Globals: PASS =========================================================
+// ===========================================================================
 /* testing local variables. PASS
 var a = "global";
 {
@@ -20,16 +28,22 @@ var a = "global";
 }
 print a;*/
 
-/* testing if. PASS
-if (true) {
+
+
+// === If: PASS ==============================================================
+// ===========================================================================
+/*if (true) {
     print 1;
 }
 else {
     print 2;
 }*/
 
-/* testing and/or. PASS
-if (true and true) { print "correct"; }
+
+
+// === And/Or: PASS ==========================================================
+// ===========================================================================
+/* if (true and true) { print "correct"; }
 else { print "true and true incorrect"; }
 if (false and false) { print "false and false incorrect"; }
 else { print "correct"; }
@@ -42,7 +56,10 @@ else { print "correct"; }
 if (true or false) { print "correct"; }
 else { print "true or false incorrect"; }*/
 
+
+
 // === Loop Statement: PASS ==================================================
+// ===========================================================================
 /*print "Loop Test: Should count from 0-9";
 var i = 0;
 while (i < 100) {
@@ -50,13 +67,19 @@ while (i < 100) {
     i = i + 1;
 }*/
 
+
+
 // === For Statement: PASS ===================================================
+// ===========================================================================
 /*print "For Test: Should count from 0-9";
 for (var i = 0; i < 10; i = i + 1) { print i; }
 print "For Test: Should count from 0-9";
 for (var i = 0; i < 10; i = i + 1) { print i; }*/
 
+
+
 // === Functions: PASS =======================================================
+// ===========================================================================
 /*fun sum(a, b, c) {
     return a + b + c;
 }
@@ -69,7 +92,43 @@ fun areWeHavingItYet(n) {
 areWeHavingItYet("Are we having fun yet?");
 print areWeHavingItYet;*/
 
+
+
+// === Closures ==============================================================
+// ===========================================================================
+/*fun makeClosure() {
+  var local = "local";
+  fun closure() {
+    print local;
+  }
+  return closure;
+}
+var closure = makeClosure();
+closure(); // should be able to reference local.
+var x = "global";
+fun outer() {
+  var x = "outer";
+
+  fun inner() {
+    print x;
+  }
+  inner();
+}
+outer(); // should print 'outer', not 'global'*/
+
+
+// === Assignment of field on expression: FAIL ===============================
+// ===========================================================================
+// menu.brunch(sunday).beverage = "mimosa";
+
+
+
 // === Fibonacci Benchmark ===================================================
+// ===========================================================================
+// C# AST: 58000 ms
+// GearsVM 4/29:                1554 ms 37x
+// GearsVM 4/29 inline context: 1413 ms 41x
+// GearsVM 4/29 inline frame:   1282 ms 45x
 fun fibonacci(n) {
     if (n <= 1) {
         return n;
@@ -77,11 +136,14 @@ fun fibonacci(n) {
     return fibonacci(n - 2) + fibonacci(n - 1);
 }
 
-var start = clock();
-for (var i = 0; i < 30; i = i + 1) {
-    print fibonacci(i);
+var total = 0;
+for (var j = 0; j < 10; j = j + 1) {
+    var start = clock();
+    for (var i = 0; i < 30; i = i + 1) {
+        fibonacci(i);
+    }
+    var now = clock() - start;
+    total = total + now;
+    print now;
 }
-print clock() - start;
-
-// testing assignment of field on expression. FAIL
-// menu.brunch(sunday).beverage = "mimosa";
+print total / 10;

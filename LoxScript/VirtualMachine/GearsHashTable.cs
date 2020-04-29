@@ -7,6 +7,10 @@ namespace LoxScript.VirtualMachine {
     class GearsHashTable {
         private Dictionary<string, GearsValue> _Table = new Dictionary<string, GearsValue>();
 
+        public void Reset() {
+            _Table.Clear();
+        }
+
         /*public GearsValue this[string key] {
             get {
                 if (_Table.TryGetValue(key, out GearsValue value)) {

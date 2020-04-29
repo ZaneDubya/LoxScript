@@ -59,6 +59,8 @@ namespace LoxScript {
             if (Compiler.TryCompile(tokens, out GearsObjFunction fn, out string status)) {
                 Gears gears = new Gears();
                 gears.Disassemble(fn.Chunk);
+                Console.WriteLine("Press enter to run.");
+                Console.ReadKey();
                 gears.Run(fn);
             }
             Console.ReadLine();

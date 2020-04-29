@@ -47,11 +47,11 @@ namespace LoxScript.VirtualMachine {
         public GearsObjFunction(GearsContext context) {
             Type = ObjType.ObjFunction;
             int index = context.ReadShort();
-            Name = context.Frame.Function.Chunk.ReadConstantString(ref index);
-            Arity = context.Frame.Function.Chunk.ReadConstantByte(ref index);
+            Name = context.Chunk.ReadConstantString(ref index);
+            Arity = context.Chunk.ReadConstantByte(ref index);
             Chunk = new GearsChunk(Name,
-                context.Frame.Function.Chunk.ReadConstantBytes(ref index),
-                context.Frame.Function.Chunk.ReadConstantBytes(ref index));
+                context.Chunk.ReadConstantBytes(ref index),
+                context.Chunk.ReadConstantBytes(ref index));
         }
 
         /// <summary>
