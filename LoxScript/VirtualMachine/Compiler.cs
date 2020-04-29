@@ -1,6 +1,5 @@
 ﻿using LoxScript.Grammar;
 using LoxScript.Scanning;
-using System;
 using static LoxScript.Scanning.TokenType;
 using static LoxScript.VirtualMachine.EGearsOpCode;
 
@@ -703,7 +702,7 @@ namespace LoxScript.VirtualMachine {
         }
 
         private void PatchJump(int offset) {
-            // -2 to adjust for the bytecode for the jump offset itself.
+            // We adjust by two for the jump offset
             int jump = Chunk.CodeSize - offset - 2;
             if (jump > ushort.MaxValue) {
                 throw new CompilerException(_Tokens.Peek(), "Too much code to jump over.");
@@ -841,23 +840,6 @@ namespace LoxScript.VirtualMachine {
                         return;
                 }
                 _Tokens.Advance();
-            }
-        }
-
-        /// <summary>
-        /// Throw this when the parser is in a confused state and needs to panic and synchronize.
-        /// </summary>
-        public class CompilerException : Exception {
-            private readonly Token _Token;
-            private readonly string _Message;
-
-            internal CompilerException(Token token, string message) {
-                _Token = token;
-                _Message = message;
-            }
-
-            internal void Print() {
-                Program.Error(_Token, _Message);
             }
         }
     }

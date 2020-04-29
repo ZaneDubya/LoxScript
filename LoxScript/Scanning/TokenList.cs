@@ -36,7 +36,7 @@ namespace LoxScript.Scanning {
             _Tokens[_Next++] = token;
         }
 
-        // === Parser Infrastructure =================================================================================
+        // === Infrastructure, should only be used by Compiler =======================================================
         // ===========================================================================================================
 
         private int _CurrentToken = 0;
@@ -50,7 +50,7 @@ namespace LoxScript.Scanning {
             if (Check(type)) {
                 return Advance();
             }
-            throw new Compiler.CompilerException(Peek(), message);
+            throw new CompilerException(Peek(), message);
         }
 
         /// <summary>

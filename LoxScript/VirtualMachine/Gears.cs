@@ -165,9 +165,17 @@ namespace LoxScript.VirtualMachine {
                             }
                         }
                         throw new RuntimeException(context.LineAtLast(), "Can only call functions and classes.");
-                    case OP_RETURN:
-                        Console.WriteLine($"return (sp:{context.SP})");
-                        return true;
+                    case OP_RETURN: {
+                            GearsValue result = context.Pop();
+                            if (context.PopFrame()) {
+                                if (context.SP != 0) {
+                                    Console.WriteLine($"Report error: SP is '{context.SP}', not '0'.");
+                                }
+                                return true;
+                            }
+                            context.Push(result);
+                        }
+                        break;
                     default:
                         throw new RuntimeException(0, $"Unknown opcode 0x{instruction:X2}");
                 }
@@ -175,12 +183,11 @@ namespace LoxScript.VirtualMachine {
         }
 
         private void Call(GearsContext context, GearsObjFunction fn, int argCount) {
-            Console.WriteLine($"call {fn.Name}({fn.Arity}) with {argCount} args");
             if (fn.Arity != argCount) {
                 throw new RuntimeException(0, $"{fn} expects {fn.Arity} arguments but was passed {argCount}.");
             }
             // todo: don't allow stack overflow when adding frames
-            context.AddFrame(new GearsCallFrame(fn, bp: context.SP - (fn.Arity + 1)));
+            context.PushFrame(new GearsCallFrame(fn, bp: context.SP - (fn.Arity + 1)));
         }
 
         private GearsValue AreValuesEqual(GearsValue a, GearsValue b) {
@@ -300,17 +307,17 @@ namespace LoxScript.VirtualMachine {
             switch (constantType) {
                 case OP_CONSTANT: {
                         GearsValue value = chunk.ReadConstantValue(ref constantIndex);
-                        Console.WriteLine($"{name} @k[{constantIndex}] ({value})");
+                        Console.WriteLine($"{name} const[{constantIndex}] ({value})");
                     }
                     break;
                 case OP_STRING: {
                         string value = chunk.ReadConstantString(ref constantIndex);
-                        Console.WriteLine($"{name} @k[{constantIndex}] ({value})");
+                        Console.WriteLine($"{name} const[{constantIndex}] ({value})");
                     }
                     break;
                 case OP_FUNCTION: {
                         string value = chunk.ReadConstantString(ref constantIndex);
-                        Console.WriteLine($"{name} @k[{constantIndex}] ({value})");
+                        Console.WriteLine($"{name} const[{constantIndex}] ({value})");
                     }
                     break;
             }

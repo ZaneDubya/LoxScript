@@ -12,7 +12,7 @@
             _Heap = new GearsObj[HEAP_MAX];
             Globals = new GearsHashTable();
             Reset();
-            AddFrame(new GearsCallFrame(fn));
+            PushFrame(new GearsCallFrame(fn));
             Push(GearsValue.CreateObjPtr(AddObject(fn)));
         }
 
@@ -34,9 +34,17 @@
 
         internal GearsCallFrame Frame => _Frames[_FrameCount - 1];
 
-        internal GearsCallFrame AddFrame(GearsCallFrame frame) {
+        internal void PushFrame(GearsCallFrame frame) {
             _Frames[_FrameCount++] = frame;
-            return frame;
+        }
+
+        /// <summary>
+        /// Returns true if this was the last frame and the script has ended.
+        /// </summary>
+        internal bool PopFrame() {
+            _StackTop -= Frame.Function.Arity + 1;
+            _FrameCount -= 1;
+            return _FrameCount <= 0;
         }
 
         internal void ModIP(int value) {

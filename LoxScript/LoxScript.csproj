@@ -63,6 +63,7 @@
     <Compile Include="Scanning\Token.cs" />
     <Compile Include="Scanning\TokenType.cs" />
     <Compile Include="VirtualMachine\Compiler.cs" />
+    <Compile Include="VirtualMachine\CompilerException.cs" />
     <Compile Include="VirtualMachine\Gears.cs" />
     <Compile Include="VirtualMachine\GearsCallFrame.cs" />
     <Compile Include="VirtualMachine\GearsChunk.cs" />

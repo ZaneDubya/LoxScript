@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace LoxScript.VirtualMachine {
+﻿namespace LoxScript.VirtualMachine {
     /// <summary>
     /// An object is a heap-allocated object. It can represent a string, function, class, etc.
     /// </summary>
