@@ -18,8 +18,8 @@ namespace LoxScript.VirtualMachine {
             Globals.Set(name, GearsValue.CreateObjPtr(AddObject(new GearsObjNativeFunction(name, arity, onInvoke))));
         }
 
-        internal bool Run(GearsObjFunction fn) {
-            Reset(fn);
+        internal bool Run(GearsObjFunction script) {
+            Reset(script);
             DefineNative("clock", 0, NativeFnClock);
             while (true) {
                 EGearsOpCode instruction = (EGearsOpCode)ReadByte();
@@ -181,6 +181,18 @@ namespace LoxScript.VirtualMachine {
                             }
                         }
                         throw new RuntimeException(0, "Can only call functions and classes.");
+                    case OP_CLOSURE: {
+                            GearsValue ptr = Pop();
+                            if (!ptr.IsObjPtr) {
+                                throw new RuntimeException(0, "Attempted closure of non-pointer.");
+                            }
+                            GearsObj obj = GetObject(ptr.AsObjPtr);
+                            if (obj.Type == GearsObj.ObjType.ObjFunction) {
+                                Push(GearsValue.CreateObjPtr(AddObject(new GearsObjClosure(obj as GearsObjFunction))));
+                                break;
+                            }
+                        }
+                        throw new RuntimeException(0, "Can only make closures from functions.");
                     case OP_RETURN: {
                             GearsValue result = Pop();
                             if (PopFrame()) {
@@ -305,6 +317,8 @@ namespace LoxScript.VirtualMachine {
                     return DisassembleTwoByteInstruction("OP_LOOP", chunk, offset);
                 case OP_CALL:
                     return DisassembleByteInstruction("OP_CALL", chunk, offset);
+                case OP_CLOSURE:
+                    return DisassembleSimpleInstruction("OP_CLOSURE", chunk, offset);
                 case OP_RETURN:
                     return DisassembleSimpleInstruction("OP_RETURN", chunk, offset);
                 default:

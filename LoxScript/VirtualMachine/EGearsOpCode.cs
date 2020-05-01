@@ -11,7 +11,7 @@
         OP_STRING,
 
         /// <summary>
-        /// Loads the indexed function into the heap, and loads an object pointing to that string onto the stack.
+        /// Loads the indexed function into the heap, and loads an object pointing to that function onto the stack.
         /// </summary>
         OP_FUNCTION,
 
@@ -117,6 +117,9 @@
 
         OP_SUPER_INVOKE,
 
+        /// <summary>
+        /// Creates a closure for the preceding function on the stack.
+        /// </summary>
         OP_CLOSURE,
 
         OP_CLOSE_UPVALUE,

@@ -145,6 +145,7 @@ namespace LoxScript.VirtualMachine {
             fnCompiler.Function();
             GearsObjFunction fn = fnCompiler.EndCompiler();
             EmitConstant(fn);
+            Emit(OP_CLOSURE);
             DefineVariable(global);
         }
 
@@ -165,7 +166,7 @@ namespace LoxScript.VirtualMachine {
             // body:
             _Tokens.Consume(LEFT_BRACE, "Expect '{' before function body.");
             Block();
-            // no need for end scope
+            // no need for end scope, as functions are each compiled by their own compiler object.
         }
 
         private void VarDeclaration() {

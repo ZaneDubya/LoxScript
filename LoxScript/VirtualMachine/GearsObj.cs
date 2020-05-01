@@ -8,6 +8,7 @@ namespace LoxScript.VirtualMachine {
         public ObjType Type;
 
         public enum ObjType {
+            ObjClosure,
             ObjFunction,
             ObjNative,
             ObjString,
@@ -42,7 +43,8 @@ namespace LoxScript.VirtualMachine {
         }
 
         /// <summary>
-        /// Deserialize from a context.
+        /// Deserialize from a chunk's constant storage...
+        /// ... will be moed to code later.
         /// </summary>
         public GearsObjFunction(GearsContext context) {
             Type = ObjType.ObjFunction;
@@ -55,7 +57,8 @@ namespace LoxScript.VirtualMachine {
         }
 
         /// <summary>
-        /// Serialize to a chunk.
+        /// Serialize to a chunk's constant storage...
+        /// ... will be moved to code later.
         /// </summary>
         internal int Serialize(GearsChunk writer) {
             int index = writer.WriteConstantString(Name);
@@ -110,5 +113,14 @@ namespace LoxScript.VirtualMachine {
         }
 
         public override string ToString() => Value;
+    }
+
+    class GearsObjClosure : GearsObj {
+        public readonly GearsObjFunction Function;
+
+        public GearsObjClosure(GearsObjFunction fn) {
+            Type = ObjType.ObjClosure;
+            Function = fn;
+        }
     }
 }

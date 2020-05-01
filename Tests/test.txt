@@ -96,15 +96,27 @@ print areWeHavingItYet;*/
 
 // === Closures ==============================================================
 // ===========================================================================
-/*fun makeClosure() {
+fun makeBreakfastClosure(value) {
+  fun closure() {
+    print value;
+  }
+  return closure;
+}
+
+var doughnutFn = makeBreakfastClosure("doughnut");
+var bagelFn = makeBreakfastClosure("bagel");
+doughnutFn();
+bagelFn();
+
+fun makeClosure() {
   var local = "local";
   fun closure() {
     print local;
   }
   return closure;
 }
-var closure = makeClosure();
-closure(); // should be able to reference local.
+var closureFn = makeClosure();
+closureFn(); // should be able to reference local.
 var x = "global";
 fun outer() {
   var x = "outer";
@@ -114,7 +126,7 @@ fun outer() {
   }
   inner();
 }
-outer(); // should print 'outer', not 'global'*/
+outer(); // should print 'outer', not 'global'
 
 
 // === Assignment of field on expression: FAIL ===============================
@@ -125,11 +137,12 @@ outer(); // should print 'outer', not 'global'*/
 
 // === Fibonacci Benchmark ===================================================
 // ===========================================================================
-// C# AST: 58000 ms
-// GearsVM 4/29:                1554 ms 37x
-// GearsVM 4/29 inline context: 1413 ms 41x
-// GearsVM 4/29 inline frame:   1282 ms 45x
-fun fibonacci(n) {
+// Native C#                    12.8 ms
+// AST:                        58000 ms 4531x slower than native
+// GearsVM 4/29:                1554 ms 37x speed up, 127x slower than native
+// GearsVM 4/29 inline context: 1413 ms 41x speed up, 115x slower than native
+// GearsVM 4/29 inline frame:   1282 ms 45x speed up, 100x slower than native
+/*fun fibonacci(n) {
     if (n <= 1) {
         return n;
     }
@@ -146,4 +159,4 @@ for (var j = 0; j < 10; j = j + 1) {
     total = total + now;
     print now;
 }
-print total / 10;
+print total / 10;*/
