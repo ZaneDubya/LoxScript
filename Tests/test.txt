@@ -1,138 +1,3 @@
-// === Starting line: PASS ===================================================
-// ===========================================================================
-// Tests print, operator precedence, number and string constants.
-/*print test + 1;
-print "hello world";
-print (-1 + 2) * 3 - -4;*/
-
-
-
-// === Assignment: PASS ======================================================
-// ===========================================================================
-/*var a = 1;
-// Note: Invalid assignment should fail. PASS
-var a = 1; var b = 2; var c = 3; var d = 4; a * b = c + d;*/
-
-
-// === Globals: PASS =========================================================
-// ===========================================================================
-/* testing local variables. PASS
-var a = "global";
-{
-    var a = "outer";
-    {
-        var a = "inner";
-        print a;
-    }
-    print a;
-}
-print a;*/
-
-
-
-// === If: PASS ==============================================================
-// ===========================================================================
-/*if (true) {
-    print 1;
-}
-else {
-    print 2;
-}*/
-
-
-
-// === And/Or: PASS ==========================================================
-// ===========================================================================
-/* if (true and true) { print "correct"; }
-else { print "true and true incorrect"; }
-if (false and false) { print "false and false incorrect"; }
-else { print "correct"; }
-if (false and true) { print "false and true incorrect"; }
-else { print "correct"; }
-if (false or true) { print "correct"; }
-else { print "false or true incorrect"; }
-if (true and false) { print "true and false incorrect"; }
-else { print "correct"; }
-if (true or false) { print "correct"; }
-else { print "true or false incorrect"; }*/
-
-
-
-// === Loop Statement: PASS ==================================================
-// ===========================================================================
-/*print "Loop Test: Should count from 0-9";
-var i = 0;
-while (i < 100) {
-    print i;
-    i = i + 1;
-}*/
-
-
-
-// === For Statement: PASS ===================================================
-// ===========================================================================
-/*print "For Test: Should count from 0-9";
-for (var i = 0; i < 10; i = i + 1) { print i; }
-print "For Test: Should count from 0-9";
-for (var i = 0; i < 10; i = i + 1) { print i; }*/
-
-
-
-// === Functions: PASS =======================================================
-// ===========================================================================
-/*fun sum(a, b, c) {
-    return a + b + c;
-}
-print 4 + sum(50, 60, 70);
-
-fun areWeHavingItYet(n) {
-    print n;
-    print "Yes we are!";
-}
-areWeHavingItYet("Are we having fun yet?");
-print areWeHavingItYet;*/
-
-
-
-// === Closures ==============================================================
-// ===========================================================================
-fun makeBreakfastClosure(value) {
-  fun closure() {
-    print value;
-  }
-  return closure;
-}
-
-var doughnutFn = makeBreakfastClosure("doughnut");
-var bagelFn = makeBreakfastClosure("bagel");
-doughnutFn();
-bagelFn();
-
-fun makeClosure() {
-  var local = "local";
-  fun closure() {
-    print local;
-  }
-  return closure;
-}
-var closureFn = makeClosure();
-closureFn(); // should be able to reference local.
-var x = "global";
-fun outer() {
-  var x = "outer";
-
-  fun inner() {
-    print x;
-  }
-  inner();
-}
-outer(); // should print 'outer', not 'global'
-
-
-// === Assignment of field on expression: FAIL ===============================
-// ===========================================================================
-// menu.brunch(sunday).beverage = "mimosa";
-
 
 
 // === Fibonacci Benchmark ===================================================
@@ -142,13 +7,13 @@ outer(); // should print 'outer', not 'global'
 // GearsVM 4/29:                1554 ms 37x speed up, 127x slower than native
 // GearsVM 4/29 inline context: 1413 ms 41x speed up, 115x slower than native
 // GearsVM 4/29 inline frame:   1282 ms 45x speed up, 100x slower than native
-/*fun fibonacci(n) {
+// GearsVM 5/02 closures:       1393 ms 42x speed up, 9% slower with closures
+fun fibonacci(n) {
     if (n <= 1) {
         return n;
     }
     return fibonacci(n - 2) + fibonacci(n - 1);
 }
-
 var total = 0;
 for (var j = 0; j < 10; j = j + 1) {
     var start = clock();
@@ -159,4 +24,4 @@ for (var j = 0; j < 10; j = j + 1) {
     total = total + now;
     print now;
 }
-print total / 10;*/
+print total / 10;

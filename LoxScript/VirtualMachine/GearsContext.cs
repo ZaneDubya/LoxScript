@@ -24,6 +24,8 @@
             Push(GearsValue.CreateObjPtr(AddObject(fn)));
         }
 
+        public override string ToString() => $"{_OpenFrame.Function}@{IP}";
+
         // === Call frames ==========================================================================================
         // === This should be part of the stack! See todo.md ========================================================
         // === Dear lord this is so inefficient! ====================================================================
@@ -31,14 +33,18 @@
 
         private const int FRAMES_MAX = 64;
         private GearsCallFrame[] _Frames = new GearsCallFrame[FRAMES_MAX];
-        private int _FrameCount;
+        private int _FrameCount = 0;
+
+        // reference to open upvariables:
+        protected GearsObjUpvalue _OpenUpvalues = null;
+
+        // references the current Frame:
+        protected GearsCallFrame _OpenFrame => _Frames[_FrameCount - 1];
 
         // references to current chunk:
         internal GearsChunk Chunk;
         internal int BP;
         internal int IP;
-
-        // internal GearsCallFrame Frame => _Frames[_FrameCount - 1];
 
         internal void PushFrame(GearsCallFrame frame) {
             if (_FrameCount == FRAMES_MAX) {
@@ -160,6 +166,13 @@
             // todo: throw runtime exception, out of heap space
             return -1;
         }
+
+        /*internal void SetObject(int index, GearsObj obj) {
+            if (index < 0 || index >= _Heap.Length) {
+                return; // todo, throw runtime exception, null object
+            }
+            _Heap[index] = obj;
+        }*/
 
         internal GearsObj GetObject(int index) {
             if (index < 0 || index >= _Heap.Length || _Heap[index] == null) {

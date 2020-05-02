@@ -12,6 +12,7 @@ namespace LoxScript.VirtualMachine {
             ObjFunction,
             ObjNative,
             ObjString,
+            ObjUpvalue
         }
 
         public override string ToString() => "GearsObj";
@@ -27,6 +28,10 @@ namespace LoxScript.VirtualMachine {
         /// The number of parameters expected by the function.
         /// </summary>
         public int Arity;
+
+        /// <summary>
+        /// The executable code and constants associated with this function.
+        /// </summary>
         public readonly GearsChunk Chunk;
 
         public GearsObjFunction(string name, int arity) {
@@ -88,7 +93,7 @@ namespace LoxScript.VirtualMachine {
         /// </summary>
         public int Arity;
 
-        private GearsNativeFunction _OnInvoke;
+        private readonly GearsNativeFunction _OnInvoke;
 
         public GearsObjNativeFunction(string name, int arity, GearsNativeFunction onInvoke) {
             Type = ObjType.ObjNative;
@@ -117,10 +122,28 @@ namespace LoxScript.VirtualMachine {
 
     class GearsObjClosure : GearsObj {
         public readonly GearsObjFunction Function;
+        public readonly GearsObjUpvalue[] Upvalues;
 
-        public GearsObjClosure(GearsObjFunction fn) {
+        public GearsObjClosure(GearsObjFunction fn, int upvalueCount) {
             Type = ObjType.ObjClosure;
             Function = fn;
+            Upvalues = new GearsObjUpvalue[upvalueCount];
         }
+
+        public override string ToString() => $"<closure {Function}>";
+    }
+
+    class GearsObjUpvalue : GearsObj {
+        public GearsValue Value;
+        public GearsObjUpvalue Next = null;
+        public bool IsClosed = false;
+        public int OriginalSP;
+
+        public GearsObjUpvalue(int sp) {
+            Type = ObjType.ObjUpvalue;
+            OriginalSP = sp;
+        }
+
+        public override string ToString() => $"<upvalue {Value}>";
     }
 }

@@ -122,6 +122,9 @@
         /// </summary>
         OP_CLOSURE,
 
+        /// <summary>
+        /// Creates an upvalue for a local variable captured by a closure. The local variable is on top of the stack.
+        /// </summary>
         OP_CLOSE_UPVALUE,
 
         /// <summary>

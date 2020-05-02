@@ -1,0 +1,41 @@
+
+
+// 25.4.1: expect 'updated'
+var globalSet;
+var globalGet;
+
+fun main() {
+  var a = "initial";
+
+  fun set() { a = "updated"; set2(); }
+  fun get() { print a; }
+  fun set2() { a = "2"; }
+
+  globalSet = set;
+  globalGet = get;
+  set2();
+}
+
+main();
+globalSet();
+globalGet();
+
+
+
+// === Assignment of field on expression: FAIL ===============================
+// ===========================================================================
+// menu.brunch(sunday).beverage = "mimosa";
+
+// close_over_method_parameter.lox:
+/* var f;
+class Foo {
+  method(param) {
+    fun f_() {
+      print param;
+    }
+    f = f_;
+  }
+}
+
+Foo().method("param");
+f(); // expect: param*/
