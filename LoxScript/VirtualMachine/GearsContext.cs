@@ -46,6 +46,7 @@ namespace LoxScript.VirtualMachine {
         protected GearsCallFrame _OpenFrame => _Frames[_FrameCount - 1]; // references the current Frame
         protected int _BP;
         protected int _IP;
+        protected byte[] _Code;
         internal GearsChunk Chunk; // reference to current chunk
 
         internal void PushFrame(GearsCallFrame frame) {
@@ -82,6 +83,7 @@ namespace LoxScript.VirtualMachine {
 
         private void LoadFrameVars(GearsCallFrame frame) {
             Chunk = frame.Function.Chunk;
+            _Code = Chunk._Code;
             _IP = frame.IP;
             _BP = frame.BP;
         }
@@ -91,11 +93,11 @@ namespace LoxScript.VirtualMachine {
         }
 
         internal int ReadByte() {
-            return Chunk.Read(ref _IP);
+            return _Code[_IP++];
         }
 
         internal int ReadShort() {
-            return (Chunk.Read(ref _IP) << 8) | Chunk.Read(ref _IP);
+            return (_Code[_IP++] << 8) | _Code[_IP++];
         }
 
         internal GearsValue ReadConstant() {
@@ -153,10 +155,10 @@ namespace LoxScript.VirtualMachine {
         // === Heap ==================================================================================================
         // ===========================================================================================================
 
-        private const int HEAP_MAX = 256;
+        private const int HEAP_MAX = 32;
         private GearsObj[] _Heap;
 
-        internal int AddObject(GearsObj obj) {
+        internal int AddObject(GearsObj obj, bool allowGC = true) {
             for (int i = 0; i < _Heap.Length; i++) {
                 if (_Heap[i] == null) {
                     _Heap[i] = obj;
@@ -166,8 +168,14 @@ namespace LoxScript.VirtualMachine {
                     return i;
                 }
             }
-            // todo: throw runtime exception, out of heap space
-            return -1;
+            if (allowGC) {
+                CollectGarbage();
+                int newIndex = AddObject(obj, false);
+                if (newIndex != -1) {
+                    return newIndex;
+                }
+            }
+            throw new Gears.RuntimeException(0, "Out of heap space.");
         }
 
         internal GearsObj GetObject(int index) {
@@ -277,7 +285,12 @@ namespace LoxScript.VirtualMachine {
         /// Reclaim all unmarked objects.
         /// </summary>
         private void Sweep() {
-            
+            for (int i = 0; i < _Heap.Length; i++) {
+                if (!_Heap[i].IsMarked) {
+                    Console.WriteLine($"Collect {i}");
+                    _Heap[i] = null;
+                }
+            }
         }
     }
 }
