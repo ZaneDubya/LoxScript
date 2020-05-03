@@ -196,8 +196,8 @@ namespace LoxScript.VirtualMachine {
             Console.WriteLine("-- gc begin");
 #endif
             MarkRoots();
-
-
+            TraceReferences();
+            Sweep();
 #if DEBUG_LOG_GC
             Console.WriteLine("-- gc end");
 #endif
@@ -271,6 +271,13 @@ namespace LoxScript.VirtualMachine {
                     }
                     break;
             }
+        }
+
+        /// <summary>
+        /// Reclaim all unmarked objects.
+        /// </summary>
+        private void Sweep() {
+            
         }
     }
 }
