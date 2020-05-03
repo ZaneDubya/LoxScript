@@ -6,6 +6,7 @@ namespace LoxScript.VirtualMachine {
     /// </summary>
     class GearsObj {
         public ObjType Type;
+        public bool IsMarked = false;
 
         public enum ObjType {
             ObjClosure,

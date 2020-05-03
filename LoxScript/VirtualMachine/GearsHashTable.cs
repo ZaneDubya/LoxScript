@@ -11,6 +11,8 @@ namespace LoxScript.VirtualMachine {
             _Table.Clear();
         }
 
+        public IEnumerable<GearsValue> All => _Table.Values;
+
         /*public GearsValue this[string key] {
             get {
                 if (_Table.TryGetValue(key, out GearsValue value)) {

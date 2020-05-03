@@ -47,12 +47,12 @@ namespace LoxScript.VirtualMachine {
                         break;
                     case OP_GET_LOCAL: {
                             int slot = ReadShort();
-                            Push(StackGet(slot + BP));
+                            Push(StackGet(slot + _BP));
                         }
                         break;
                     case OP_SET_LOCAL: {
                             int slot = ReadShort();
-                            StackSet(slot + BP, Peek());
+                            StackSet(slot + _BP, Peek());
                         }
                         break;
                     case OP_GET_GLOBAL: {
@@ -235,15 +235,15 @@ namespace LoxScript.VirtualMachine {
                         }
                         throw new RuntimeException(0, "Can only make closures from functions.");
                     case OP_CLOSE_UPVALUE:
-                        CloseUpvalues(SP - 1);
+                        CloseUpvalues(_SP - 1);
                         Pop();
                         break;
                     case OP_RETURN: {
                             GearsValue result = Pop();
                             CloseUpvalues(_OpenFrame.BP);
                             if (PopFrame()) {
-                                if (SP != 0) {
-                                    Console.WriteLine($"Report error: SP is '{SP}', not '0'.");
+                                if (_SP != 0) {
+                                    Console.WriteLine($"Report error: SP is '{_SP}', not '0'.");
                                 }
                                 return true;
                             }
@@ -260,7 +260,7 @@ namespace LoxScript.VirtualMachine {
             if (closure.Function.Arity != argCount) {
                 throw new RuntimeException(0, $"{closure.Function} expects {closure.Function.Arity} arguments but was passed {argCount}.");
             }
-            int bp = SP - (closure.Function.Arity + 1);
+            int bp = _SP - (closure.Function.Arity + 1);
             PushFrame(new GearsCallFrameClosure(closure, bp: bp));
         }
 
@@ -268,7 +268,7 @@ namespace LoxScript.VirtualMachine {
             if (fn.Arity != argCount) {
                 throw new RuntimeException(0, $"{fn} expects {fn.Arity} arguments but was passed {argCount}.");
             }
-            int bp = SP - (fn.Arity + 1);
+            int bp = _SP - (fn.Arity + 1);
             PushFrame(new GearsCallFrame(fn, bp: bp));
         }
 
