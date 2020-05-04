@@ -61,7 +61,7 @@ namespace LoxScript.VirtualMachine {
         /// </summary>
         internal int Read(ref int index) {
             if (index < 0 || index >= CodeSize) {
-                throw new Gears.RuntimeException(0, "Attempted to read outside of a chunk.");
+                throw new GearsRuntimeException(0, "Attempted to read outside of a chunk.");
             }
             return _Code[index++];
         }

@@ -45,7 +45,7 @@ namespace LoxScript.VirtualMachine {
 
         public bool IsObjPtr => (_AsLong & TAG_OBJECTPTR) == TAG_OBJECTPTR;
 
-        public bool IsObjType(GearsContext context, GearsObj.ObjType type) => IsObjPtr && AsObject(context).Type == type;
+        public bool IsObjType(Gears context, GearsObj.ObjType type) => IsObjPtr && AsObject(context).Type == type;
 
         // --- Return as a ... ---------------------------------------------------------------------------------------
 
@@ -56,7 +56,7 @@ namespace LoxScript.VirtualMachine {
         /// </summary>
         public int AsObjPtr => IsObjPtr ? (int)(_AsLong & ~(TAG_OBJECTPTR)) : -1;
 
-        public GearsObj AsObject(GearsContext context) => context.GetObject(AsObjPtr); // todo: fix with reference to context's heap...
+        public GearsObj AsObject(Gears context) => context.GetObject(AsObjPtr); // todo: fix with reference to context's heap...
 
         public byte[] AsBytes => BitConverter.GetBytes(_AsLong);
 
@@ -72,7 +72,7 @@ namespace LoxScript.VirtualMachine {
 
         public override string ToString() => ToString(null);
 
-        public string ToString(GearsContext context) {
+        public string ToString(Gears context) {
             if (IsObjPtr) {
                 if (context != null) {
                     return AsObject(context).ToString();

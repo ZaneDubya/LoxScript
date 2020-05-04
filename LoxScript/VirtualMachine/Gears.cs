@@ -5,17 +5,14 @@ namespace LoxScript.VirtualMachine {
     /// <summary>
     /// Gears is a bytecode virtual machine for the Lox language.
     /// </summary>
-    class Gears : GearsContext {
-
-        internal Gears() : base() {
-        }
+    partial class Gears {
 
         private GearsValue NativeFnClock(GearsValue[] args) {
             return new GearsValue((double)DateTimeOffset.Now.ToUnixTimeMilliseconds());
         }
 
-        private void DefineNative(string name, int arity, GearsNativeFunction onInvoke) {
-            Globals.Set(name, GearsValue.CreateObjPtr(AddObject(new GearsObjNativeFunction(name, arity, onInvoke))));
+        private void DefineNative(string name, int arity, GearsFunctionNativeDelegate onInvoke) {
+            Globals.Set(name, GearsValue.CreateObjPtr(AddObject(new GearsObjFunctionNative(name, arity, onInvoke))));
         }
 
         internal bool Run(GearsObjFunction script) {
@@ -58,7 +55,7 @@ namespace LoxScript.VirtualMachine {
                     case OP_GET_GLOBAL: {
                             string name = ReadConstantString();
                             if (!Globals.TryGet(name, out GearsValue value)) {
-                                throw new RuntimeException(0, $"Undefined variable '{name}'.");
+                                throw new GearsRuntimeException(0, $"Undefined variable '{name}'.");
                             }
                             Push(value);
                         }
@@ -72,7 +69,7 @@ namespace LoxScript.VirtualMachine {
                     case OP_SET_GLOBAL: {
                             string name = ReadConstantString();
                             if (!Globals.ContainsKey(name)) {
-                                throw new RuntimeException(0, $"Undefined variable '{name}'.");
+                                throw new GearsRuntimeException(0, $"Undefined variable '{name}'.");
                             }
                             Globals.Set(name, Peek());
                             break;
@@ -99,12 +96,39 @@ namespace LoxScript.VirtualMachine {
                             }
                         }
                         break;
+                    case OP_GET_PROPERTY: {
+                            GearsValue ptr = Peek();
+                            GearsObjInstance instance = ptr.IsObjPtr ? GetObject(ptr.AsObjPtr) as GearsObjInstance : null;
+                            if (instance == null) {
+                                throw new GearsRuntimeException(0, "Attempt to get property of non-instance variable.");
+                            }
+                            string name = ReadConstantString(); // property name.
+                            if (!instance.Fields.TryGet(name, out GearsValue value)) {
+                                throw new GearsRuntimeException(0, $"Undefined property '{name}'.");
+                            }
+                            Pop(); // instance
+                            Push(value); // property value
+                        }
+                        break;
+                    case OP_SET_PROPERTY: {
+                            GearsValue ptr = Peek(1); // ptr to instance
+                            GearsObjInstance instance = ptr.IsObjPtr ? GetObject(ptr.AsObjPtr) as GearsObjInstance : null;
+                            if (instance == null) {
+                                throw new GearsRuntimeException(0, "Attempt to set property of non-instance variable.");
+                            }
+                            string name = ReadConstantString(); // property name.
+                            GearsValue value = Pop(); // value
+                            instance.Fields.Set(name, value);
+                            Pop(); // ptr
+                            Push(value); // value
+                        }
+                        break;
                     case OP_EQUAL:
                         Push(AreValuesEqual(Pop(), Pop()));
                         break;
                     case OP_GREATER: {
                             if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
-                                throw new RuntimeException(0, "Operands must be numbers.");
+                                throw new GearsRuntimeException(0, "Operands must be numbers.");
                             }
                             GearsValue b = Pop();
                             GearsValue a = Pop();
@@ -113,7 +137,7 @@ namespace LoxScript.VirtualMachine {
                         break;
                     case OP_LESS: {
                             if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
-                                throw new RuntimeException(0, "Operands must be numbers.");
+                                throw new GearsRuntimeException(0, "Operands must be numbers.");
                             }
                             GearsValue b = Pop();
                             GearsValue a = Pop();
@@ -127,13 +151,13 @@ namespace LoxScript.VirtualMachine {
                                 Push(a + b);
                             }
                             else {
-                                throw new RuntimeException(0, "Operands must be numbers or strings.");
+                                throw new GearsRuntimeException(0, "Operands must be numbers or strings.");
                             }
                         }
                         break;
                     case OP_SUBTRACT: {
                             if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
-                                throw new RuntimeException(0, "Operands must be numbers.");
+                                throw new GearsRuntimeException(0, "Operands must be numbers.");
                             }
                             GearsValue b = Pop();
                             GearsValue a = Pop();
@@ -142,7 +166,7 @@ namespace LoxScript.VirtualMachine {
                         break;
                     case OP_MULTIPLY: {
                             if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
-                                throw new RuntimeException(0, "Operands must be numbers.");
+                                throw new GearsRuntimeException(0, "Operands must be numbers.");
                             }
                             GearsValue b = Pop();
                             GearsValue a = Pop();
@@ -151,7 +175,7 @@ namespace LoxScript.VirtualMachine {
                         break;
                     case OP_DIVIDE: {
                             if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
-                                throw new RuntimeException(0, "Operands must be numbers.");
+                                throw new GearsRuntimeException(0, "Operands must be numbers.");
                             }
                             GearsValue b = Pop();
                             GearsValue a = Pop();
@@ -163,7 +187,7 @@ namespace LoxScript.VirtualMachine {
                         break;
                     case OP_NEGATE: {
                             if (!Peek(0).IsNumber) {
-                                throw new RuntimeException(0, "Operand must be a number.");
+                                throw new GearsRuntimeException(0, "Operand must be a number.");
                             }
                             Push(-Pop());
                         }
@@ -189,30 +213,13 @@ namespace LoxScript.VirtualMachine {
                         }
                         break;
                     case OP_CALL: {
-                            int argCount = ReadByte();
-                            GearsValue ptr = Peek(argCount);
-                            if (!ptr.IsObjPtr) {
-                                throw new RuntimeException(0, "Attempted call to non-pointer.");
-                            }
-                            GearsObj obj = GetObject(ptr.AsObjPtr);
-                            if (obj is GearsObjFunction fn) { // this is not currently used - all fns currently wrapped in closures
-                                CallFunction(fn, argCount);
-                                break;
-                            }
-                            else if (obj is GearsObjClosure closure) {
-                                CallClosure(closure, argCount);
-                                break;
-                            }
-                            else if (obj is GearsObjNativeFunction native) {
-                                CallNative(native, argCount);
-                                break;
-                            }
+                            Call();
                         }
-                        throw new RuntimeException(0, "Can only call functions and classes.");
+                        break;
                     case OP_CLOSURE: {
                             GearsValue ptr = Pop();
                             if (!ptr.IsObjPtr) {
-                                throw new RuntimeException(0, "Attempted closure of non-pointer.");
+                                throw new GearsRuntimeException(0, "Attempted closure of non-pointer.");
                             }
                             GearsObj obj = GetObject(ptr.AsObjPtr);
                             if (obj.Type == GearsObj.ObjType.ObjFunction) {
@@ -233,7 +240,7 @@ namespace LoxScript.VirtualMachine {
                                 break;
                             }
                         }
-                        throw new RuntimeException(0, "Can only make closures from functions.");
+                        throw new GearsRuntimeException(0, "Can only make closures from functions.");
                     case OP_CLOSE_UPVALUE:
                         CloseUpvalues(_SP - 1);
                         Pop();
@@ -250,38 +257,54 @@ namespace LoxScript.VirtualMachine {
                             Push(result);
                         }
                         break;
+                    case OP_CLASS: {
+                            Push(GearsValue.CreateObjPtr(AddObject(new GearsObjClass(ReadConstantString()))));
+                        }
+                        break;
                     default:
-                        throw new RuntimeException(0, $"Unknown opcode {instruction}");
+                        throw new GearsRuntimeException(0, $"Unknown opcode {instruction}");
                 }
             }
         }
 
-        private void CallClosure(GearsObjClosure closure, int argCount) {
-            if (closure.Function.Arity != argCount) {
-                throw new RuntimeException(0, $"{closure.Function} expects {closure.Function.Arity} arguments but was passed {argCount}.");
+        private void Call() {
+            int argCount = ReadByte();
+            GearsValue ptr = Peek(argCount);
+            if (!ptr.IsObjPtr) {
+                throw new GearsRuntimeException(0, "Attempted call to non-pointer.");
             }
-            int bp = _SP - (closure.Function.Arity + 1);
-            PushFrame(new GearsCallFrameClosure(closure, bp: bp));
-        }
-
-        private void CallFunction(GearsObjFunction fn, int argCount) {
-            if (fn.Arity != argCount) {
-                throw new RuntimeException(0, $"{fn} expects {fn.Arity} arguments but was passed {argCount}.");
+            GearsObj obj = GetObject(ptr.AsObjPtr);
+            if (obj is GearsObjFunction fn) { // this is not currently used - all fns currently wrapped in closures
+                if (fn.Arity != argCount) {
+                    throw new GearsRuntimeException(0, $"{fn} expects {fn.Arity} arguments but was passed {argCount}.");
+                }
+                int bp = _SP - (fn.Arity + 1);
+                PushFrame(new GearsCallFrame(fn, bp: bp));
             }
-            int bp = _SP - (fn.Arity + 1);
-            PushFrame(new GearsCallFrame(fn, bp: bp));
-        }
-
-        private void CallNative(GearsObjNativeFunction fn, int argCount) {
-            if (fn.Arity != argCount) {
-                throw new RuntimeException(0, $"{fn} expects {fn.Arity} arguments but was passed {argCount}.");
+            else if (obj is GearsObjClass classObj) {
+                StackSet(_SP - argCount - 1, GearsValue.CreateObjPtr(AddObject(new GearsObjInstance(classObj))));
             }
-            GearsValue[] args = new GearsValue[argCount];
-            for (int i = argCount - 1; i >= 0; i++) {
-                args[i] = Pop();
+            else if (obj is GearsObjClosure closure) {
+                if (closure.Function.Arity != argCount) {
+                    throw new GearsRuntimeException(0, $"{closure.Function} expects {closure.Function.Arity} arguments but was passed {argCount}.");
+                }
+                int bp = _SP - (closure.Function.Arity + 1);
+                PushFrame(new GearsCallFrameClosure(closure, bp: bp));
             }
-            Pop(); // pop the function signature
-            Push(fn.Invoke(args));
+            else if (obj is GearsObjFunctionNative native) {
+                if (native.Arity != argCount) {
+                    throw new GearsRuntimeException(0, $"{native} expects {native.Arity} arguments but was passed {argCount}.");
+                }
+                GearsValue[] args = new GearsValue[argCount];
+                for (int i = argCount - 1; i >= 0; i++) {
+                    args[i] = Pop();
+                }
+                Pop(); // pop the function signature
+                Push(native.Invoke(args));
+            }
+            else {
+                throw new GearsRuntimeException(0, $"Unhandled call to object {obj}");
+            }
         }
 
         private GearsValue AreValuesEqual(GearsValue a, GearsValue b) {
@@ -346,159 +369,5 @@ namespace LoxScript.VirtualMachine {
                 _OpenUpvalues = upvalue.Next;
             }
         }
-
-        // === Disassembly ===========================================================================================
-        // ===========================================================================================================
-
-        public void Disassemble(GearsChunk chunk) {
-            Console.WriteLine($"=== {chunk.Name} ===");
-            int offset = 0;
-            while (offset < chunk.CodeSize) {
-                offset = DisassembleInstruction(chunk, offset);
-            }
-        }
-
-        private int DisassembleInstruction(GearsChunk chunk, int offset) {
-            Console.Write($"{offset:X4}  ");
-            EGearsOpCode instruction = (EGearsOpCode)chunk.Read(ref offset);
-            switch (instruction) {
-                case OP_CONSTANT:
-                    return DisassembleInstructionConstant("OP_CONSTANT", chunk, offset, OP_CONSTANT);
-                case OP_STRING:
-                    return DisassembleInstructionConstant("OP_STRING", chunk, offset, OP_STRING);
-                case OP_FUNCTION:
-                    return DisassembleInstructionConstant("OP_FUNCTION", chunk, offset, OP_FUNCTION);
-                case OP_NIL:
-                    return DisassembleInstructionSimple("OP_NIL", chunk, offset);
-                case OP_TRUE:
-                    return DisassembleInstructionSimple("OP_TRUE", chunk, offset);
-                case OP_FALSE:
-                    return DisassembleInstructionSimple("OP_FALSE", chunk, offset);
-                case OP_POP:
-                    return DisassembleInstructionSimple("OP_POP", chunk, offset);
-                case OP_GET_LOCAL:
-                    return DisassembleInstructionTwoParams("OP_GET_LOCAL", chunk, offset);
-                case OP_SET_LOCAL:
-                    return DisassembleInstructionTwoParams("OP_SET_LOCAL", chunk, offset);
-                case OP_DEFINE_GLOBAL:
-                    return DisassembleInstructionConstant("OP_DEF_GLOBAL", chunk, offset, OP_STRING);
-                case OP_GET_GLOBAL:
-                    return DisassembleInstructionConstant("OP_GET_GLOBAL", chunk, offset, OP_STRING);
-                case OP_SET_GLOBAL:
-                    return DisassembleInstructionConstant("OP_SET_GLOBAL", chunk, offset, OP_STRING);
-                case OP_GET_UPVALUE:
-                    return DisassembleInstructionTwoParams("OP_GET_UPVALUE", chunk, offset);
-                case OP_SET_UPVALUE:
-                    return DisassembleInstructionTwoParams("OP_SET_UPVALUE", chunk, offset);
-                case OP_EQUAL:
-                    return DisassembleInstructionSimple("OP_EQUAL", chunk, offset);
-                case OP_GREATER:
-                    return DisassembleInstructionSimple("OP_GREATER", chunk, offset);
-                case OP_LESS:
-                    return DisassembleInstructionSimple("OP_LESS", chunk, offset);
-                case OP_ADD:
-                    return DisassembleInstructionSimple("OP_ADD", chunk, offset);
-                case OP_SUBTRACT:
-                    return DisassembleInstructionSimple("OP_SUBTRACT", chunk, offset);
-                case OP_MULTIPLY:
-                    return DisassembleInstructionSimple("OP_MULTIPLY", chunk, offset);
-                case OP_DIVIDE:
-                    return DisassembleInstructionSimple("OP_DIVIDE", chunk, offset);
-                case OP_NOT:
-                    return DisassembleInstructionSimple("OP_NOT", chunk, offset);
-                case OP_NEGATE:
-                    return DisassembleInstructionSimple("OP_NEGATE", chunk, offset);
-                case OP_PRINT:
-                    return DisassembleInstructionSimple("OP_PRINT", chunk, offset);
-                case OP_JUMP:
-                    return DisassembleInstructionTwoParams("OP_JUMP", chunk, offset);
-                case OP_JUMP_IF_FALSE:
-                    return DisassembleInstructionTwoParams("OP_JUMP_IF_FALSE", chunk, offset);
-                case OP_LOOP:
-                    return DisassembleInstructionTwoParams("OP_LOOP", chunk, offset);
-                case OP_CALL:
-                    return DisassembleInstructionOneParam("OP_CALL", chunk, offset);
-                case OP_CLOSURE:
-                    return DisassembleClosure("OP_CLOSURE", chunk, offset);
-                case OP_CLOSE_UPVALUE:
-                    return DisassembleInstructionSimple("OP_CLOSE_UPVALUE", chunk, offset);
-                case OP_RETURN:
-                    return DisassembleInstructionSimple("OP_RETURN", chunk, offset);
-                default:
-                    Console.WriteLine($"Unknown opcode {instruction}");
-                    return offset;
-            }
-        }
-
-        private int DisassembleClosure(string name, GearsChunk chunk, int offset) {
-            int upvalueCount = chunk.Read(ref offset);
-            Console.WriteLine($"{name} ({upvalueCount} upvalues)");
-            for (int i = 0; i < upvalueCount; i++) {
-                chunk.Read(ref offset); // is local?
-                chunk.Read(ref offset); // index
-            }
-            return offset;
-        }
-
-        private int DisassembleInstructionSimple(string name, GearsChunk chunk, int offset) {
-            Console.WriteLine(name);
-            return offset;
-        }
-
-        private int DisassembleInstructionOneParam(string name, GearsChunk chunk, int offset) {
-            int index = chunk.Read(ref offset);
-            Console.WriteLine($"{name} ({index})");
-            return offset;
-        }
-
-        private int DisassembleInstructionTwoParams(string name, GearsChunk chunk, int offset) {
-            int index = (chunk.Read(ref offset) << 8) + chunk.Read(ref offset);
-            Console.WriteLine($"{name} ({index})");
-            return offset;
-        }
-
-        private int DisassembleInstructionConstant(string name, GearsChunk chunk, int offset, EGearsOpCode constantType) {
-            int constantIndex = (chunk.Read(ref offset) << 8) + chunk.Read(ref offset);
-            switch (constantType) {
-                case OP_CONSTANT: {
-                        GearsValue value = chunk.ReadConstantValue(ref constantIndex);
-                        Console.WriteLine($"{name} const[{constantIndex}] ({value})");
-                    }
-                    break;
-                case OP_STRING: {
-                        string value = chunk.ReadConstantString(ref constantIndex);
-                        Console.WriteLine($"{name} const[{constantIndex}] ({value})");
-                    }
-                    break;
-                case OP_FUNCTION: {
-                        string value = chunk.ReadConstantString(ref constantIndex);
-                        Console.WriteLine($"{name} const[{constantIndex}] ({value})");
-                    }
-                    break;
-            }
-            return offset;
-        }
-
-        // === Error reporting =======================================================================================
-        // ===========================================================================================================
-
-        /// <summary>
-        /// Throw this when vm encounters an error
-        /// </summary>
-        public class RuntimeException : Exception {
-            private readonly int _Line;
-            private readonly string _Message;
-
-            internal RuntimeException(int line, string message) {
-                _Line = line;
-                _Message = message;
-            }
-
-            internal void Print() {
-                // todo: print stack trace 24.5.2
-                Program.Error(_Line, _Message);
-            }
-        }
-
     }
 }

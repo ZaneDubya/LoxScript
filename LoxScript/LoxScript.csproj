@@ -68,10 +68,12 @@
     <Compile Include="VirtualMachine\GearsCallFrame.cs" />
     <Compile Include="VirtualMachine\GearsChunk.cs" />
     <Compile Include="VirtualMachine\EGearsOpCode.cs" />
-    <Compile Include="VirtualMachine\GearsContext.cs" />
+    <Compile Include="VirtualMachine\GearsRuntimeException.cs" />
+    <Compile Include="VirtualMachine\Gears_Context.cs" />
     <Compile Include="VirtualMachine\GearsHashTable.cs" />
     <Compile Include="VirtualMachine\GearsObj.cs" />
     <Compile Include="VirtualMachine\GearsValue.cs" />
+    <Compile Include="VirtualMachine\Gears_Disassembly.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -1,7 +1,15 @@
-for (var i = 0; i < 1000; i = i + 1) {
-    var x = "hello world";
-}
+class Pastry {}
+var eclair = Pastry();
+eclair.filling = "pastry creme";
 
+class Pair {}
+var pair = Pair();
+pair.first = 1;
+pair.second = 2;
+print pair.first + pair.second; // 3.
+
+
+/*
 // === Fibonacci Benchmark ===================================================
 // ===========================================================================
 // Native C#                    12.8 ms
@@ -27,3 +35,4 @@ for (var j = 0; j < 10; j = j + 1) {
     print now;
 }
 print total / 10;
+*/

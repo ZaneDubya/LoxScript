@@ -9,11 +9,11 @@ namespace LoxScript.VirtualMachine {
     /// The state of a running gears instance.
     /// It represents the Call frame stack, the value Stack, and the Heap.
     /// </summary>
-    abstract class GearsContext {
+    partial class Gears {
 
         internal readonly GearsHashTable Globals;
 
-        internal GearsContext() {
+        internal Gears() {
             _Frames = new GearsCallFrame[FRAMES_MAX];
             _Stack = new GearsValue[STACK_MAX];
             _Heap = new GearsObj[HEAP_MAX];
@@ -51,7 +51,7 @@ namespace LoxScript.VirtualMachine {
 
         internal void PushFrame(GearsCallFrame frame) {
             if (_FrameCount == FRAMES_MAX) {
-                throw new Gears.RuntimeException(0, "Stack frame overflow.");
+                throw new GearsRuntimeException(0, "Stack frame overflow.");
             }
             if (_FrameCount > 0) {
                 SaveFrameVars(_Frames[_FrameCount - 1]);
@@ -67,7 +67,7 @@ namespace LoxScript.VirtualMachine {
             _SP = _BP;
             _FrameCount -= 1;
             if (_FrameCount < 0) {
-                throw new Gears.RuntimeException(0, "Stack frame underflow.");
+                throw new GearsRuntimeException(0, "Stack frame underflow.");
             }
             if (_FrameCount > 0) {
                 LoadFrameVars(_Frames[_FrameCount - 1]);
@@ -119,35 +119,35 @@ namespace LoxScript.VirtualMachine {
 
         internal GearsValue StackGet(int index) {
             if (index < 0 || index >= _SP) {
-                throw new Gears.RuntimeException(0, "Stack exception");
+                throw new GearsRuntimeException(0, "Stack exception");
             }
             return _Stack[index];
         }
 
         internal void StackSet(int index, GearsValue value) {
             if (index < 0 || index >= _SP) {
-                throw new Gears.RuntimeException(0, "Stack exception");
+                throw new GearsRuntimeException(0, "Stack exception");
             }
             _Stack[index] = value;
         }
 
         internal void Push(GearsValue value) {
             if (_SP >= STACK_MAX) {
-                throw new Gears.RuntimeException(0, "Stack exception");
+                throw new GearsRuntimeException(0, "Stack exception");
             }
             _Stack[_SP++] = value;
         }
 
         internal GearsValue Pop() {
             if (_SP == 0) {
-                throw new Gears.RuntimeException(0, "Stack exception");
+                throw new GearsRuntimeException(0, "Stack exception");
             }
             return _Stack[--_SP];
         }
 
         internal GearsValue Peek(int offset = 0) {
             if (_SP - 1 - offset < 0) {
-                throw new Gears.RuntimeException(0, "Stack exception");
+                throw new GearsRuntimeException(0, "Stack exception");
             }
             return _Stack[_SP - 1 - offset];
         }
@@ -175,7 +175,7 @@ namespace LoxScript.VirtualMachine {
                     return newIndex;
                 }
             }
-            throw new Gears.RuntimeException(0, "Out of heap space.");
+            throw new GearsRuntimeException(0, "Out of heap space.");
         }
 
         internal GearsObj GetObject(int index) {
@@ -269,14 +269,19 @@ namespace LoxScript.VirtualMachine {
                 case GearsObj.ObjType.ObjUpvalue:
                     MarkValue((obj as GearsObjUpvalue).Value);
                     break;
+                case GearsObj.ObjType.ObjClass:
                 case GearsObj.ObjType.ObjFunction:
-                    // no outgoing references that I know of...
+                    // no outgoing references yet...
                     break;
                 case GearsObj.ObjType.ObjClosure:
                     MarkObject((obj as GearsObjClosure).Function);
                     foreach (GearsObjUpvalue upvalue in (obj as GearsObjClosure).Upvalues) {
                         MarkObject(upvalue);
                     }
+                    break;
+                case GearsObj.ObjType.ObjInstance:
+                    MarkObject((obj as GearsObjInstance).Class);
+                    MarkTable((obj as GearsObjInstance).Fields);
                     break;
             }
         }

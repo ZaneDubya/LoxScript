@@ -13,16 +13,6 @@ namespace LoxScript.VirtualMachine {
 
         public IEnumerable<GearsValue> All => _Table.Values;
 
-        /*public GearsValue this[string key] {
-            get {
-                if (_Table.TryGetValue(key, out GearsValue value)) {
-                    return value;
-                }
-                return GearsValue.NilValue;
-            }
-            set => _Table[key] = value;
-        }*/
-
         /// <summary>
         /// Returns true if value exists in hash table.
         /// </summary>

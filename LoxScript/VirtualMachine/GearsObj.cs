@@ -9,14 +9,40 @@ namespace LoxScript.VirtualMachine {
         public bool IsMarked = false;
 
         public enum ObjType {
+            ObjClass,
             ObjClosure,
             ObjFunction,
+            ObjInstance,
             ObjNative,
             ObjString,
             ObjUpvalue
         }
 
         public override string ToString() => "GearsObj";
+    }
+
+    class GearsObjClass : GearsObj {
+        public readonly string Name;
+
+        public GearsObjClass(string name) {
+            Type = ObjType.ObjClass;
+            Name = name;
+        }
+
+        public override string ToString() => $"{Name}";
+    }
+
+    class GearsObjClosure : GearsObj {
+        public readonly GearsObjFunction Function;
+        public readonly GearsObjUpvalue[] Upvalues;
+
+        public GearsObjClosure(GearsObjFunction fn, int upvalueCount) {
+            Type = ObjType.ObjClosure;
+            Function = fn;
+            Upvalues = new GearsObjUpvalue[upvalueCount];
+        }
+
+        public override string ToString() => $"<closure {Function}>";
     }
 
     /// <summary>
@@ -52,7 +78,7 @@ namespace LoxScript.VirtualMachine {
         /// Deserialize from a chunk's constant storage...
         /// ... will be moed to code later.
         /// </summary>
-        public GearsObjFunction(GearsContext context) {
+        public GearsObjFunction(Gears context) {
             Type = ObjType.ObjFunction;
             int index = context.ReadShort();
             Name = context.Chunk.ReadConstantString(ref index);
@@ -84,9 +110,7 @@ namespace LoxScript.VirtualMachine {
         public override string ToString() => Name == null ? "<script>" : $"<fn {Name}>";
     }
 
-    delegate GearsValue GearsNativeFunction(GearsValue[] args);
-
-    class GearsObjNativeFunction : GearsObj {
+    class GearsObjFunctionNative : GearsObj {
         public readonly string Name;
 
         /// <summary>
@@ -94,9 +118,9 @@ namespace LoxScript.VirtualMachine {
         /// </summary>
         public int Arity;
 
-        private readonly GearsNativeFunction _OnInvoke;
+        private readonly GearsFunctionNativeDelegate _OnInvoke;
 
-        public GearsObjNativeFunction(string name, int arity, GearsNativeFunction onInvoke) {
+        public GearsObjFunctionNative(string name, int arity, GearsFunctionNativeDelegate onInvoke) {
             Type = ObjType.ObjNative;
             Name = name;
             Arity = arity;
@@ -110,6 +134,21 @@ namespace LoxScript.VirtualMachine {
         public override string ToString() => $"<native {Name}>";
     }
 
+    delegate GearsValue GearsFunctionNativeDelegate(GearsValue[] args);
+
+    class GearsObjInstance : GearsObj {
+        public readonly GearsObjClass Class;
+        public readonly GearsHashTable Fields;
+
+        public GearsObjInstance(GearsObjClass classObj) {
+            Type = ObjType.ObjInstance;
+            Class = classObj;
+            Fields = new GearsHashTable();
+        }
+
+        public override string ToString() => $"instance of {Class}";
+    }
+
     class GearsObjString : GearsObj {
         public readonly string Value;
 
@@ -119,19 +158,6 @@ namespace LoxScript.VirtualMachine {
         }
 
         public override string ToString() => Value;
-    }
-
-    class GearsObjClosure : GearsObj {
-        public readonly GearsObjFunction Function;
-        public readonly GearsObjUpvalue[] Upvalues;
-
-        public GearsObjClosure(GearsObjFunction fn, int upvalueCount) {
-            Type = ObjType.ObjClosure;
-            Function = fn;
-            Upvalues = new GearsObjUpvalue[upvalueCount];
-        }
-
-        public override string ToString() => $"<closure {Function}>";
     }
 
     class GearsObjUpvalue : GearsObj {
