@@ -1,12 +1,47 @@
-class Pastry {}
+
+// === Class Properties. PASS ================================================
+// ===========================================================================
+/*
+class Pastry {
+    taste() {
+    }
+}
 var eclair = Pastry();
 eclair.filling = "pastry creme";
+print eclair.filling;
 
 class Pair {}
 var pair = Pair();
 pair.first = 1;
 pair.second = 2;
 print pair.first + pair.second; // 3.
+*/
+
+// === Class Methods with passed values. PASS =============================
+// ===========================================================================
+/*
+class Scone {
+  topping(first, second) {
+    print "scone with " + first + " and " + second;
+  }
+}
+
+var scone = Scone();
+scone.topping("berries", "cream");
+*/
+// === Class Methods and Method References. FAIL =============================
+// ===========================================================================
+class Person {
+  sayName() {
+    print this.name;
+  }
+}
+
+var jane = Person();
+jane.name = "Jane";
+
+var method = jane.sayName;
+method(); // ?
 
 
 /*

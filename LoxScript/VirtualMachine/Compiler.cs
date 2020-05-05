@@ -107,7 +107,7 @@ namespace LoxScript.VirtualMachine {
                     return;
                 }
                 if (_Tokens.Match(FUNCTION)) {
-                    FunctionDeclaration("function");
+                    FunctionDeclaration("function", EFunctionType.TYPE_FUNCTION, EGearsOpCode.OP_FUNCTION);
                     return;
                 }
                 if (_Tokens.Match(VAR)) {
@@ -139,13 +139,15 @@ namespace LoxScript.VirtualMachine {
             Emit(OP_CLASS);
             EmitConstantIndex(nameConstant);
             DefineVariable(nameConstant);
+            NamedVariable(name); // push class onto stack
             // body:
             _Tokens.Consume(LEFT_BRACE, "Expect '{' before class body.");
             while (!_Tokens.Check(RIGHT_BRACE) && !_Tokens.IsAtEnd()) {
-                // !!! we are adding methods to the class...
-                FunctionDeclaration("method");
+                // lox doesn't have field declarations, so anything before the brace that ends the class body must be a method:
+                MethodDeclaration("method", EFunctionType.TYPE_METHOD, EGearsOpCode.OP_METHOD);
             }
             _Tokens.Consume(RIGHT_BRACE, "Expect '}' after class body.");
+            Emit(OP_POP); // pop class from stack
             return;
         }
 
@@ -153,10 +155,30 @@ namespace LoxScript.VirtualMachine {
         /// function    → IDENTIFIER "(" parameters? ")" block ;
         /// parameters  → IDENTIFIER( "," IDENTIFIER )* ;
         /// </summary>
-        private void FunctionDeclaration(string kind) {
-            int global = ParseVariable($"Expect {kind} name.");
+        private void FunctionDeclaration(string fnType, EFunctionType fnType2, EGearsOpCode fnOpCode) {
+            int global = ParseVariable($"Expect {fnType} name.");
             MarkInitialized();
-            Compiler fnCompiler = new Compiler(_Tokens, EFunctionType.TYPE_FUNCTION, _Tokens.Previous().Lexeme, this);
+            Compiler fnCompiler = new Compiler(_Tokens, fnType2, _Tokens.Previous().Lexeme, this);
+            fnCompiler.Function();
+            GearsObjFunction fn = fnCompiler.EndCompiler();
+            Emit(fnOpCode);
+            EmitConstantIndex(fn.Serialize(Chunk));
+            Emit(OP_CLOSURE);
+            // todo: move this to closure definition - not all functions need upvalues.
+            Emit((byte)fnCompiler._UpvalueCount);
+            for (int i = 0; i < fnCompiler._UpvalueCount; i++) {
+                Emit((byte)(fnCompiler._UpvalueData[i].IsLocal ? 1 : 0));
+                Emit((byte)(fnCompiler._UpvalueData[i].Index));
+            }
+            DefineVariable(global);
+        }
+
+        /// <summary>
+        /// Todo: merge this with FunctionDeclaration
+        /// </summary>
+        private void MethodDeclaration(string fnType, EFunctionType fnType2, EGearsOpCode fnOpCode) {
+            _Tokens.Consume(IDENTIFIER, $"Expect {fnType} name.");
+            Compiler fnCompiler = new Compiler(_Tokens, fnType2, _Tokens.Previous().Lexeme, this);
             fnCompiler.Function();
             GearsObjFunction fn = fnCompiler.EndCompiler();
             Emit(OP_FUNCTION);
@@ -168,7 +190,7 @@ namespace LoxScript.VirtualMachine {
                 Emit((byte)(fnCompiler._UpvalueData[i].IsLocal ? 1 : 0));
                 Emit((byte)(fnCompiler._UpvalueData[i].Index));
             }
-            DefineVariable(global);
+            Emit(fnOpCode);
         }
 
         private void Function() {
@@ -806,21 +828,6 @@ namespace LoxScript.VirtualMachine {
         // === Constants =============================================================================================
         // ===========================================================================================================
 
-        /*private void EmitConstant(GearsValue value) {
-            int index = MakeConstant(value);
-            Emit(OP_CONSTANT, (byte)((index >> 8) & 0xff), (byte)(index & 0xff));
-        }
-
-        private void EmitConstant(string value) {
-            int index = MakeConstant(value);
-            Emit(OP_STRING, (byte)((index >> 8) & 0xff), (byte)(index & 0xff));
-        }
-
-        private void EmitConstant(GearsObjFunction fn) {
-            int index = fn.Serialize(Chunk);
-            Emit(OP_FUNCTION, (byte)((index >> 8) & 0xff), (byte)(index & 0xff));
-        }*/
-
         private void EmitConstantIndex(int index) {
             Emit((byte)((index >> 8) & 0xff), (byte)(index & 0xff));
         }
@@ -912,7 +919,7 @@ namespace LoxScript.VirtualMachine {
         private enum EFunctionType {
             TYPE_FUNCTION,
             // TYPE_INITIALIZER,
-            // TYPE_METHOD,
+            TYPE_METHOD,
             TYPE_SCRIPT
         }
 

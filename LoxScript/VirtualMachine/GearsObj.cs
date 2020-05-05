@@ -9,6 +9,7 @@ namespace LoxScript.VirtualMachine {
         public bool IsMarked = false;
 
         public enum ObjType {
+            ObjBoundMethod,
             ObjClass,
             ObjClosure,
             ObjFunction,
@@ -21,12 +22,27 @@ namespace LoxScript.VirtualMachine {
         public override string ToString() => "GearsObj";
     }
 
+    class GearsObjBoundMethod : GearsObj {
+        public readonly GearsValue Receiver;
+        public readonly GearsObjClosure Method;
+
+        public GearsObjBoundMethod(GearsValue receiver, GearsObjClosure method) {
+            Type = ObjType.ObjBoundMethod;
+            Receiver = receiver;
+            Method = method;
+        }
+
+        public override string ToString() => Method.Function.ToString();
+    }
+
     class GearsObjClass : GearsObj {
         public readonly string Name;
+        public readonly GearsHashTable Methods;
 
         public GearsObjClass(string name) {
             Type = ObjType.ObjClass;
             Name = name;
+            Methods = new GearsHashTable();
         }
 
         public override string ToString() => $"{Name}";
@@ -42,7 +58,7 @@ namespace LoxScript.VirtualMachine {
             Upvalues = new GearsObjUpvalue[upvalueCount];
         }
 
-        public override string ToString() => $"<closure {Function}>";
+        public override string ToString() => Function.ToString();
     }
 
     /// <summary>

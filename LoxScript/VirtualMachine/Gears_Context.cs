@@ -262,16 +262,12 @@ namespace LoxScript.VirtualMachine {
             Console.WriteLine($"Blacken {obj}");
 #endif
             switch (obj.Type) {
-                case GearsObj.ObjType.ObjNative:
-                case GearsObj.ObjType.ObjString:
-                    // these have no outgoing references, so there is nothing to traverse.
-                    break;
-                case GearsObj.ObjType.ObjUpvalue:
-                    MarkValue((obj as GearsObjUpvalue).Value);
+                case GearsObj.ObjType.ObjBoundMethod:
+                    MarkValue((obj as GearsObjBoundMethod).Receiver);
+                    MarkObject((obj as GearsObjBoundMethod).Method);
                     break;
                 case GearsObj.ObjType.ObjClass:
-                case GearsObj.ObjType.ObjFunction:
-                    // no outgoing references yet...
+                    MarkTable((obj as GearsObjClass).Methods);
                     break;
                 case GearsObj.ObjType.ObjClosure:
                     MarkObject((obj as GearsObjClosure).Function);
@@ -279,9 +275,17 @@ namespace LoxScript.VirtualMachine {
                         MarkObject(upvalue);
                     }
                     break;
+                case GearsObj.ObjType.ObjUpvalue:
+                    MarkValue((obj as GearsObjUpvalue).Value);
+                    break;
                 case GearsObj.ObjType.ObjInstance:
                     MarkObject((obj as GearsObjInstance).Class);
                     MarkTable((obj as GearsObjInstance).Fields);
+                    break;
+                case GearsObj.ObjType.ObjFunction:
+                case GearsObj.ObjType.ObjNative:
+                case GearsObj.ObjType.ObjString:
+                    // these have no outgoing references, so there is nothing to traverse.
                     break;
             }
         }

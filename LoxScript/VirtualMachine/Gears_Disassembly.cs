@@ -87,6 +87,8 @@ namespace LoxScript.VirtualMachine {
                     return DisassembleInstructionSimple("OP_RETURN", chunk, offset);
                 case OP_CLASS:
                     return DisassembleInstructionConstant("OP_CLASS", chunk, offset, OP_STRING);
+                case OP_METHOD:
+                    return DisassembleInstructionSimple("OP_METHOD", chunk, offset);
                 default:
                     Console.WriteLine($"Unknown opcode {instruction}");
                     return offset;

@@ -11,10 +11,6 @@ namespace LoxScript.VirtualMachine {
             return new GearsValue((double)DateTimeOffset.Now.ToUnixTimeMilliseconds());
         }
 
-        private void DefineNative(string name, int arity, GearsFunctionNativeDelegate onInvoke) {
-            Globals.Set(name, GearsValue.CreateObjPtr(AddObject(new GearsObjFunctionNative(name, arity, onInvoke))));
-        }
-
         internal bool Run(GearsObjFunction script) {
             Reset(script);
             DefineNative("clock", 0, NativeFnClock);
@@ -62,7 +58,7 @@ namespace LoxScript.VirtualMachine {
                         break;
                     case OP_DEFINE_GLOBAL: {
                             string name = ReadConstantString();
-                            Globals.Set(name, Peek(0));
+                            Globals.Set(name, Peek());
                             Pop();
                         }
                         break;
@@ -103,11 +99,14 @@ namespace LoxScript.VirtualMachine {
                                 throw new GearsRuntimeException(0, "Attempt to get property of non-instance variable.");
                             }
                             string name = ReadConstantString(); // property name.
-                            if (!instance.Fields.TryGet(name, out GearsValue value)) {
-                                throw new GearsRuntimeException(0, $"Undefined property '{name}'.");
+                            if (instance.Fields.TryGet(name, out GearsValue value)) {
+                                Pop(); // instance
+                                Push(value); // property value
+                                break;
                             }
-                            Pop(); // instance
-                            Push(value); // property value
+                            if (!BindMethod(instance.Class, name)) {
+                                throw new GearsRuntimeException(0, $"Undefined property or method '{name}'.");
+                            }
                         }
                         break;
                     case OP_SET_PROPERTY: {
@@ -149,6 +148,11 @@ namespace LoxScript.VirtualMachine {
                                 GearsValue b = Pop();
                                 GearsValue a = Pop();
                                 Push(a + b);
+                            }
+                            else if (Peek(0).IsObjType(this, GearsObj.ObjType.ObjString) && Peek(1).IsObjType(this, GearsObj.ObjType.ObjString)) {
+                                string b = (GetObject(Pop().AsObjPtr) as GearsObjString).Value;
+                                string a = (GetObject(Pop().AsObjPtr) as GearsObjString).Value;
+                                Push(GearsValue.CreateObjPtr(AddObject(new GearsObjString(a + b))));
                             }
                             else {
                                 throw new GearsRuntimeException(0, "Operands must be numbers or strings.");
@@ -261,49 +265,13 @@ namespace LoxScript.VirtualMachine {
                             Push(GearsValue.CreateObjPtr(AddObject(new GearsObjClass(ReadConstantString()))));
                         }
                         break;
+                    case OP_METHOD: {
+                            DefineMethod();
+                        }
+                        break;
                     default:
                         throw new GearsRuntimeException(0, $"Unknown opcode {instruction}");
                 }
-            }
-        }
-
-        private void Call() {
-            int argCount = ReadByte();
-            GearsValue ptr = Peek(argCount);
-            if (!ptr.IsObjPtr) {
-                throw new GearsRuntimeException(0, "Attempted call to non-pointer.");
-            }
-            GearsObj obj = GetObject(ptr.AsObjPtr);
-            if (obj is GearsObjFunction fn) { // this is not currently used - all fns currently wrapped in closures
-                if (fn.Arity != argCount) {
-                    throw new GearsRuntimeException(0, $"{fn} expects {fn.Arity} arguments but was passed {argCount}.");
-                }
-                int bp = _SP - (fn.Arity + 1);
-                PushFrame(new GearsCallFrame(fn, bp: bp));
-            }
-            else if (obj is GearsObjClass classObj) {
-                StackSet(_SP - argCount - 1, GearsValue.CreateObjPtr(AddObject(new GearsObjInstance(classObj))));
-            }
-            else if (obj is GearsObjClosure closure) {
-                if (closure.Function.Arity != argCount) {
-                    throw new GearsRuntimeException(0, $"{closure.Function} expects {closure.Function.Arity} arguments but was passed {argCount}.");
-                }
-                int bp = _SP - (closure.Function.Arity + 1);
-                PushFrame(new GearsCallFrameClosure(closure, bp: bp));
-            }
-            else if (obj is GearsObjFunctionNative native) {
-                if (native.Arity != argCount) {
-                    throw new GearsRuntimeException(0, $"{native} expects {native.Arity} arguments but was passed {argCount}.");
-                }
-                GearsValue[] args = new GearsValue[argCount];
-                for (int i = argCount - 1; i >= 0; i++) {
-                    args[i] = Pop();
-                }
-                Pop(); // pop the function signature
-                Push(native.Invoke(args));
-            }
-            else {
-                throw new GearsRuntimeException(0, $"Unhandled call to object {obj}");
             }
         }
 
@@ -327,9 +295,81 @@ namespace LoxScript.VirtualMachine {
             return value.IsNil || (value.IsBool && !value.AsBool);
         }
 
+        // === Functions =============================================================================================
+        // ===========================================================================================================
+
+        private void DefineNative(string name, int arity, GearsFunctionNativeDelegate onInvoke) {
+            Globals.Set(name, GearsValue.CreateObjPtr(AddObject(new GearsObjFunctionNative(name, arity, onInvoke))));
+        }
+
+        private void DefineMethod() {
+            GearsValue methodPtr = Peek();
+            GearsObjClosure method = GetObject(methodPtr.AsObjPtr) as GearsObjClosure;
+            GearsObjClass objClass = GetObject(Peek(1).AsObjPtr) as GearsObjClass;
+            objClass.Methods.Set(method.Function.Name, methodPtr);
+            Pop();
+        }
+
+        private bool BindMethod(GearsObjClass classObj, string name) {
+            if (!classObj.Methods.TryGet(name, out GearsValue method)) {
+                return false;
+            }
+            int objPtr = AddObject(new GearsObjBoundMethod(Peek(), GetObject(method.AsObjPtr) as GearsObjClosure));
+            Pop();
+            Push(GearsValue.CreateObjPtr(objPtr));
+            return true;
+        }
+
+        private void Call() {
+            int argCount = ReadByte();
+            GearsValue ptr = Peek(argCount);
+            if (!ptr.IsObjPtr) {
+                throw new GearsRuntimeException(0, "Attempted call to non-pointer.");
+            }
+            GearsObj obj = GetObject(ptr.AsObjPtr);
+            if (obj is GearsObjFunction fn) { // this is not currently used - all fns currently wrapped in closures
+                if (fn.Arity != argCount) {
+                    throw new GearsRuntimeException(0, $"{fn} expects {fn.Arity} arguments but was passed {argCount}.");
+                }
+                int bp = _SP - (fn.Arity + 1);
+                PushFrame(new GearsCallFrame(fn, bp: bp));
+            }
+            else if (obj is GearsObjClass classObj) {
+                StackSet(_SP - argCount - 1, GearsValue.CreateObjPtr(AddObject(new GearsObjInstance(classObj))));
+            }
+            else if (obj is GearsObjClosure closure) {
+                if (closure.Function.Arity != argCount) {
+                    throw new GearsRuntimeException(0, $"{closure} expects {closure.Function.Arity} arguments but was passed {argCount}.");
+                }
+                int bp = _SP - (closure.Function.Arity + 1);
+                PushFrame(new GearsCallFrameClosure(closure, bp: bp));
+            }
+            else if (obj is GearsObjFunctionNative native) {
+                if (native.Arity != argCount) {
+                    throw new GearsRuntimeException(0, $"{native} expects {native.Arity} arguments but was passed {argCount}.");
+                }
+                GearsValue[] args = new GearsValue[argCount];
+                for (int i = argCount - 1; i >= 0; i++) {
+                    args[i] = Pop();
+                }
+                Pop(); // pop the function signature
+                Push(native.Invoke(args));
+            }
+            else if (obj is GearsObjBoundMethod method) {
+                if (method.Method.Function.Arity != argCount) {
+                    throw new GearsRuntimeException(0, $"{method} expects {method.Method.Function.Arity} arguments but was passed {argCount}.");
+                }
+                int bp = _SP - (method.Method.Function.Arity + 1);
+                PushFrame(new GearsCallFrameClosure(method.Method, bp: bp));
+            }
+            else {
+                throw new GearsRuntimeException(0, $"Unhandled call to object {obj}");
+            }
+        }
+
         // === Closures ==============================================================================================
         // ===========================================================================================================
-        
+
         private GearsObjUpvalue CaptureUpvalue(int sp) {
             GearsObjUpvalue previousUpvalue = null;
             GearsObjUpvalue currentUpValue = _OpenUpvalues;
