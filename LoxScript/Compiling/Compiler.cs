@@ -477,25 +477,7 @@ namespace LoxScript.Compiling {
         /// </summary>
         private void Assignment() {
             _CanAssign = true;
-            Or(); // Expr expr = 
-            /*if (_Tokens.Match(EQUAL)) {
-                Token equals = Previous();
-                Assignment();
-                // Make sure the left-hand expression is a valid assignment target. If not, fail with a syntax error.
-                if (target.Type == IDENTIFIER) {
-
-                    return;
-                }
-                // !!! if (expr is Expr.Variable varExpr) {
-                // !!!    Token name = varExpr.Name;
-                    return; // !!! return new Expr.Assign(name, value);
-                // !!! }
-                // !!! else if (expr is Expr.Get getExpr) {
-                // !!!     return new Expr.Set(getExpr.Obj, getExpr.Name, value);
-                // !!! }
-                throw new CompilerException(equals, "Invalid assignment target.");
-            }*/
-            //!!! return expr;
+            Or();
         }
 
         /// <summary>
@@ -622,7 +604,7 @@ namespace LoxScript.Compiling {
             Primary();
             while (true) {
                 if (_Tokens.Match(LEFT_PAREN)) {
-                    FinishCall(); // !!! expr = FinishCall(expr)
+                    FinishCall(OP_CALL);
                 }
                 else if (_Tokens.Match(DOT)) {
                     Token name = _Tokens.Consume(IDENTIFIER, "Expect a property name after '.'.");
@@ -630,6 +612,10 @@ namespace LoxScript.Compiling {
                     if (_CanAssign && _Tokens.Match(EQUAL)) {
                         Expression();
                         Emit(OP_SET_PROPERTY);
+                        EmitConstantIndex(nameConstant);
+                    }
+                    else if (_Tokens.Match(LEFT_PAREN)) {
+                        FinishCall(OP_INVOKE);
                         EmitConstantIndex(nameConstant);
                     }
                     else {
@@ -649,7 +635,7 @@ namespace LoxScript.Compiling {
         /// Requires one or more argument expressions, followed by zero or more expressions each preceded by a comma.
         /// To handle zero-argument calls, the call rule itself considers the entire arguments production optional.
         /// </summary>
-        private void FinishCall() {
+        private void FinishCall(EGearsOpCode opCode) {
             int argumentCount = 0;
             if (!_Tokens.Check(RIGHT_PAREN)) {
                 do {
@@ -661,7 +647,7 @@ namespace LoxScript.Compiling {
                 } while (_Tokens.Match(COMMA));
             }
             Token paren = _Tokens.Consume(RIGHT_PAREN, "Expect ')' ending call operator parens (following any arguments).");
-            Emit(OP_CALL, (byte)argumentCount);
+            Emit(opCode, (byte)argumentCount);
         }
 
         /// <summary>

@@ -11,88 +11,98 @@ namespace LoxScript.VirtualMachine {
             Console.WriteLine($"=== {chunk.Name} ===");
             int offset = 0;
             while (offset < chunk.CodeSize) {
-                offset = DisassembleInstruction(chunk, offset);
+                offset = Disassemble(chunk, offset);
             }
         }
 
-        private int DisassembleInstruction(GearsChunk chunk, int offset) {
+        private int Disassemble(GearsChunk chunk, int offset) {
             Console.Write($"{offset:X4}  ");
             EGearsOpCode instruction = (EGearsOpCode)chunk.Read(ref offset);
             switch (instruction) {
                 case OP_CONSTANT:
-                    return DisassembleInstructionConstant("OP_CONSTANT", chunk, offset, OP_CONSTANT);
+                    return DisassembleConstant("OP_CONSTANT", chunk, offset, OP_CONSTANT);
                 case OP_STRING:
-                    return DisassembleInstructionConstant("OP_STRING", chunk, offset, OP_STRING);
+                    return DisassembleConstant("OP_STRING", chunk, offset, OP_STRING);
                 case OP_FUNCTION:
-                    return DisassembleInstructionConstant("OP_FUNCTION", chunk, offset, OP_FUNCTION);
+                    return DisassembleConstant("OP_FUNCTION", chunk, offset, OP_FUNCTION);
                 case OP_NIL:
-                    return DisassembleInstructionSimple("OP_NIL", chunk, offset);
+                    return DisassembleSimple("OP_NIL", chunk, offset);
                 case OP_TRUE:
-                    return DisassembleInstructionSimple("OP_TRUE", chunk, offset);
+                    return DisassembleSimple("OP_TRUE", chunk, offset);
                 case OP_FALSE:
-                    return DisassembleInstructionSimple("OP_FALSE", chunk, offset);
+                    return DisassembleSimple("OP_FALSE", chunk, offset);
                 case OP_POP:
-                    return DisassembleInstructionSimple("OP_POP", chunk, offset);
+                    return DisassembleSimple("OP_POP", chunk, offset);
                 case OP_GET_LOCAL:
-                    return DisassembleInstructionTwoParams("OP_GET_LOCAL", chunk, offset);
+                    return DisassembleTwoParams("OP_GET_LOCAL", chunk, offset);
                 case OP_SET_LOCAL:
-                    return DisassembleInstructionTwoParams("OP_SET_LOCAL", chunk, offset);
+                    return DisassembleTwoParams("OP_SET_LOCAL", chunk, offset);
                 case OP_DEFINE_GLOBAL:
-                    return DisassembleInstructionConstant("OP_DEF_GLOBAL", chunk, offset, OP_STRING);
+                    return DisassembleConstant("OP_DEF_GLOBAL", chunk, offset, OP_STRING);
                 case OP_GET_GLOBAL:
-                    return DisassembleInstructionConstant("OP_GET_GLOBAL", chunk, offset, OP_STRING);
+                    return DisassembleConstant("OP_GET_GLOBAL", chunk, offset, OP_STRING);
                 case OP_SET_GLOBAL:
-                    return DisassembleInstructionConstant("OP_SET_GLOBAL", chunk, offset, OP_STRING);
+                    return DisassembleConstant("OP_SET_GLOBAL", chunk, offset, OP_STRING);
                 case OP_GET_UPVALUE:
-                    return DisassembleInstructionTwoParams("OP_GET_UPVALUE", chunk, offset);
+                    return DisassembleTwoParams("OP_GET_UPVALUE", chunk, offset);
                 case OP_SET_UPVALUE:
-                    return DisassembleInstructionTwoParams("OP_SET_UPVALUE", chunk, offset);
+                    return DisassembleTwoParams("OP_SET_UPVALUE", chunk, offset);
                 case OP_GET_PROPERTY:
-                    return DisassembleInstructionConstant("OP_GET_PROPERTY", chunk, offset, OP_STRING);
+                    return DisassembleConstant("OP_GET_PROPERTY", chunk, offset, OP_STRING);
                 case OP_SET_PROPERTY:
-                    return DisassembleInstructionConstant("OP_SET_PROPERTY", chunk, offset, OP_STRING);
+                    return DisassembleConstant("OP_SET_PROPERTY", chunk, offset, OP_STRING);
                 case OP_EQUAL:
-                    return DisassembleInstructionSimple("OP_EQUAL", chunk, offset);
+                    return DisassembleSimple("OP_EQUAL", chunk, offset);
                 case OP_GREATER:
-                    return DisassembleInstructionSimple("OP_GREATER", chunk, offset);
+                    return DisassembleSimple("OP_GREATER", chunk, offset);
                 case OP_LESS:
-                    return DisassembleInstructionSimple("OP_LESS", chunk, offset);
+                    return DisassembleSimple("OP_LESS", chunk, offset);
                 case OP_ADD:
-                    return DisassembleInstructionSimple("OP_ADD", chunk, offset);
+                    return DisassembleSimple("OP_ADD", chunk, offset);
                 case OP_SUBTRACT:
-                    return DisassembleInstructionSimple("OP_SUBTRACT", chunk, offset);
+                    return DisassembleSimple("OP_SUBTRACT", chunk, offset);
                 case OP_MULTIPLY:
-                    return DisassembleInstructionSimple("OP_MULTIPLY", chunk, offset);
+                    return DisassembleSimple("OP_MULTIPLY", chunk, offset);
                 case OP_DIVIDE:
-                    return DisassembleInstructionSimple("OP_DIVIDE", chunk, offset);
+                    return DisassembleSimple("OP_DIVIDE", chunk, offset);
                 case OP_NOT:
-                    return DisassembleInstructionSimple("OP_NOT", chunk, offset);
+                    return DisassembleSimple("OP_NOT", chunk, offset);
                 case OP_NEGATE:
-                    return DisassembleInstructionSimple("OP_NEGATE", chunk, offset);
+                    return DisassembleSimple("OP_NEGATE", chunk, offset);
                 case OP_PRINT:
-                    return DisassembleInstructionSimple("OP_PRINT", chunk, offset);
+                    return DisassembleSimple("OP_PRINT", chunk, offset);
                 case OP_JUMP:
-                    return DisassembleInstructionTwoParams("OP_JUMP", chunk, offset);
+                    return DisassembleTwoParams("OP_JUMP", chunk, offset);
                 case OP_JUMP_IF_FALSE:
-                    return DisassembleInstructionTwoParams("OP_JUMP_IF_FALSE", chunk, offset);
+                    return DisassembleTwoParams("OP_JUMP_IF_FALSE", chunk, offset);
                 case OP_LOOP:
-                    return DisassembleInstructionTwoParams("OP_LOOP", chunk, offset);
+                    return DisassembleTwoParams("OP_LOOP", chunk, offset);
                 case OP_CALL:
-                    return DisassembleInstructionOneParam("OP_CALL", chunk, offset);
+                    return DisassembleOneParam("OP_CALL", chunk, offset);
+                case OP_INVOKE:
+                    return DisassembleInvoke("OP_INVOKE", chunk, offset);
                 case OP_CLOSURE:
                     return DisassembleClosure("OP_CLOSURE", chunk, offset);
                 case OP_CLOSE_UPVALUE:
-                    return DisassembleInstructionSimple("OP_CLOSE_UPVALUE", chunk, offset);
+                    return DisassembleSimple("OP_CLOSE_UPVALUE", chunk, offset);
                 case OP_RETURN:
-                    return DisassembleInstructionSimple("OP_RETURN", chunk, offset);
+                    return DisassembleSimple("OP_RETURN", chunk, offset);
                 case OP_CLASS:
-                    return DisassembleInstructionConstant("OP_CLASS", chunk, offset, OP_STRING);
+                    return DisassembleConstant("OP_CLASS", chunk, offset, OP_STRING);
                 case OP_METHOD:
-                    return DisassembleInstructionSimple("OP_METHOD", chunk, offset);
+                    return DisassembleSimple("OP_METHOD", chunk, offset);
                 default:
                     Console.WriteLine($"Unknown opcode {instruction}");
                     return offset;
             }
+        }
+
+        private int DisassembleInvoke(string name, GearsChunk chunk, int offset) {
+            int args = chunk.Read(ref offset);
+            int nameIndex = (chunk.Read(ref offset) << 8) + chunk.Read(ref offset);
+            string value = chunk.ReadConstantString(ref nameIndex);
+            Console.WriteLine($"{name} const[{nameIndex}] ({value})");
+            return offset;
         }
 
         private int DisassembleClosure(string name, GearsChunk chunk, int offset) {
@@ -105,24 +115,24 @@ namespace LoxScript.VirtualMachine {
             return offset;
         }
 
-        private int DisassembleInstructionSimple(string name, GearsChunk chunk, int offset) {
+        private int DisassembleSimple(string name, GearsChunk chunk, int offset) {
             Console.WriteLine(name);
             return offset;
         }
 
-        private int DisassembleInstructionOneParam(string name, GearsChunk chunk, int offset) {
+        private int DisassembleOneParam(string name, GearsChunk chunk, int offset) {
             int index = chunk.Read(ref offset);
             Console.WriteLine($"{name} ({index})");
             return offset;
         }
 
-        private int DisassembleInstructionTwoParams(string name, GearsChunk chunk, int offset) {
+        private int DisassembleTwoParams(string name, GearsChunk chunk, int offset) {
             int index = (chunk.Read(ref offset) << 8) + chunk.Read(ref offset);
             Console.WriteLine($"{name} ({index})");
             return offset;
         }
 
-        private int DisassembleInstructionConstant(string name, GearsChunk chunk, int offset, EGearsOpCode constantType) {
+        private int DisassembleConstant(string name, GearsChunk chunk, int offset, EGearsOpCode constantType) {
             int constantIndex = (chunk.Read(ref offset) << 8) + chunk.Read(ref offset);
             switch (constantType) {
                 case OP_CONSTANT: {

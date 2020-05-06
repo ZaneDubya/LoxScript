@@ -222,6 +222,10 @@ namespace LoxScript.VirtualMachine {
                             Call();
                         }
                         break;
+                    case OP_INVOKE: {
+                            CallInvoke();
+                        }
+                        break;
                     case OP_CLOSURE: {
                             GearsValue ptr = Pop();
                             if (!ptr.IsObjPtr) {
@@ -320,6 +324,41 @@ namespace LoxScript.VirtualMachine {
             Pop();
             Push(GearsValue.CreateObjPtr(objPtr));
             return true;
+        }
+
+        private void CallInvoke() {
+            int argCount = ReadByte();
+            string methodName = ReadConstantString();
+            GearsValue receiverPtr = Peek(argCount);
+            if (!(receiverPtr.IsObjPtr) || !(receiverPtr.AsObject(this) is GearsObjInstance instance)) {
+                throw new GearsRuntimeException(0, "Attempted invoke to non-pointer or non-method.");
+            }
+            if (instance.Fields.TryGet(methodName, out GearsValue value)) {
+                // check fields first 28.5.1:
+                if ((!value.IsObjPtr) || !(GetObject(value.AsObjPtr) is GearsObjClosure closure)) {
+                    throw new GearsRuntimeException(0, $"Could not resolve method {methodName} in class {instance.Class}.");
+                }
+                if (closure.Function.Arity != argCount) {
+                    throw new GearsRuntimeException(0, $"{closure} expects {closure.Function.Arity} arguments but was passed {argCount}.");
+                }
+                int bp = _SP - (closure.Function.Arity + 1);
+                PushFrame(new GearsCallFrameClosure(closure, bp: bp));
+            }
+            else {
+                // invoke from class 28.5:
+                if (!instance.Class.Methods.TryGet(methodName, out GearsValue methodPtr)) {
+                    throw new GearsRuntimeException(0, $"{instance.Class} has no method with name {methodName}.");
+                }
+                if ((!methodPtr.IsObjPtr) || !(GetObject(methodPtr.AsObjPtr) is GearsObjClosure method)) {
+                    throw new GearsRuntimeException(0, $"Could not resolve method {methodName} in class {instance.Class}.");
+                }
+                if (method.Function.Arity != argCount) {
+                    throw new GearsRuntimeException(0, $"{method} expects {method.Function.Arity} arguments but was passed {argCount}.");
+                }
+                int bp = _SP - (method.Function.Arity + 1);
+                StackSet(bp, receiverPtr); // todo: this wipes out the method object. Is this bad?
+                PushFrame(new GearsCallFrameClosure(method, bp: bp));
+            }
         }
 
         private void Call() {

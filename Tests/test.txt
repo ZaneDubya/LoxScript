@@ -1,3 +1,14 @@
+class Oops {
+    init() {
+        fun f() {
+            print "not a method.";
+        }
+        this.field = f;
+    }
+}
+var oops = Oops();
+oops.field();
+
 
 class Person {
   init(n) {
@@ -30,7 +41,7 @@ class CoffeeMaker {
 var maker = CoffeeMaker("coffee and chicory");
 maker.brew();
 
-/*
+
 // === Fibonacci Benchmark ===================================================
 // ===========================================================================
 // Native C#                    12.8 ms
@@ -38,7 +49,9 @@ maker.brew();
 // GearsVM 4/29:                1554 ms 37x speed up, 127x slower than native
 // GearsVM 4/29 inline context: 1413 ms 41x speed up, 115x slower than native
 // GearsVM 4/29 inline frame:   1282 ms 45x speed up, 100x slower than native
-// GearsVM 5/02 closures:       1393 ms 42x speed up, 9% slower with closures
+// GearsVM 5/02 closures:       1393 ms 42x speed up, 9% slower than 4/29
+// GearsVM 5/05 classes/init:   1340 ms 43x speed up, 5% slower than 4/20
+/*
 fun fibonacci(n) {
     if (n <= 1) {
         return n;
