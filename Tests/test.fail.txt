@@ -1,6 +1,7 @@
 
-
-// 25.4.1: expect 'updated'
+// === 25.4.1: expect 'updated' ==============================================
+// ===========================================================================
+// This is an interesting problem - Do I allow forward declaration of methods?
 var globalSet;
 var globalGet;
 

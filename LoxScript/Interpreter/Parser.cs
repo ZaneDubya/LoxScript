@@ -1,8 +1,8 @@
-﻿using LoxScript.Grammar;
-using LoxScript.Scanning;
+﻿using LoxScript.Compiling;
+using LoxScript.Grammar;
 using System;
 using System.Collections.Generic;
-using static LoxScript.Scanning.TokenType;
+using static LoxScript.Compiling.TokenType;
 
 namespace LoxScript.Interpreter {
     /// <summary>

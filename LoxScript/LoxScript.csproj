@@ -45,7 +45,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Scanning\TokenList.cs" />
+    <Compile Include="Compiling\CompilerClass.cs" />
+    <Compile Include="Compiling\CompilerLocal.cs" />
+    <Compile Include="Compiling\CompilerUpvalue.cs" />
+    <Compile Include="Compiling\EFunctionType.cs" />
+    <Compile Include="Compiling\TokenList.cs" />
     <Compile Include="Interpreter\IEngineCallable.cs" />
     <Compile Include="Interpreter\EngineFunction.cs" />
     <Compile Include="Interpreter\EngineClassDeclaration.cs" />
@@ -54,16 +58,16 @@
     <Compile Include="Grammar\Expr.cs" />
     <Compile Include="Grammar\Stmt.cs" />
     <Compile Include="Interpreter\Engine.cs" />
-    <Compile Include="Grammar\Keywords.cs" />
+    <Compile Include="Compiling\Keywords.cs" />
     <Compile Include="Interpreter\EngineResolver.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Interpreter\Parser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Scanning\Scanner.cs" />
-    <Compile Include="Scanning\Token.cs" />
-    <Compile Include="Scanning\TokenType.cs" />
-    <Compile Include="VirtualMachine\Compiler.cs" />
-    <Compile Include="VirtualMachine\CompilerException.cs" />
+    <Compile Include="Compiling\Tokenizer.cs" />
+    <Compile Include="Compiling\Token.cs" />
+    <Compile Include="Compiling\TokenType.cs" />
+    <Compile Include="Compiling\Compiler.cs" />
+    <Compile Include="Compiling\CompilerException.cs" />
     <Compile Include="VirtualMachine\Gears.cs" />
     <Compile Include="VirtualMachine\GearsCallFrame.cs" />
     <Compile Include="VirtualMachine\GearsChunk.cs" />
@@ -78,5 +82,6 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

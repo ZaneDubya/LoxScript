@@ -1,11 +1,11 @@
 ﻿using LoxScript.Grammar;
 
-namespace LoxScript.Scanning {
+namespace LoxScript.Compiling {
     /// <summary>
-    /// Scanner transforms an input source file into TokenList.
+    /// Tokenizer is a scanner that transforms an input source file into TokenList.
     /// Tokens defined by reserved keywords are recognized by checking against Grammar/Keywords.cs
     /// </summary>
-    internal class Scanner {
+    internal class Tokenizer {
         private string _Source;
         private int _Start = 0;
         private int _Current = 0;
@@ -14,7 +14,7 @@ namespace LoxScript.Scanning {
 
         private bool IsAtEnd => _Current >= _Source.Length;
 
-        public Scanner(string source) {
+        public Tokenizer(string source) {
             _Source = source;
         }
 

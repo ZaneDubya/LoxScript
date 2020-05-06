@@ -1,6 +1,6 @@
-﻿using LoxScript.Grammar;
+﻿using LoxScript.Compiling;
+using LoxScript.Grammar;
 using LoxScript.Interpreter;
-using LoxScript.Scanning;
 using LoxScript.VirtualMachine;
 using System;
 using System.Collections.Generic;
@@ -55,7 +55,7 @@ namespace LoxScript {
         }
 
         private static void Run(string source) {
-            TokenList tokens = new Scanner(source).ScanTokens();
+            TokenList tokens = new Tokenizer(source).ScanTokens();
             if (Compiler.TryCompile(tokens, out GearsObjFunction fn, out string status)) {
                 Gears gears = new Gears();
                 gears.Disassemble(fn.Chunk);

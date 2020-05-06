@@ -1,7 +1,6 @@
-﻿using LoxScript.VirtualMachine;
-using System;
+﻿using System;
 
-namespace LoxScript.Scanning {
+namespace LoxScript.Compiling {
     /// <summary>
     /// A list of tokens.
     /// </summary>

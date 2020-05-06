@@ -1,8 +1,8 @@
-﻿using LoxScript.Scanning;
-using static LoxScript.Scanning.TokenType;
+﻿using LoxScript.VirtualMachine;
+using static LoxScript.Compiling.TokenType;
 using static LoxScript.VirtualMachine.EGearsOpCode;
 
-namespace LoxScript.VirtualMachine {
+namespace LoxScript.Compiling {
     /// <summary>
     /// Compiler parses a TokenList and compiles it into a GearsChunk: bytecode executed by Gears.
     /// </summary>
@@ -13,7 +13,7 @@ namespace LoxScript.VirtualMachine {
         /// If compilation fails, status will be the error message.
         /// </summary>
         public static bool TryCompile(TokenList tokens, out GearsObjFunction fn, out string status) {
-            Compiler compiler = new Compiler(tokens, EFunctionType.TYPE_SCRIPT, null, null);
+            Compiler compiler = new Compiler(tokens, EFunctionType.TYPE_SCRIPT, null, null, null);
             if (compiler.Compile(out fn)) {
                 status = null;
                 return true;
@@ -32,8 +32,9 @@ namespace LoxScript.VirtualMachine {
         private bool _HadError = false;
 
         // Compiling code to:
-        private GearsObjFunction _Function;
-        private EFunctionType _FunctionType;
+        private readonly GearsObjFunction _Function;
+        private readonly EFunctionType _FunctionType;
+        private CompilerClass _CurrentClass;
         private bool _CanAssign = false;
 
         // enclosing compiler:
@@ -50,14 +51,19 @@ namespace LoxScript.VirtualMachine {
         private readonly CompilerLocal[] _LocalVarData = new CompilerLocal[MAX_LOCALS];
         private readonly CompilerUpvalue[] _UpvalueData = new CompilerUpvalue[MAX_UPVALUES];
 
-        private Compiler(TokenList tokens, EFunctionType type, string name, Compiler enclosing) {
+        private Compiler(TokenList tokens, EFunctionType type, string name, Compiler enclosing, CompilerClass enclosingClass) {
             _Tokens = tokens;
             _FunctionType = type;
             _Function = new GearsObjFunction(name, 0);
             _Enclosing = enclosing;
-            // reserve stack slot zero for VM's own internal use.
-            // Give it an empty name so the user can't write an identifier that refers to it:
-            _LocalVarData[_LocalCount++] = new CompilerLocal(string.Empty, 0);
+            _CurrentClass = enclosingClass;
+            // stack slot zero is used for 'this' reference in methods, and is empty for script/functions:
+            if (type != EFunctionType.TYPE_FUNCTION) {
+                _LocalVarData[_LocalCount++] = new CompilerLocal("this", 0);
+            }
+            else {
+                _LocalVarData[_LocalCount++] = new CompilerLocal(string.Empty, 0);
+            }
         }
 
         private GearsChunk Chunk => _Function.Chunk;
@@ -111,7 +117,7 @@ namespace LoxScript.VirtualMachine {
                     return;
                 }
                 if (_Tokens.Match(VAR)) {
-                    VarDeclaration();
+                    GlobalVarDeclaration();
                     return;
                 }
                 Statement();
@@ -139,15 +145,18 @@ namespace LoxScript.VirtualMachine {
             Emit(OP_CLASS);
             EmitConstantIndex(nameConstant);
             DefineVariable(nameConstant);
+            _CurrentClass = new CompilerClass(name, _CurrentClass);
             NamedVariable(name); // push class onto stack
             // body:
             _Tokens.Consume(LEFT_BRACE, "Expect '{' before class body.");
             while (!_Tokens.Check(RIGHT_BRACE) && !_Tokens.IsAtEnd()) {
-                // lox doesn't have field declarations, so anything before the brace that ends the class body must be a method:
-                MethodDeclaration("method", EFunctionType.TYPE_METHOD, EGearsOpCode.OP_METHOD);
+                // lox doesn't have field declarations, so anything before the brace that ends the class body must be a method.
+                // initializer is a special method
+                MethodDeclaration("method", EFunctionType.TYPE_METHOD, OP_METHOD);
             }
             _Tokens.Consume(RIGHT_BRACE, "Expect '}' after class body.");
             Emit(OP_POP); // pop class from stack
+            _CurrentClass = _CurrentClass.Enclosing;
             return;
         }
 
@@ -158,8 +167,8 @@ namespace LoxScript.VirtualMachine {
         private void FunctionDeclaration(string fnType, EFunctionType fnType2, EGearsOpCode fnOpCode) {
             int global = ParseVariable($"Expect {fnType} name.");
             MarkInitialized();
-            Compiler fnCompiler = new Compiler(_Tokens, fnType2, _Tokens.Previous().Lexeme, this);
-            fnCompiler.Function();
+            Compiler fnCompiler = new Compiler(_Tokens, fnType2, _Tokens.Previous().Lexeme, this, _CurrentClass);
+            fnCompiler.FunctionBody();
             GearsObjFunction fn = fnCompiler.EndCompiler();
             Emit(fnOpCode);
             EmitConstantIndex(fn.Serialize(Chunk));
@@ -178,8 +187,11 @@ namespace LoxScript.VirtualMachine {
         /// </summary>
         private void MethodDeclaration(string fnType, EFunctionType fnType2, EGearsOpCode fnOpCode) {
             _Tokens.Consume(IDENTIFIER, $"Expect {fnType} name.");
-            Compiler fnCompiler = new Compiler(_Tokens, fnType2, _Tokens.Previous().Lexeme, this);
-            fnCompiler.Function();
+            if (_Tokens.Previous().Lexeme == "init") {
+                fnType2 = EFunctionType.TYPE_INITIALIZER;
+            }
+            Compiler fnCompiler = new Compiler(_Tokens, fnType2, _Tokens.Previous().Lexeme, this, _CurrentClass);
+            fnCompiler.FunctionBody();
             GearsObjFunction fn = fnCompiler.EndCompiler();
             Emit(OP_FUNCTION);
             EmitConstantIndex(fn.Serialize(Chunk));
@@ -193,7 +205,7 @@ namespace LoxScript.VirtualMachine {
             Emit(fnOpCode);
         }
 
-        private void Function() {
+        private void FunctionBody() {
             BeginScope();
             _Tokens.Consume(LEFT_PAREN, $"Expect '(' after function name.");
             // parameter list:
@@ -213,7 +225,7 @@ namespace LoxScript.VirtualMachine {
             // no need for end scope, as functions are each compiled by their own compiler object.
         }
 
-        private void VarDeclaration() {
+        private void GlobalVarDeclaration() {
             int global = ParseVariable("Expect variable name.");
             if (_Tokens.Match(EQUAL)) {
                 Expression(); // var x = value;
@@ -331,7 +343,7 @@ namespace LoxScript.VirtualMachine {
                 // no initializer.
             }
             else if (_Tokens.Match(VAR)) {
-                VarDeclaration();
+                GlobalVarDeclaration();
             }
             else {
                 ExpressionStatement();
@@ -408,6 +420,9 @@ namespace LoxScript.VirtualMachine {
                 EmitReturn();
             }
             else {
+                if (_FunctionType == EFunctionType.TYPE_INITIALIZER) {
+                    throw new CompilerException(_Tokens.Previous(), "Can't return a value from a class initializer.");
+                }
                 Expression();
                 _Tokens.Consume(SEMICOLON, "Expect ';' after return value.");
                 Emit(OP_RETURN);
@@ -684,11 +699,16 @@ namespace LoxScript.VirtualMachine {
                 return; // !!! return new Expr.Super(keyword, method);
             }
             if (_Tokens.Match(THIS)) {
-                return; // !!! return new Expr.This(Previous());
+                if (_CurrentClass == null) {
+                    throw new CompilerException(_Tokens.Previous(), $"Cannot use 'this' outside of a class.");
+                }
+                // need to emit 'this' reference, but don't allow assignment:
+                NamedVariable(_Tokens.Previous(), false);
+                return;
             }
             if (_Tokens.Match(IDENTIFIER)) {
                 NamedVariable(_Tokens.Previous());
-                return; // !!! return new Expr.Variable(Previous());
+                return;
             }
             if (_Tokens.Match(LEFT_PAREN)) {
                 Expression();
@@ -703,8 +723,7 @@ namespace LoxScript.VirtualMachine {
         /// variable in the function, we try to resolve the reference to variables in enclosing functions. If
         /// we can't find a variable in an enclosing function, we assume it is a global variable.
         /// </summary>
-        /// <param name="name"></param>
-        private void NamedVariable(Token name) {
+        private void NamedVariable(Token name, bool overrideCanAssign = true) {
             EGearsOpCode getOp, setOp;
             int index = ResolveLocal(name);
             if (index != -1) {
@@ -721,7 +740,7 @@ namespace LoxScript.VirtualMachine {
                 setOp = OP_SET_GLOBAL;
             }
             if (_Tokens.Match(EQUAL)) {
-                if (!_CanAssign) {
+                if (!(_CanAssign & overrideCanAssign)) {
                     throw new CompilerException(name, $"Invalid assignment target '{name}'.");
                 }
                 Expression();
@@ -816,12 +835,13 @@ namespace LoxScript.VirtualMachine {
         /// Lox implicitly returns nil when no return value is specified.
         /// </summary>
         private void EmitReturn() {
-            /*if (_FunctionType == EFunctionType.TYPE_INITIALIZER) {
-                Emit(OP_GET_LOCAL, 0);
+            if (_FunctionType == EFunctionType.TYPE_INITIALIZER) {
+                Emit(OP_GET_LOCAL); //, 0);
+                EmitConstantIndex(0);
             }
-            else {*/
+            else {
                 Emit(OP_NIL);
-            // }
+            }
             Emit(OP_RETURN);
         }
 
@@ -850,32 +870,6 @@ namespace LoxScript.VirtualMachine {
 
         // === Scope and Locals ======================================================================================
         // ===========================================================================================================
-
-        class CompilerLocal {
-            public readonly string Name;
-            public int Depth;
-            public bool IsCaptured;
-
-            public CompilerLocal(string name, int depth) {
-                Name = name;
-                Depth = depth;
-                IsCaptured = false;
-            }
-
-            public override string ToString() => $"{Name}";
-        }
-
-        class CompilerUpvalue {
-            public readonly int Index;
-            public readonly bool IsLocal;
-
-            public CompilerUpvalue(int index, bool isLocal) {
-                Index = index;
-                IsLocal = isLocal;
-            }
-
-            public override string ToString() => $"{Index}";
-        }
 
         private void BeginScope() {
             _ScopeDepth += 1;
@@ -911,16 +905,6 @@ namespace LoxScript.VirtualMachine {
                 }
             }
             return -1;
-        }
-
-        // === What type of function are we compiling? ===============================================================
-        // ===========================================================================================================
-
-        private enum EFunctionType {
-            TYPE_FUNCTION,
-            // TYPE_INITIALIZER,
-            TYPE_METHOD,
-            TYPE_SCRIPT
         }
 
         // === Error Handling ========================================================================================

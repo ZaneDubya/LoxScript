@@ -1,7 +1,6 @@
-﻿using LoxScript.Scanning;
-using System;
+﻿using System;
 
-namespace LoxScript.VirtualMachine {
+namespace LoxScript.Compiling {
     /// <summary>
     /// Throw this when the parser is in a confused state and needs to panic and synchronize.
     /// </summary>

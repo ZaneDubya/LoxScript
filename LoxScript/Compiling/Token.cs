@@ -1,4 +1,4 @@
-﻿namespace LoxScript.Scanning {
+﻿namespace LoxScript.Compiling {
     /// <summary>
     /// Optimized Lox Token, 20 bytes.
     /// </summary>

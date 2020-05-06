@@ -7,6 +7,8 @@ namespace LoxScript.VirtualMachine {
     /// </summary>
     partial class Gears {
 
+        private const string InitString = "init";
+
         private GearsValue NativeFnClock(GearsValue[] args) {
             return new GearsValue((double)DateTimeOffset.Now.ToUnixTimeMilliseconds());
         }
@@ -336,6 +338,13 @@ namespace LoxScript.VirtualMachine {
             }
             else if (obj is GearsObjClass classObj) {
                 StackSet(_SP - argCount - 1, GearsValue.CreateObjPtr(AddObject(new GearsObjInstance(classObj))));
+                if (classObj.Methods.TryGet(InitString, out GearsValue initPtr)) {
+                    if (!initPtr.IsObjPtr) {
+                        throw new GearsRuntimeException(0, "Attempted call to non-pointer.");
+                    }
+                    GearsObjClosure initFn = GetObject(initPtr.AsObjPtr) as GearsObjClosure;
+                    PushFrame(new GearsCallFrame(initFn.Function, bp: _SP - argCount - 1));
+                }
             }
             else if (obj is GearsObjClosure closure) {
                 if (closure.Function.Arity != argCount) {
@@ -360,6 +369,7 @@ namespace LoxScript.VirtualMachine {
                     throw new GearsRuntimeException(0, $"{method} expects {method.Method.Function.Arity} arguments but was passed {argCount}.");
                 }
                 int bp = _SP - (method.Method.Function.Arity + 1);
+                StackSet(bp, method.Receiver); // todo: this wipes out the method object. Is this bad?
                 PushFrame(new GearsCallFrameClosure(method.Method, bp: bp));
             }
             else {

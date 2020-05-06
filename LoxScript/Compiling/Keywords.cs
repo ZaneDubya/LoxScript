@@ -1,7 +1,6 @@
-﻿using LoxScript.Scanning;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
-namespace LoxScript.Grammar {
+namespace LoxScript.Compiling {
     static class Keywords {
         internal const string This = "this";
         internal const string Ctor = "init";

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using LoxScript.Compiling;
 using LoxScript.Grammar;
-using LoxScript.Scanning;
 
 namespace LoxScript.Interpreter {
     class EngineResolver : Expr.IVisitor<object>, Stmt.IVisitor {
