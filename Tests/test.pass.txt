@@ -510,6 +510,18 @@ scone.topping("berries", "cream");
 // === Class Methods and Method References. PASS =============================
 // ===========================================================================
 /*
+class Oops {
+    init() {
+        fun f() {
+            print "not a method.";
+        }
+        this.field = f;
+    }
+}
+var oops = Oops();
+oops.field();
+
+
 class Person {
   init(n) {
     this.name = n;

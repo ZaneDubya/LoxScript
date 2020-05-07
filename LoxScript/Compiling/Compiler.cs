@@ -113,7 +113,7 @@ namespace LoxScript.Compiling {
                     return;
                 }
                 if (_Tokens.Match(FUNCTION)) {
-                    FunctionDeclaration("function", EFunctionType.TYPE_FUNCTION, EGearsOpCode.OP_FUNCTION);
+                    FunctionDeclaration("function", EFunctionType.TYPE_FUNCTION, OP_FUNCTION);
                     return;
                 }
                 if (_Tokens.Match(VAR)) {
@@ -137,13 +137,17 @@ namespace LoxScript.Compiling {
             int nameConstant = IdentifierConstant(name);
             DeclareVariable(name); // The class name binds the class object type to a variable of the same name.
             // todo? make the class declaration an expression, require explicit binding of class to variable (like var Pie = new Pie()); 27.2
-            // super class:
-            if (_Tokens.Match(LESS)) {
-                _Tokens.Consume(IDENTIFIER, "Expect superclass name.");
-                // superClass = new Expr.Variable(_Tokens.Previous());
-            }
             Emit(OP_CLASS);
             EmitConstantIndex(nameConstant);
+            // superclass:
+            if (_Tokens.Match(LESS)) { 
+                _Tokens.Consume(IDENTIFIER, "Expect superclass name.");
+                if (_Tokens.Previous().Lexeme == name.Lexeme) {
+                    throw new CompilerException(_Tokens.Previous(), "A class cannot inherit from itself.");
+                }
+                NamedVariable(_Tokens.Previous(), false); // push super class onto stack
+                Emit(OP_INHERIT);
+            }
             DefineVariable(nameConstant);
             _CurrentClass = new CompilerClass(name, _CurrentClass);
             NamedVariable(name); // push class onto stack

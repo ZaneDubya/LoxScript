@@ -1,46 +1,23 @@
-class Oops {
-    init() {
-        fun f() {
-            print "not a method.";
-        }
-        this.field = f;
-    }
-}
-var oops = Oops();
-oops.field();
 
 
-class Person {
-  init(n) {
-    this.name = n;
-  }
-  sayName() {
-    print this.name;
+// === Ch 29 Superclasses. Test ==============================================
+// ===========================================================================
+
+class Doughnut {
+  cook() {
+    print "Dunk in the fryer.";
   }
 }
 
-var jane = Person("Alex");
-var method = jane.sayName;
-method(); // print Alex
-jane.name = "Jane";
-method(); // print Jane
-
-class CoffeeMaker {
-  init(coffee) {
-    this.coffee = coffee;
-  }
-
-  brew() {
-    print "Enjoy your cup of " + this.coffee;
-
-    // No reusing the grounds!
-    this.coffee = nil;
+class Cruller < Doughnut {
+  finish() {
+    print "Glaze with icing";
   }
 }
 
-var maker = CoffeeMaker("coffee and chicory");
-maker.brew();
-
+var c = Cruller();
+c.cook();
+c.finish();
 
 // === Fibonacci Benchmark ===================================================
 // ===========================================================================

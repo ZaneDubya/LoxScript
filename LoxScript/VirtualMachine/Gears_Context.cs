@@ -29,7 +29,7 @@ namespace LoxScript.VirtualMachine {
             Globals.Reset();
             _GrayList.Clear();
             PushFrame(new GearsCallFrame(fn));
-            Push(GearsValue.CreateObjPtr(AddObject(fn)));
+            Push(GearsValue.CreateObjPtr(HeapAddObject(fn)));
         }
 
         public override string ToString() => $"{_OpenFrame.Function}@{_IP}";
@@ -158,7 +158,7 @@ namespace LoxScript.VirtualMachine {
         private const int HEAP_MAX = 32;
         private GearsObj[] _Heap;
 
-        internal int AddObject(GearsObj obj, bool allowGC = true) {
+        internal int HeapAddObject(GearsObj obj, bool allowGC = true) {
             for (int i = 0; i < _Heap.Length; i++) {
                 if (_Heap[i] == null) {
                     _Heap[i] = obj;
@@ -170,7 +170,7 @@ namespace LoxScript.VirtualMachine {
             }
             if (allowGC) {
                 CollectGarbage();
-                int newIndex = AddObject(obj, false);
+                int newIndex = HeapAddObject(obj, false);
                 if (newIndex != -1) {
                     return newIndex;
                 }
@@ -178,14 +178,14 @@ namespace LoxScript.VirtualMachine {
             throw new GearsRuntimeException(0, "Out of heap space.");
         }
 
-        internal GearsObj GetObject(int index) {
+        internal GearsObj HeapGetObject(int index) {
             if (index < 0 || index >= _Heap.Length || _Heap[index] == null) {
                 return null; // todo, throw runtime exception, null object
             }
             return _Heap[index];
         }
 
-        internal void FreeObject(int index) {
+        internal void HeapFreeObject(int index) {
             if (_Heap[index] != null) {
 #if DEBUG_LOG_GC
                 Console.WriteLine($"Free {_Heap[index].Type} at {index}");
@@ -227,7 +227,7 @@ namespace LoxScript.VirtualMachine {
         }
 
         private void MarkTable(GearsHashTable table) {
-            foreach (GearsValue value in table.All) {
+            foreach (GearsValue value in table.AllValues) {
                 MarkValue(value);
             }
         }

@@ -89,6 +89,8 @@ namespace LoxScript.VirtualMachine {
                     return DisassembleSimple("OP_RETURN", chunk, offset);
                 case OP_CLASS:
                     return DisassembleConstant("OP_CLASS", chunk, offset, OP_STRING);
+                case OP_INHERIT:
+                    return DisassembleSimple("OP_INHERIT", chunk, offset);
                 case OP_METHOD:
                     return DisassembleSimple("OP_METHOD", chunk, offset);
                 default:

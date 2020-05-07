@@ -56,7 +56,7 @@ namespace LoxScript.VirtualMachine {
         /// </summary>
         public int AsObjPtr => IsObjPtr ? (int)(_AsLong & ~(TAG_OBJECTPTR)) : -1;
 
-        public GearsObj AsObject(Gears context) => context.GetObject(AsObjPtr); // todo: fix with reference to context's heap...
+        public GearsObj AsObject(Gears context) => context.HeapGetObject(AsObjPtr); // todo: fix with reference to context's heap...
 
         public byte[] AsBytes => BitConverter.GetBytes(_AsLong);
 

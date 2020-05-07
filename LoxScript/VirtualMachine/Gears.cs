@@ -23,10 +23,10 @@ namespace LoxScript.VirtualMachine {
                         Push(ReadConstant());
                         break;
                     case OP_STRING:
-                        Push(GearsValue.CreateObjPtr(AddObject(new GearsObjString(ReadConstantString()))));
+                        Push(GearsValue.CreateObjPtr(HeapAddObject(new GearsObjString(ReadConstantString()))));
                         break;
                     case OP_FUNCTION:
-                        Push(GearsValue.CreateObjPtr(AddObject(new GearsObjFunction(this))));
+                        Push(GearsValue.CreateObjPtr(HeapAddObject(new GearsObjFunction(this))));
                         break;
                     case OP_NIL:
                         Push(GearsValue.NilValue);
@@ -95,11 +95,7 @@ namespace LoxScript.VirtualMachine {
                         }
                         break;
                     case OP_GET_PROPERTY: {
-                            GearsValue ptr = Peek();
-                            GearsObjInstance instance = ptr.IsObjPtr ? GetObject(ptr.AsObjPtr) as GearsObjInstance : null;
-                            if (instance == null) {
-                                throw new GearsRuntimeException(0, "Attempt to get property of non-instance variable.");
-                            }
+                            GearsObjInstance instance = GetObjectFromPtr<GearsObjInstance>(Peek());
                             string name = ReadConstantString(); // property name.
                             if (instance.Fields.TryGet(name, out GearsValue value)) {
                                 Pop(); // instance
@@ -112,11 +108,7 @@ namespace LoxScript.VirtualMachine {
                         }
                         break;
                     case OP_SET_PROPERTY: {
-                            GearsValue ptr = Peek(1); // ptr to instance
-                            GearsObjInstance instance = ptr.IsObjPtr ? GetObject(ptr.AsObjPtr) as GearsObjInstance : null;
-                            if (instance == null) {
-                                throw new GearsRuntimeException(0, "Attempt to set property of non-instance variable.");
-                            }
+                            GearsObjInstance instance = GetObjectFromPtr<GearsObjInstance>(Peek(1));
                             string name = ReadConstantString(); // property name.
                             GearsValue value = Pop(); // value
                             instance.Fields.Set(name, value);
@@ -152,9 +144,9 @@ namespace LoxScript.VirtualMachine {
                                 Push(a + b);
                             }
                             else if (Peek(0).IsObjType(this, GearsObj.ObjType.ObjString) && Peek(1).IsObjType(this, GearsObj.ObjType.ObjString)) {
-                                string b = (GetObject(Pop().AsObjPtr) as GearsObjString).Value;
-                                string a = (GetObject(Pop().AsObjPtr) as GearsObjString).Value;
-                                Push(GearsValue.CreateObjPtr(AddObject(new GearsObjString(a + b))));
+                                string b = GetObjectFromPtr<GearsObjString>(Pop()).Value;
+                                string a = GetObjectFromPtr<GearsObjString>(Pop()).Value;
+                                Push(GearsValue.CreateObjPtr(HeapAddObject(new GearsObjString(a + b))));
                             }
                             else {
                                 throw new GearsRuntimeException(0, "Operands must be numbers or strings.");
@@ -231,7 +223,7 @@ namespace LoxScript.VirtualMachine {
                             if (!ptr.IsObjPtr) {
                                 throw new GearsRuntimeException(0, "Attempted closure of non-pointer.");
                             }
-                            GearsObj obj = GetObject(ptr.AsObjPtr);
+                            GearsObj obj = HeapGetObject(ptr.AsObjPtr);
                             if (obj.Type == GearsObj.ObjType.ObjFunction) {
                                 int upvalueCount = ReadByte();
                                 GearsObjClosure closure = new GearsObjClosure(obj as GearsObjFunction, upvalueCount);
@@ -246,7 +238,7 @@ namespace LoxScript.VirtualMachine {
                                         closure.Upvalues[i] = (_OpenFrame as GearsCallFrameClosure).Closure.Upvalues[index];
                                     }
                                 }
-                                Push(GearsValue.CreateObjPtr(AddObject(closure)));
+                                Push(GearsValue.CreateObjPtr(HeapAddObject(closure)));
                                 break;
                             }
                         }
@@ -268,7 +260,22 @@ namespace LoxScript.VirtualMachine {
                         }
                         break;
                     case OP_CLASS: {
-                            Push(GearsValue.CreateObjPtr(AddObject(new GearsObjClass(ReadConstantString()))));
+                            Push(GearsValue.CreateObjPtr(HeapAddObject(new GearsObjClass(ReadConstantString()))));
+                        }
+                        break;
+                    case OP_INHERIT: {
+                            if (!Peek(0).IsObjType(this, GearsObj.ObjType.ObjClass)) {
+                                throw new GearsRuntimeException(0, "Superclass is not a class.");
+                            }
+                            GearsObjClass sub = GetObjectFromPtr<GearsObjClass>(Peek(1));
+                            GearsObjClass super = GetObjectFromPtr<GearsObjClass>(Peek(0));
+                            foreach (string key in super.Methods.AllKeys) {
+                                if (!super.Methods.TryGet(key, out GearsValue methodPtr)) {
+                                    throw new GearsRuntimeException(0, "Could not copy superclass method table.");
+                                }
+                                sub.Methods.Set(key, methodPtr);
+                            }
+                            Pop(); // subclass
                         }
                         break;
                     case OP_METHOD: {
@@ -301,17 +308,28 @@ namespace LoxScript.VirtualMachine {
             return value.IsNil || (value.IsBool && !value.AsBool);
         }
 
+        private T GetObjectFromPtr<T>(GearsValue ptr) where T : GearsObj {
+            if (!ptr.IsObjPtr) {
+                throw new Exception($"GetObjectFromPtr: Value is not a pointer and cannot reference a {typeof(T).Name}.");
+            }
+            GearsObj obj = HeapGetObject(ptr.AsObjPtr);
+            if (obj is T) {
+                return obj as T;
+            }
+            throw new Exception($"GetObjectFromPtr: Object is not {typeof(T).Name}.");
+        }
+
         // === Functions =============================================================================================
         // ===========================================================================================================
 
         private void DefineNative(string name, int arity, GearsFunctionNativeDelegate onInvoke) {
-            Globals.Set(name, GearsValue.CreateObjPtr(AddObject(new GearsObjFunctionNative(name, arity, onInvoke))));
+            Globals.Set(name, GearsValue.CreateObjPtr(HeapAddObject(new GearsObjFunctionNative(name, arity, onInvoke))));
         }
 
         private void DefineMethod() {
             GearsValue methodPtr = Peek();
-            GearsObjClosure method = GetObject(methodPtr.AsObjPtr) as GearsObjClosure;
-            GearsObjClass objClass = GetObject(Peek(1).AsObjPtr) as GearsObjClass;
+            GearsObjClosure method = GetObjectFromPtr<GearsObjClosure>(methodPtr);
+            GearsObjClass objClass = GetObjectFromPtr<GearsObjClass>(Peek(1));
             objClass.Methods.Set(method.Function.Name, methodPtr);
             Pop();
         }
@@ -320,7 +338,7 @@ namespace LoxScript.VirtualMachine {
             if (!classObj.Methods.TryGet(name, out GearsValue method)) {
                 return false;
             }
-            int objPtr = AddObject(new GearsObjBoundMethod(Peek(), GetObject(method.AsObjPtr) as GearsObjClosure));
+            int objPtr = HeapAddObject(new GearsObjBoundMethod(Peek(), HeapGetObject(method.AsObjPtr) as GearsObjClosure));
             Pop();
             Push(GearsValue.CreateObjPtr(objPtr));
             return true;
@@ -335,7 +353,7 @@ namespace LoxScript.VirtualMachine {
             }
             if (instance.Fields.TryGet(methodName, out GearsValue value)) {
                 // check fields first 28.5.1:
-                if ((!value.IsObjPtr) || !(GetObject(value.AsObjPtr) is GearsObjClosure closure)) {
+                if ((!value.IsObjPtr) || !(HeapGetObject(value.AsObjPtr) is GearsObjClosure closure)) {
                     throw new GearsRuntimeException(0, $"Could not resolve method {methodName} in class {instance.Class}.");
                 }
                 if (closure.Function.Arity != argCount) {
@@ -349,7 +367,7 @@ namespace LoxScript.VirtualMachine {
                 if (!instance.Class.Methods.TryGet(methodName, out GearsValue methodPtr)) {
                     throw new GearsRuntimeException(0, $"{instance.Class} has no method with name {methodName}.");
                 }
-                if ((!methodPtr.IsObjPtr) || !(GetObject(methodPtr.AsObjPtr) is GearsObjClosure method)) {
+                if ((!methodPtr.IsObjPtr) || !(HeapGetObject(methodPtr.AsObjPtr) is GearsObjClosure method)) {
                     throw new GearsRuntimeException(0, $"Could not resolve method {methodName} in class {instance.Class}.");
                 }
                 if (method.Function.Arity != argCount) {
@@ -367,7 +385,7 @@ namespace LoxScript.VirtualMachine {
             if (!ptr.IsObjPtr) {
                 throw new GearsRuntimeException(0, "Attempted call to non-pointer.");
             }
-            GearsObj obj = GetObject(ptr.AsObjPtr);
+            GearsObj obj = HeapGetObject(ptr.AsObjPtr);
             if (obj is GearsObjFunction fn) { // this is not currently used - all fns currently wrapped in closures
                 if (fn.Arity != argCount) {
                     throw new GearsRuntimeException(0, $"{fn} expects {fn.Arity} arguments but was passed {argCount}.");
@@ -376,12 +394,12 @@ namespace LoxScript.VirtualMachine {
                 PushFrame(new GearsCallFrame(fn, bp: bp));
             }
             else if (obj is GearsObjClass classObj) {
-                StackSet(_SP - argCount - 1, GearsValue.CreateObjPtr(AddObject(new GearsObjInstance(classObj))));
+                StackSet(_SP - argCount - 1, GearsValue.CreateObjPtr(HeapAddObject(new GearsObjInstance(classObj))));
                 if (classObj.Methods.TryGet(InitString, out GearsValue initPtr)) {
                     if (!initPtr.IsObjPtr) {
                         throw new GearsRuntimeException(0, "Attempted call to non-pointer.");
                     }
-                    GearsObjClosure initFn = GetObject(initPtr.AsObjPtr) as GearsObjClosure;
+                    GearsObjClosure initFn = HeapGetObject(initPtr.AsObjPtr) as GearsObjClosure;
                     PushFrame(new GearsCallFrame(initFn.Function, bp: _SP - argCount - 1));
                 }
             }

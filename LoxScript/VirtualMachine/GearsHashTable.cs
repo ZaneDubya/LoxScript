@@ -11,7 +11,9 @@ namespace LoxScript.VirtualMachine {
             _Table.Clear();
         }
 
-        public IEnumerable<GearsValue> All => _Table.Values;
+        public IEnumerable<GearsValue> AllValues => _Table.Values;
+
+        public IEnumerable<string> AllKeys => _Table.Keys;
 
         /// <summary>
         /// Returns true if value exists in hash table.
