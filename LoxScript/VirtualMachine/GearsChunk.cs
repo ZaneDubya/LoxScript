@@ -10,8 +10,6 @@ namespace LoxScript.VirtualMachine {
         private const int InitialChunkCapcity = 8;
         private const int GrowCapacityFactor = 2;
 
-        internal readonly string Name;
-
         /// <summary>
         /// How much of the chunk code array is in use.
         /// </summary>
@@ -35,8 +33,7 @@ namespace LoxScript.VirtualMachine {
 
         private int[] _Lines = null; // todo: optimize with RLE.
 
-        internal GearsChunk(string name, byte[] code = null, byte[] constants = null, byte[] stringTable = null) {
-            Name = name;
+        internal GearsChunk(byte[] code = null, byte[] constants = null, byte[] stringTable = null) {
             if (code != null) {
                 _Code = code;
                 CodeSize = code.Length;

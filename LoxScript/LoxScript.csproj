@@ -45,7 +45,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Compiling\CompilerChunk.cs" />
     <Compile Include="Compiling\CompilerClass.cs" />
     <Compile Include="Compiling\CompilerLocal.cs" />
     <Compile Include="Compiling\CompilerUpvalue.cs" />

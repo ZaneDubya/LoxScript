@@ -8,7 +8,7 @@ namespace LoxScript.VirtualMachine {
         // ===========================================================================================================
 
         public void Disassemble(GearsChunk chunk) {
-            Console.WriteLine($"=== {chunk.Name} ===");
+            Console.WriteLine($"=== chunk ===");
             int offset = 0;
             while (offset < chunk.CodeSize) {
                 offset = Disassemble(chunk, offset);

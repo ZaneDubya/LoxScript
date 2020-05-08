@@ -91,7 +91,7 @@
             Name = name;
             Arity = arity;
             int index = context.ReadShort();
-            Chunk = new GearsChunk(Name,
+            Chunk = new GearsChunk(
                 context.Chunk.ReadConstantBytes(ref index),
                 context.Chunk.ReadConstantBytes(ref index),
                 context.Chunk.ReadConstantBytes(ref index));

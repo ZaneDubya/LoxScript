@@ -33,7 +33,9 @@ namespace LoxScript.Compiling {
         private bool _HadError = false;
 
         // Compiling code to:
-        private readonly CompilerChunk _Function;
+        private readonly string Name;
+        private int Arity;
+        private readonly GearsChunk Chunk;
         private readonly EFunctionType _FunctionType;
         private CompilerClass _CurrentClass;
         private bool _CanAssign = false;
@@ -53,7 +55,9 @@ namespace LoxScript.Compiling {
         private Compiler(TokenList tokens, EFunctionType type, string name, Compiler enclosing, CompilerClass enclosingClass) {
             _Tokens = tokens;
             _FunctionType = type;
-            _Function = new CompilerChunk(name, 0);
+            Name = name;
+            Arity = 0;
+            Chunk = new GearsChunk();
             _EnclosingCompiler = enclosing;
             _CurrentClass = enclosingClass;
             // stack slot zero is used for 'this' reference in methods, and is empty for script/functions:
@@ -65,12 +69,10 @@ namespace LoxScript.Compiling {
             }
         }
 
-        private GearsChunk Chunk => _Function.Chunk;
+        public override string ToString() => $"Compiling {Name}";
 
-        public override string ToString() => $"Compiling {_Function}";
-
-        private void AddFixup(CompilerChunk fn) {
-            EmitData((byte)0, 0); // to fix up
+        private void AddFixup(Compiler fn) {
+            EmitData(0, 0); // fn jump - to fix up
         }
 
         // === Declarations and Statements ===========================================================================
@@ -91,14 +93,13 @@ namespace LoxScript.Compiling {
                     Synchronize();
                 }
             }
-            CompilerChunk chunk = EndCompiler();
-            fn = new GearsObjFunction(chunk.Chunk, chunk.Name, chunk.Arity);
+            EndCompiler();
+            fn = new GearsObjFunction(Chunk, Name, Arity);
             return !_HadError;
         }
 
-        private CompilerChunk EndCompiler() {
+        private void EndCompiler() {
             EmitReturn();
-            return _Function;
         }
 
         // === Declarations ==========================================================================================
@@ -186,11 +187,11 @@ namespace LoxScript.Compiling {
             string fnName = _Tokens.Previous().Lexeme;
             Compiler fnCompiler = new Compiler(_Tokens, fnType2, fnName, this, _CurrentClass);
             fnCompiler.FunctionBody();
-            CompilerChunk fn = fnCompiler.EndCompiler();
+            fnCompiler.EndCompiler();
             EmitOpcode(fnOpCode);
-            EmitData((byte)fn.Arity);
+            EmitData((byte)fnCompiler.Arity);
             EmitConstantIndex(MakeConstant(fnName));
-            AddFixup(fn); // EmitConstantIndex(fn.Serialize(Chunk));
+            AddFixup(fnCompiler); // EmitConstantIndex(fn.Serialize(Chunk));
             EmitOpcode(OP_CLOSURE);
             // todo: move this to closure definition - not all functions need upvalues.
             EmitData((byte)fnCompiler._UpvalueCount);
@@ -212,11 +213,11 @@ namespace LoxScript.Compiling {
             string fnName = _Tokens.Previous().Lexeme;
             Compiler fnCompiler = new Compiler(_Tokens, fnType2, fnName, this, _CurrentClass);
             fnCompiler.FunctionBody();
-            CompilerChunk fn = fnCompiler.EndCompiler();
+            EndCompiler();
             EmitOpcode(OP_FUNCTION);
-            EmitData((byte)fn.Arity);
+            EmitData((byte)Arity);
             EmitConstantIndex(MakeConstant(fnName));
-            AddFixup(fn); // EmitConstantIndex(fn.Serialize(Chunk));
+            AddFixup(fnCompiler); // EmitConstantIndex(fn.Serialize(Chunk));
             EmitOpcode(OP_CLOSURE);
             // todo: move this to closure definition - not all functions need upvalues.
             EmitData((byte)fnCompiler._UpvalueCount);
@@ -235,7 +236,7 @@ namespace LoxScript.Compiling {
                 do {
                     int paramConstant = ParseVariable("Expect parameter name.");
                     DefineVariable(paramConstant);
-                    if (++_Function.Arity >= 255) {
+                    if (++Arity >= 255) {
                         throw new CompilerException(_Tokens.Peek(), "Cannot have more than 255 parameters.");
                     }
                 } while (_Tokens.Match(COMMA));
