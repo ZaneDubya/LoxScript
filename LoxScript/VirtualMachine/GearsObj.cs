@@ -92,12 +92,13 @@
         /// Deserialize from a chunk's constant storage...
         /// ... will be moed to code later.
         /// </summary>
-        public GearsObjFunction(Gears context) {
+        public GearsObjFunction(Gears context, string name, int arity) {
             Type = ObjType.ObjFunction;
+            Name = name;
+            Arity = arity;
             int index = context.ReadShort();
-            Name = context.Chunk.ReadConstantString(ref index);
-            Arity = context.Chunk.ReadConstantByte(ref index);
             Chunk = new GearsChunk(Name,
+                context.Chunk.ReadConstantBytes(ref index),
                 context.Chunk.ReadConstantBytes(ref index),
                 context.Chunk.ReadConstantBytes(ref index));
         }
@@ -107,8 +108,7 @@
         /// ... will be moved to code later.
         /// </summary>
         internal int Serialize(GearsChunk writer) {
-            int index = writer.WriteConstantString(Name);
-            writer.WriteConstantByte((byte)Arity);
+            int constantIndex = writer.ConstantSize;
             Chunk.Compress();
             writer.WriteConstantShort(Chunk.CodeSize);
             if (Chunk.CodeSize > 0) {
@@ -118,7 +118,11 @@
             if (Chunk.ConstantSize > 0) {
                 writer.WriteConstantBytes(Chunk._Constants);
             }
-            return index;
+            writer.WriteConstantShort(Chunk.StringTableSize);
+            if (Chunk.StringTableSize > 0) {
+                writer.WriteConstantBytes(Chunk._StringTable);
+            }
+            return constantIndex;
         }
 
         public override string ToString() => Name == null ? "<script>" : $"<fn {Name}>";

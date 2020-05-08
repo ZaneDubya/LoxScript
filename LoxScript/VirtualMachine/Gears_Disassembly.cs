@@ -17,14 +17,14 @@ namespace LoxScript.VirtualMachine {
 
         private int Disassemble(GearsChunk chunk, int offset) {
             Console.Write($"{offset:X4}  ");
-            EGearsOpCode instruction = (EGearsOpCode)chunk.Read(ref offset);
+            EGearsOpCode instruction = (EGearsOpCode)chunk.ReadCode(ref offset);
             switch (instruction) {
                 case OP_CONSTANT:
                     return DisassembleConstant("OP_CONSTANT", chunk, offset, OP_CONSTANT);
                 case OP_STRING:
                     return DisassembleConstant("OP_STRING", chunk, offset, OP_STRING);
                 case OP_FUNCTION:
-                    return DisassembleConstant("OP_FUNCTION", chunk, offset, OP_FUNCTION);
+                    return DisassembleFunction("OP_FUNCTION", chunk, offset);
                 case OP_NIL:
                     return DisassembleSimple("OP_NIL", chunk, offset);
                 case OP_TRUE:
@@ -104,20 +104,29 @@ namespace LoxScript.VirtualMachine {
         }
 
         private int DisassembleInvoke(string name, GearsChunk chunk, int offset) {
-            int args = chunk.Read(ref offset);
-            int nameIndex = (chunk.Read(ref offset) << 8) + chunk.Read(ref offset);
-            string value = chunk.ReadConstantString(ref nameIndex);
+            int args = chunk.ReadCode(ref offset);
+            int nameIndex = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
+            string value = chunk.ReadStringConstant(nameIndex);
             Console.WriteLine($"{name} const[{nameIndex}] ({value})");
             return offset;
         }
 
         private int DisassembleClosure(string name, GearsChunk chunk, int offset) {
-            int upvalueCount = chunk.Read(ref offset);
+            int upvalueCount = chunk.ReadCode(ref offset);
             Console.WriteLine($"{name} ({upvalueCount} upvalues)");
             for (int i = 0; i < upvalueCount; i++) {
-                chunk.Read(ref offset); // is local?
-                chunk.Read(ref offset); // index
+                chunk.ReadCode(ref offset); // is local?
+                chunk.ReadCode(ref offset); // index
             }
+            return offset;
+        }
+
+        private int DisassembleFunction(string name, GearsChunk chunk, int offset) {
+            int argCount = chunk.ReadCode(ref offset);
+            int nameIndex = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
+            string value = chunk.ReadStringConstant(nameIndex);
+            offset += 2; // ptr to serialized function
+            Console.WriteLine($"{name} {value}({argCount} arguments)");
             return offset;
         }
 
@@ -127,19 +136,19 @@ namespace LoxScript.VirtualMachine {
         }
 
         private int DisassembleOneParam(string name, GearsChunk chunk, int offset) {
-            int index = chunk.Read(ref offset);
+            int index = chunk.ReadCode(ref offset);
             Console.WriteLine($"{name} ({index})");
             return offset;
         }
 
         private int DisassembleTwoParams(string name, GearsChunk chunk, int offset) {
-            int index = (chunk.Read(ref offset) << 8) + chunk.Read(ref offset);
+            int index = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
             Console.WriteLine($"{name} ({index})");
             return offset;
         }
 
         private int DisassembleConstant(string name, GearsChunk chunk, int offset, EGearsOpCode constantType) {
-            int constantIndex = (chunk.Read(ref offset) << 8) + chunk.Read(ref offset);
+            int constantIndex = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
             switch (constantType) {
                 case OP_CONSTANT: {
                         GearsValue value = chunk.ReadConstantValue(ref constantIndex);
@@ -147,12 +156,12 @@ namespace LoxScript.VirtualMachine {
                     }
                     break;
                 case OP_STRING: {
-                        string value = chunk.ReadConstantString(ref constantIndex);
+                        string value = chunk.ReadStringConstant(constantIndex);
                         Console.WriteLine($"{name} const[{constantIndex}] ({value})");
                     }
                     break;
                 case OP_FUNCTION: {
-                        string value = chunk.ReadConstantString(ref constantIndex);
+                        string value = chunk.ReadStringConstant(constantIndex);
                         Console.WriteLine($"{name} const[{constantIndex}] ({value})");
                     }
                     break;

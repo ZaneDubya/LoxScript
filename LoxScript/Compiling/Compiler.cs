@@ -179,10 +179,13 @@ namespace LoxScript.Compiling {
         private void FunctionDeclaration(string fnType, EFunctionType fnType2, EGearsOpCode fnOpCode) {
             int global = ParseVariable($"Expect {fnType} name.");
             MarkInitialized();
-            Compiler fnCompiler = new Compiler(_Tokens, fnType2, _Tokens.Previous().Lexeme, this, _CurrentClass);
+            string fnName = _Tokens.Previous().Lexeme;
+            Compiler fnCompiler = new Compiler(_Tokens, fnType2, fnName, this, _CurrentClass);
             fnCompiler.FunctionBody();
             GearsObjFunction fn = fnCompiler.EndCompiler();
             Emit(fnOpCode);
+            Emit((byte)fn.Arity);
+            EmitConstantIndex(MakeConstant(fnName));
             EmitConstantIndex(fn.Serialize(Chunk));
             Emit(OP_CLOSURE);
             // todo: move this to closure definition - not all functions need upvalues.
@@ -202,10 +205,13 @@ namespace LoxScript.Compiling {
             if (_Tokens.Previous().Lexeme == "init") {
                 fnType2 = EFunctionType.TYPE_INITIALIZER;
             }
-            Compiler fnCompiler = new Compiler(_Tokens, fnType2, _Tokens.Previous().Lexeme, this, _CurrentClass);
+            string fnName = _Tokens.Previous().Lexeme;
+            Compiler fnCompiler = new Compiler(_Tokens, fnType2, fnName, this, _CurrentClass);
             fnCompiler.FunctionBody();
             GearsObjFunction fn = fnCompiler.EndCompiler();
             Emit(OP_FUNCTION);
+            Emit((byte)fn.Arity);
+            EmitConstantIndex(MakeConstant(fnName));
             EmitConstantIndex(fn.Serialize(Chunk));
             Emit(OP_CLOSURE);
             // todo: move this to closure definition - not all functions need upvalues.
@@ -807,19 +813,19 @@ namespace LoxScript.Compiling {
         // ===========================================================================================================
 
         private void Emit(EGearsOpCode opcode0, EGearsOpCode opcode1, params byte[] data) {
-            Chunk.Write(opcode0);
-            Chunk.Write(opcode1);
+            Chunk.WriteCode(opcode0);
+            Chunk.WriteCode(opcode1);
             Emit(data);
         }
 
         private void Emit(EGearsOpCode opcode, params byte[] data) {
-            Chunk.Write(opcode);
+            Chunk.WriteCode(opcode);
             Emit(data);
         }
 
         private void Emit(params byte[] data) {
             foreach (byte i in data) {
-                Chunk.Write(i);
+                Chunk.WriteCode(i);
             }
         }
 
@@ -843,8 +849,8 @@ namespace LoxScript.Compiling {
             if (jump > ushort.MaxValue) {
                 throw new CompilerException(_Tokens.Peek(), "Too much code to jump over.");
             }
-            Chunk.WriteAt(offset, (byte)((jump >> 8) & 0xff));
-            Chunk.WriteAt(offset + 1, (byte)(jump & 0xff));
+            Chunk.WriteCodeAt(offset, (byte)((jump >> 8) & 0xff));
+            Chunk.WriteCodeAt(offset + 1, (byte)(jump & 0xff));
         }
 
         /// <summary>
@@ -877,7 +883,7 @@ namespace LoxScript.Compiling {
         }
 
         private int MakeConstant(string value) {
-            int index = Chunk.WriteConstantString(value);
+            int index = Chunk.WriteStringConstant(value);
             if (index > short.MaxValue) {
                 throw new CompilerException(_Tokens.Peek(), "Too many constants in one chunk.");
             }

@@ -1,5 +1,4 @@
-﻿#define DEBUG_STRESS_GC
-#define DEBUG_LOG_GC
+﻿// #define DEBUG_LOG_GC
 
 using System;
 using System.Collections.Generic;
@@ -107,7 +106,7 @@ namespace LoxScript.VirtualMachine {
 
         internal string ReadConstantString() {
             int index = ReadShort();
-            return Chunk.ReadConstantString(ref index);
+            return Chunk.ReadStringConstant(index);
         }
 
         // === Stack ================================================================================================

@@ -25,8 +25,11 @@ namespace LoxScript.VirtualMachine {
                     case OP_STRING:
                         Push(GearsValue.CreateObjPtr(HeapAddObject(new GearsObjString(ReadConstantString()))));
                         break;
-                    case OP_FUNCTION:
-                        Push(GearsValue.CreateObjPtr(HeapAddObject(new GearsObjFunction(this))));
+                    case OP_FUNCTION: {
+                            int arity = ReadByte();
+                            string name = ReadConstantString();
+                            Push(GearsValue.CreateObjPtr(HeapAddObject(new GearsObjFunction(this, name, arity))));
+                        }
                         break;
                     case OP_NIL:
                         Push(GearsValue.NilValue);
@@ -508,6 +511,45 @@ namespace LoxScript.VirtualMachine {
                 upvalue.IsClosed = true;
                 _OpenUpvalues = upvalue.Next;
             }
+        }
+
+        // === String speedup ========================================================================================
+        // ===========================================================================================================
+
+        public static ulong GetBitString(string value) {
+            ulong bits = 0;
+            int bitPosition = 0;
+            for (int i = 0; i < value.Length; i++) {
+                char ch = value[i];
+                if (ch == '0') {
+                    // encode as 000000
+                }
+                else if (ch >= '1' && ch <= '9') {
+                    // encode as binary (000001 - 001001)
+                    ulong bitValue = (ulong)(ch - '1');
+                    bits |= (bitValue << bitPosition);
+                }
+                else if (ch >= 'A' && ch <= 'Z') {
+                    // encode as 001010 - 100011
+                    ulong bitValue = (ulong)(ch - 'A');
+                    bits |= (bitValue << bitPosition);
+                }
+                else if (ch >= 'a' && ch <= 'z') {
+                    // encode as 100100 - 111101
+                    ulong bitValue = (ulong)(ch - 'a');
+                    bits |= (bitValue << bitPosition);
+                }
+                else if (ch == '_') {
+                    // encode as 111110
+                    ulong bitValue = 62;
+                    bits |= (bitValue << bitPosition);
+                }
+                else {
+                    throw new Exception($"Cannot use character '{ch}' in string '{value}'.");
+                }
+                bitPosition += 6;
+            }
+            return bits;
         }
     }
 }
