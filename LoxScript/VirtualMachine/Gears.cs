@@ -226,6 +226,10 @@ namespace LoxScript.VirtualMachine {
                             CallInvoke();
                         }
                         break;
+                    case OP_SUPER_INVOKE: {
+                            CallInvokeSuper();
+                        }
+                        break;
                     case OP_CLOSURE: {
                             GearsValue ptr = Pop();
                             if (!ptr.IsObjPtr) {
@@ -352,6 +356,8 @@ namespace LoxScript.VirtualMachine {
             return true;
         }
 
+        // --- Can probably merge a ton of code from the three call methods ---
+
         private void CallInvoke() {
             int argCount = ReadByte();
             string methodName = ReadConstantString();
@@ -371,20 +377,38 @@ namespace LoxScript.VirtualMachine {
                 PushFrame(new GearsCallFrameClosure(closure, bp: bp));
             }
             else {
-                // invoke from class 28.5:
-                if (!instance.Class.Methods.TryGet(methodName, out GearsValue methodPtr)) {
-                    throw new GearsRuntimeException(0, $"{instance.Class} has no method with name {methodName}.");
-                }
-                if ((!methodPtr.IsObjPtr) || !(HeapGetObject(methodPtr.AsObjPtr) is GearsObjClosure method)) {
-                    throw new GearsRuntimeException(0, $"Could not resolve method {methodName} in class {instance.Class}.");
-                }
-                if (method.Function.Arity != argCount) {
-                    throw new GearsRuntimeException(0, $"{method} expects {method.Function.Arity} arguments but was passed {argCount}.");
-                }
-                int bp = _SP - (method.Function.Arity + 1);
-                StackSet(bp, receiverPtr); // todo: this wipes out the method object. Is this bad?
-                PushFrame(new GearsCallFrameClosure(method, bp: bp));
+                InvokeFromClass(argCount, methodName, receiverPtr, instance.Class);
             }
+        }
+
+        private void InvokeFromClass(int argCount, string methodName, GearsValue receiverPtr, GearsObjClass objClass) {
+            if (!objClass.Methods.TryGet(methodName, out GearsValue methodPtr)) {
+                throw new GearsRuntimeException(0, $"{objClass} has no method with name {methodName}.");
+            }
+            if ((!methodPtr.IsObjPtr) || !(HeapGetObject(methodPtr.AsObjPtr) is GearsObjClosure method)) {
+                throw new GearsRuntimeException(0, $"Could not resolve method {methodName} in class {objClass}.");
+            }
+            if (method.Function.Arity != argCount) {
+                throw new GearsRuntimeException(0, $"{method} expects {method.Function.Arity} arguments but was passed {argCount}.");
+            }
+            int bp = _SP - (method.Function.Arity + 1);
+            if (!receiverPtr.IsNil) {
+                StackSet(bp, receiverPtr); // todo: this wipes out the method object. Is this bad?
+            }
+            PushFrame(new GearsCallFrameClosure(method, bp: bp));
+        }
+
+        private void CallInvokeSuper() {
+            int argCount = ReadByte();
+            // next instruction will always be OP_GET_UPVALUE (for the super class). we include it here:
+            if (!(ReadByte() == (int)OP_GET_UPVALUE)) {
+                throw new GearsRuntimeException(0, "OP_SUPER_INVOKE must be followed by OP_GET_UPVALUE.");
+            }
+            int slot = ReadShort();
+            GearsObjUpvalue upvalue = (_OpenFrame as GearsCallFrameClosure).Closure.Upvalues[slot];
+            GearsObjClass superclass = GetObjectFromPtr<GearsObjClass>(upvalue.IsClosed ? upvalue.Value : StackGet(upvalue.OriginalSP));
+            string methodName = ReadConstantString();
+            InvokeFromClass(argCount, methodName, GearsValue.NilValue, superclass);
         }
 
         private void Call() {
@@ -441,6 +465,7 @@ namespace LoxScript.VirtualMachine {
                 throw new GearsRuntimeException(0, $"Unhandled call to object {obj}");
             }
         }
+        // --- end merge candidates ---
 
         // === Closures ==============================================================================================
         // ===========================================================================================================

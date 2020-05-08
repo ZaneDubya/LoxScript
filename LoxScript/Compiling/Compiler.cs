@@ -702,9 +702,16 @@ namespace LoxScript.Compiling {
                 Token methodName = _Tokens.Consume(IDENTIFIER, "Expect superclass method name.");
                 int name = IdentifierConstant(methodName);
                 NamedVariable(MakeSyntheticToken(THIS, "this", 0), false); // look up this - load instance onto stack
-                NamedVariable(MakeSyntheticToken(SUPER, "super", 0), false); // look up this.super - load superclass of instance
-                Emit(OP_GET_SUPER); // look up super.name - encode name of method to access as operand
-                EmitConstantIndex(name);
+                if (_Tokens.Match(LEFT_PAREN)) {
+                    FinishCall(OP_SUPER_INVOKE);
+                    NamedVariable(MakeSyntheticToken(SUPER, "super", 0), false); // look up this.super - load superclass of instance
+                    EmitConstantIndex(name);
+                }
+                else {
+                    NamedVariable(MakeSyntheticToken(SUPER, "super", 0), false); // look up this.super - load superclass of instance
+                    Emit(OP_GET_SUPER); // look up super.name - encode name of method to access as operand
+                    EmitConstantIndex(name);
+                }
                 return;
             }
             if (_Tokens.Match(THIS)) {

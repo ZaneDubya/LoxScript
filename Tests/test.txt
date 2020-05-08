@@ -1,24 +1,4 @@
 
-
-// === Ch 29 Superclasses. Test ==============================================
-// ===========================================================================
-
-class Doughnut {
-  cook() {
-    print "Dunk in the fryer.";
-  }
-}
-
-class Cruller < Doughnut {
-  finish() {
-    print "Glaze with icing";
-  }
-}
-
-var c = Cruller();
-c.cook();
-c.finish();
-
 // === Fibonacci Benchmark ===================================================
 // ===========================================================================
 // Native C#                    12.8 ms

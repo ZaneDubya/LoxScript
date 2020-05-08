@@ -554,3 +554,48 @@ var maker = CoffeeMaker("coffee and chicory");
 maker.brew();
 */
 
+// === Ch 29 Superclasses. PASS ==============================================
+// ===========================================================================
+
+class Doughnut {
+  cook() {
+    print "Dunk in the fryer.";
+  }
+}
+
+class Cruller < Doughnut {
+  finish() {
+    print "Glaze with icing";
+  }
+}
+
+var c = Cruller();
+c.cook();
+c.finish();
+
+
+// === Ch 29 Referencing Superclass with 'super'. PASS =======================
+// ===========================================================================
+
+class Doughnut {
+  cook() {
+    print "Dunk in the fryer.";
+    this.finish();
+  }
+
+  finish(ingredient) {
+    print "Finish with " + ingredient;
+  }
+}
+
+class Cruller < Doughnut {
+  finish() {
+    super.finish("icing");
+  }
+}
+
+var c = Cruller();
+c.cook();
+
+
+

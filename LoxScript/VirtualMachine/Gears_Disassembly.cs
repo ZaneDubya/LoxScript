@@ -83,6 +83,8 @@ namespace LoxScript.VirtualMachine {
                     return DisassembleOneParam("OP_CALL", chunk, offset);
                 case OP_INVOKE:
                     return DisassembleInvoke("OP_INVOKE", chunk, offset);
+                case OP_SUPER_INVOKE:
+                    return DisassembleInvoke("OP_SUPER_INVOKE", chunk, offset);
                 case OP_CLOSURE:
                     return DisassembleClosure("OP_CLOSURE", chunk, offset);
                 case OP_CLOSE_UPVALUE:
