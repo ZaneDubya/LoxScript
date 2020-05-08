@@ -51,6 +51,8 @@ namespace LoxScript.VirtualMachine {
                     return DisassembleConstant("OP_GET_PROPERTY", chunk, offset, OP_STRING);
                 case OP_SET_PROPERTY:
                     return DisassembleConstant("OP_SET_PROPERTY", chunk, offset, OP_STRING);
+                case OP_GET_SUPER:
+                    return DisassembleConstant("OP_GET_SUPER", chunk, offset, OP_STRING);
                 case OP_EQUAL:
                     return DisassembleSimple("OP_EQUAL", chunk, offset);
                 case OP_GREATER:

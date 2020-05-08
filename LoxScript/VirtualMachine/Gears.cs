@@ -116,6 +116,10 @@ namespace LoxScript.VirtualMachine {
                             Push(value); // value
                         }
                         break;
+                    case OP_GET_SUPER: {
+                            string name = ReadConstantString(); // property name.
+                        }
+                        break;
                     case OP_EQUAL:
                         Push(AreValuesEqual(Pop(), Pop()));
                         break;

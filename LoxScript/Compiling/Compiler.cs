@@ -133,24 +133,35 @@ namespace LoxScript.Compiling {
         ///               "{" function* "}" ;
         /// </summary>
         private void ClassDeclaration() {
-            Token name = _Tokens.Consume(IDENTIFIER, "Expect class name.");
-            int nameConstant = IdentifierConstant(name);
-            DeclareVariable(name); // The class name binds the class object type to a variable of the same name.
+            Token className = _Tokens.Consume(IDENTIFIER, "Expect class name.");
+            int nameConstant = IdentifierConstant(className);
+            DeclareVariable(className); // The class name binds the class object type to a variable of the same name.
             // todo? make the class declaration an expression, require explicit binding of class to variable (like var Pie = new Pie()); 27.2
             Emit(OP_CLASS);
             EmitConstantIndex(nameConstant);
             // superclass:
+            bool hasSuperClass = false;
             if (_Tokens.Match(LESS)) { 
                 _Tokens.Consume(IDENTIFIER, "Expect superclass name.");
-                if (_Tokens.Previous().Lexeme == name.Lexeme) {
+                if (_Tokens.Previous().Lexeme == className.Lexeme) {
                     throw new CompilerException(_Tokens.Previous(), "A class cannot inherit from itself.");
                 }
+
+
+
                 NamedVariable(_Tokens.Previous(), false); // push super class onto stack
                 Emit(OP_INHERIT);
+                hasSuperClass = true;
             }
             DefineVariable(nameConstant);
-            _CurrentClass = new CompilerClass(name, _CurrentClass);
-            NamedVariable(name); // push class onto stack
+            _CurrentClass = new CompilerClass(className, _CurrentClass);
+            if (hasSuperClass) {
+                BeginScope();
+                AddLocal(MakeSyntheticToken(SUPER, "super", _Tokens.Previous().Line));
+                DefineVariable(0);
+                _CurrentClass.HasSuperClass = true;
+            }
+            NamedVariable(className); // push class onto stack
             // body:
             _Tokens.Consume(LEFT_BRACE, "Expect '{' before class body.");
             while (!_Tokens.Check(RIGHT_BRACE) && !_Tokens.IsAtEnd()) {
@@ -160,6 +171,9 @@ namespace LoxScript.Compiling {
             }
             _Tokens.Consume(RIGHT_BRACE, "Expect '}' after class body.");
             Emit(OP_POP); // pop class from stack
+            if (_CurrentClass.HasSuperClass) {
+                EndScope();
+            }
             _CurrentClass = _CurrentClass.Enclosing;
             return;
         }
@@ -683,10 +697,21 @@ namespace LoxScript.Compiling {
                 return;
             }
             if (_Tokens.Match(SUPER)) {
+                if (_CurrentClass == null) {
+                    throw new CompilerException(_Tokens.Previous(), "Can't use 'super' outside of a class.");
+                }
+                if (!_CurrentClass.HasSuperClass) {
+                    throw new CompilerException(_Tokens.Previous(), "Can't use 'super' in a class with no superclass.");
+                }
                 Token keyword = _Tokens.Previous();
                 _Tokens.Consume(DOT, "Expect '.' after 'super'.");
-                Token method = _Tokens.Consume(IDENTIFIER, "Expect superclass method name.");
-                return; // !!! return new Expr.Super(keyword, method);
+                Token methodName = _Tokens.Consume(IDENTIFIER, "Expect superclass method name.");
+                int name = IdentifierConstant(methodName);
+                NamedVariable(MakeSyntheticToken(THIS, "this", 0), false); // look up this - load instance onto stack
+                NamedVariable(MakeSyntheticToken(SUPER, "super", 0), false); // look up this.super - load superclass of instance
+                Emit(OP_GET_SUPER); // look up super.name - encode name of method to access as operand
+                EmitConstantIndex(name);
+                return;
             }
             if (_Tokens.Match(THIS)) {
                 if (_CurrentClass == null) {
@@ -858,6 +883,10 @@ namespace LoxScript.Compiling {
             return index;
         }
 
+        private Token MakeSyntheticToken(TokenType type, string name, int line) {
+            return new Token(type, line, name, 0, name.Length);
+        }
+
         // === Scope and Locals ======================================================================================
         // ===========================================================================================================
 
@@ -888,7 +917,7 @@ namespace LoxScript.Compiling {
         private int ResolveLocal(Token name) {
             for (int i = _LocalCount - 1; i >= 0; i--) {
                 if (_LocalVarData[i].Name == name.Lexeme) {
-                    if (_LocalVarData[i].Depth == -1) {
+                    if (_LocalVarData[i].Depth == SCOPE_NONE) {
                         throw new CompilerException(name, "Cannot read local variable in its own initializer.");
                     }
                     return i;
