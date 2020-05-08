@@ -1,3 +1,5 @@
+# Language changes
+
 Syntactic sugar:
 - Add ++, --, +=, -=, /=, *=, and modulus % and %=
 
@@ -12,7 +14,7 @@ Control Flow:
 - Make sure these are only usable in loops.
 
 Functions:
-- Add anonymous functions:
+- Add anonymous functions.
 
 Resolving and Binding:
 - Don't allow redefinition of a local within an enclosed scope.
@@ -25,8 +27,12 @@ Classes
 - private and public modifiers (maybe).
 - Getters and Setters.
 - init with New
-- How does set and get work??
 
-Inheritance:
+Inheritance(???):
 - Replace inherits extender '<' with ':'
 - Replace "super" with "base"
+
+# VM Changes
+- Functions, methods, class definitions, etc should all exist in one chunk.
+- If that means that some data should exist in a metadata byte array, that's fine.
+- Proposed format: byte[] code, byte[] constantStrings, value[] constantValues.

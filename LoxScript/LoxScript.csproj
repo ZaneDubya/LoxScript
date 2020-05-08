@@ -22,6 +22,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -31,6 +32,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -43,37 +45,43 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Compiling\CompilerClass.cs" />
+    <Compile Include="Compiling\CompilerLocal.cs" />
+    <Compile Include="Compiling\CompilerUpvalue.cs" />
+    <Compile Include="Compiling\EFunctionType.cs" />
+    <Compile Include="Compiling\TokenList.cs" />
     <Compile Include="Interpreter\IEngineCallable.cs" />
     <Compile Include="Interpreter\EngineFunction.cs" />
     <Compile Include="Interpreter\EngineClassDeclaration.cs" />
     <Compile Include="Interpreter\EngineClassInstance.cs" />
     <Compile Include="Interpreter\EngineEnvironment.cs" />
-    <Compile Include="Grammar\Expr.cs" />
-    <Compile Include="Grammar\Stmt.cs" />
+    <Compile Include="Interpreter\Expr.cs" />
+    <Compile Include="Interpreter\Stmt.cs" />
     <Compile Include="Interpreter\Engine.cs" />
-    <Compile Include="Grammar\Keywords.cs" />
+    <Compile Include="Compiling\Keywords.cs" />
     <Compile Include="Interpreter\EngineResolver.cs" />
     <Compile Include="Program.cs" />
-    <Compile Include="Parser.cs" />
+    <Compile Include="Interpreter\Parser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Scanner.cs" />
-    <Compile Include="Grammar\Token.cs" />
-    <Compile Include="Grammar\TokenType.cs" />
+    <Compile Include="Compiling\Tokenizer.cs" />
+    <Compile Include="Compiling\Token.cs" />
+    <Compile Include="Compiling\TokenType.cs" />
+    <Compile Include="Compiling\Compiler.cs" />
+    <Compile Include="Compiling\CompilerException.cs" />
+    <Compile Include="VirtualMachine\Gears.cs" />
+    <Compile Include="VirtualMachine\GearsCallFrame.cs" />
+    <Compile Include="VirtualMachine\GearsChunk.cs" />
+    <Compile Include="VirtualMachine\EGearsOpCode.cs" />
+    <Compile Include="VirtualMachine\GearsRuntimeException.cs" />
+    <Compile Include="VirtualMachine\Gears_Context.cs" />
+    <Compile Include="VirtualMachine\GearsHashTable.cs" />
+    <Compile Include="VirtualMachine\GearsObj.cs" />
+    <Compile Include="VirtualMachine\GearsValue.cs" />
+    <Compile Include="VirtualMachine\Gears_Disassembly.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Content Include="Tests\classes.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Tests\todo-anon-fns.txt" />
-    <Content Include="Tests\count.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Tests\fib.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -1,0 +1,601 @@
+// === Starting line: PASS ===================================================
+// ===========================================================================
+// Tests print, operator precedence, number and string constants.
+/*print test + 1;
+print "hello world";
+print (-1 + 2) * 3 - -4;*/
+
+
+
+// === Assignment: PASS ======================================================
+// ===========================================================================
+/*var a = 1;
+// Note: Invalid assignment should fail. PASS
+var a = 1; var b = 2; var c = 3; var d = 4; a * b = c + d;*/
+
+
+// === Globals: PASS =========================================================
+// ===========================================================================
+/* testing local variables. PASS
+var a = "global";
+{
+    var a = "outer";
+    {
+        var a = "inner";
+        print a;
+    }
+    print a;
+}
+print a;*/
+
+
+
+// === If: PASS ==============================================================
+// ===========================================================================
+/*if (true) {
+    print 1;
+}
+else {
+    print 2;
+}*/
+
+
+
+// === And/Or: PASS ==========================================================
+// ===========================================================================
+/* if (true and true) { print "correct"; }
+else { print "true and true incorrect"; }
+if (false and false) { print "false and false incorrect"; }
+else { print "correct"; }
+if (false and true) { print "false and true incorrect"; }
+else { print "correct"; }
+if (false or true) { print "correct"; }
+else { print "false or true incorrect"; }
+if (true and false) { print "true and false incorrect"; }
+else { print "correct"; }
+if (true or false) { print "correct"; }
+else { print "true or false incorrect"; }*/
+
+
+
+// === Loop Statement: PASS ==================================================
+// ===========================================================================
+/*print "Loop Test: Should count from 0-9";
+var i = 0;
+while (i < 100) {
+    print i;
+    i = i + 1;
+}*/
+
+
+
+// === For Statement: PASS ===================================================
+// ===========================================================================
+/*print "For Test: Should count from 0-9";
+for (var i = 0; i < 10; i = i + 1) { print i; }
+print "For Test: Should count from 0-9";
+for (var i = 0; i < 10; i = i + 1) { print i; }*/
+
+
+
+// === Functions: PASS =======================================================
+// ===========================================================================
+/*fun sum(a, b, c) {
+    return a + b + c;
+}
+print 4 + sum(50, 60, 70);
+
+fun areWeHavingItYet(n) {
+    print n;
+    print "Yes we are!";
+}
+areWeHavingItYet("Are we having fun yet?");
+print areWeHavingItYet;*/
+
+
+
+// === Closures - Part 1. PASS ===============================================
+// ===========================================================================
+
+/*fun outer() {
+  var a = 100;
+  var b = 200;
+  fun middle() {
+    var c = 300;
+    var d = 400;
+    fun inner() {
+      print a + c + b + d;
+    }
+    inner();
+  }
+  middle();
+}
+outer(); // prints '1000'
+
+fun outer2() {
+  var x = "outside";
+  fun inner() {
+    print x;
+  }
+  inner();
+}
+outer2(); // should print 'outside' 
+
+fun makeBreakfastClosure(value) {
+  fun closure() {
+    print value;
+  }
+  return closure;
+}
+
+var doughnutFn = makeBreakfastClosure("doughnut");
+var bagelFn = makeBreakfastClosure("bagel");
+doughnutFn();
+bagelFn();
+
+fun makeClosure() {
+  var local = "local";
+  fun closure() {
+    print local;
+  }
+  return closure;
+}
+var closureFn = makeClosure();
+closureFn(); // should print 'local' (be able to reference local)
+var x = "global";
+fun outer3() {
+  var x = "outer";
+  fun inner() {
+    print x;
+  }
+  inner();
+}
+outer3(); // should print 'outer', not 'global'*/
+
+// === Closures - Part 2. TEST ===============================================
+// ===========================================================================
+fun outer() {
+  var x = "before";
+  fun inner() {
+    x = "assigned";
+  }
+  inner();
+  print x;
+}
+outer(); // expect assigned
+
+// close_over_later_variable.lox:
+fun f() {
+  var a = "close_over_later_variable a";
+  fun g() {
+    print a;
+  }
+  g();
+}
+f(); // expect: close_over_later_variable a
+// nested_closure.lox: 
+var f;
+fun f1() {
+  var a = "nested_closure a";
+  fun f2() {
+    print a;
+  }
+  f = f2;
+}
+f1();
+f();
+// expect: nested_closure a
+
+
+// 25.2, expect '2': pass
+fun outer() {
+  var x = 1;    // (1)
+  x = 2;        // (2)
+  fun inner() { // (3)
+    print x;
+  }
+  inner();
+}
+outer();
+
+
+// 25.2.2, expect 'return from outer, create inner closure, value': pass
+fun outer() {
+  var x = "value";
+  fun middle() {
+    fun inner() {
+      print x;
+    }
+    print "create inner closure";
+    return inner;
+  }
+  print "return from outer";
+  return middle;
+}
+var mid = outer();
+var in = mid();
+in();
+
+
+// 25.2.2: expect '10';
+fun outer() {
+  var a = 1;
+  var b = 2;
+  fun middle() {
+    var c = 3;
+    var d = 4;
+    fun inner() {
+      print a + c + b + d;
+    }
+    return inner;
+  }
+  return middle();
+}
+var f = outer();
+f();
+
+
+// 25.3.1: expect 'outside'.
+fun outer() {
+  var x = "outside";
+  fun inner() {
+    print x;
+  }
+  inner();
+}
+outer();
+
+// 25.4.1: expect 'updated'
+var globalSet;
+var globalGet;
+
+fun main() {
+  var a = "initial";
+
+  fun set() { a = "updated"; }
+  fun get() { print a; }
+
+  globalSet = set;
+  globalGet = get;
+}
+
+main();
+globalSet();
+globalGet();
+
+
+
+// 25.4.3: expect '1;2;3'
+{
+  var a = 1;
+  fun f() {
+    print a;
+  }
+  var b = 2;
+  fun g() {
+    print b;
+  }
+  var c = 3;
+  fun h() {
+    print c;
+  }
+  f();
+  g();
+  h();
+}
+
+// assign_to_closure.lox: passed
+var f;
+var g;
+{
+  var local = "assign_to_closure local";
+  fun f_() {
+    print local;
+    local = "assign_to_closure after f";
+    print local;
+  }
+  f = f_;
+  fun g_() {
+    print local;
+    local = "assign_to_closure after g";
+    print local;
+  }
+  g = g_;
+}
+f();
+// expect: local
+// expect: after f
+g();
+// expect: after f
+// expect: after g
+
+
+// assign_to_shadowed_later.lox: passed
+var a = "assign_to_shadowed_later global";
+{
+  fun assign() {
+    a = "assign_to_shadowed_later assigned";
+  }
+  var a = "assign_to_shadowed_later inner";
+  assign();
+  print a; // expect: inner
+}
+print a; // expect: assigned
+
+
+// close_over_function_parameter.lox: passed
+var f;
+fun foo(param) {
+  fun f_() {
+    print param;
+  }
+  f = f_;
+}
+foo("close_over_function_parameter param");
+f(); // expect: param
+
+
+// close_over_later_variable.lox:
+fun f() {
+  var a = "close_over_later_variable a";
+  var b = "close_over_later_variable b";
+  fun g() {
+    print b; // expect: b
+    print a; // expect: a
+  }
+  g();
+}
+f();
+
+
+// closed_closure_in_function.lox: passed
+var f;
+{
+  var local = "closed_closure_in_function local";
+  fun f_() {
+    print local;
+  }
+  f = f_;
+}
+f(); // expect: local
+
+
+// open_closure_in_function.lox:
+{
+  var local = "open_closure_in_function local";
+  fun f() {
+    print local; // expect: local
+  }
+  f();
+}
+
+
+// nested_closure.lox: 
+var f;
+fun f1() {
+  var a = "nested_closure a";
+  fun f2() {
+    var b = "nested_closure b";
+    fun f3() {
+      var c = "nested_closure c";
+      fun f4() {
+        print a;
+        print b;
+        print c;
+      }
+      f = f4;
+    }
+    f3();
+  }
+  f2();
+}
+f1();
+f();
+// expect: a
+// expect: b
+// expect: c
+
+
+// reference_closure_multiple_times.lox
+var f;
+{
+  var a = "reference_closure_multiple_times abc";
+  fun f_() {
+    print a;
+    print a;
+  }
+  f = f_;
+}
+f();
+// expect: abc
+// expect: abc
+
+
+
+// reuse_closure_slot.lox:
+{
+  var f;
+  {
+    var a = "a";
+    fun f_() { print a; }
+    f = f_;
+  }
+
+  {
+    // Since a is out of scope, the local slot will be reused by b. Make sure
+    // that f still closes over a.
+    var b = "b";
+    f(); // expect: a
+  }
+}
+
+{
+  var foo = "closure";
+  fun f() {
+    {
+      print foo; // expect: closure
+      var foo = "shadow";
+      print foo; // expect: shadow
+    }
+    print foo; // expect: closure
+  }
+  f();
+}
+
+// This is a regression test. When closing upvalues for discarded locals, it
+// wouldn't make sure it discarded the upvalue for the correct stack slot.
+//
+// Here we create two locals that can be closed over, but only the first one
+// actually is. When "b" goes out of scope, we need to make sure we don't
+// prematurely close "a".
+var closure;
+
+{
+  var a = "a";
+
+  {
+    var b = "b";
+    fun returnA() {
+      return a;
+    }
+
+    closure = returnA;
+
+    if (false) {
+      fun returnB() {
+        return b;
+      }
+    }
+  }
+
+  print closure(); // expect: a
+}
+
+
+
+// === Class Properties. PASS ================================================
+// ===========================================================================
+/*
+class Pastry {
+    taste() {
+    }
+}
+var eclair = Pastry();
+eclair.filling = "pastry creme";
+print eclair.filling;
+
+class Pair {}
+var pair = Pair();
+pair.first = 1;
+pair.second = 2;
+print pair.first + pair.second; // 3.
+*/
+
+
+
+// === Class Methods with passed values. PASS ================================
+// ===========================================================================
+/*
+class Scone {
+  topping(first, second) {
+    print "scone with " + first + " and " + second;
+  }
+}
+
+var scone = Scone();
+scone.topping("berries", "cream");
+*/
+
+
+// === Class Methods and Method References. PASS =============================
+// ===========================================================================
+/*
+class Oops {
+    init() {
+        fun f() {
+            print "not a method.";
+        }
+        this.field = f;
+    }
+}
+var oops = Oops();
+oops.field();
+
+
+class Person {
+  init(n) {
+    this.name = n;
+  }
+  sayName() {
+    print this.name;
+  }
+}
+
+var jane = Person("Alex");
+var method = jane.sayName;
+method(); // print Alex
+jane.name = "Jane";
+method(); // print Jane
+
+class CoffeeMaker {
+  init(coffee) {
+    this.coffee = coffee;
+  }
+
+  brew() {
+    print "Enjoy your cup of " + this.coffee;
+
+    // No reusing the grounds!
+    this.coffee = nil;
+  }
+}
+
+var maker = CoffeeMaker("coffee and chicory");
+maker.brew();
+*/
+
+// === Ch 29 Superclasses. PASS ==============================================
+// ===========================================================================
+
+class Doughnut {
+  cook() {
+    print "Dunk in the fryer.";
+  }
+}
+
+class Cruller < Doughnut {
+  finish() {
+    print "Glaze with icing";
+  }
+}
+
+var c = Cruller();
+c.cook();
+c.finish();
+
+
+// === Ch 29 Referencing Superclass with 'super'. PASS =======================
+// ===========================================================================
+
+class Doughnut {
+  cook() {
+    print "Dunk in the fryer.";
+    this.finish();
+  }
+
+  finish(ingredient) {
+    print "Finish with " + ingredient;
+  }
+}
+
+class Cruller < Doughnut {
+  finish() {
+    super.finish("icing");
+  }
+}
+
+var c = Cruller();
+c.cook();
+
+
+

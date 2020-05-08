@@ -1,21 +1,21 @@
-﻿using LoxScript.Grammar;
+﻿using LoxScript.Compiling;
 using System;
 using System.Collections.Generic;
-using static LoxScript.Grammar.TokenType;
+using static LoxScript.Compiling.TokenType;
 
-namespace LoxScript {
+namespace LoxScript.Interpreter {
     /// <summary>
-    /// TODO: Add comma operator, ternary operator, error production on each binary operator without a left-hand operator.
+    /// Parses a TokenList into a list of statements that is executed by Engine.
     /// </summary>
     class Parser {
-        private readonly List<Token> _Tokens;
+        private readonly TokenList _Tokens;
 
         /// <summary>
         /// Points to the next token eagerly waiting to be used.
         /// </summary>
         private int _Current = 0;
 
-        internal Parser(List<Token> tokens) {
+        internal Parser(TokenList tokens) {
             _Tokens = tokens;
         }
 
@@ -39,12 +39,12 @@ namespace LoxScript {
             return statements;
         }
 
-        // === Declarations and Statements ===========================================================================
+        // === Declarations ==========================================================================================
         // ===========================================================================================================
 
         /// <summary>
         /// declaration → "class" class
-        ///             | "func" function
+        ///             | "fun" function
         ///             | varDecl
         ///             | statement ;
         /// </summary>
@@ -71,7 +71,6 @@ namespace LoxScript {
         /// classDecl   → "class" IDENTIFIER ( "&lt;" IDENTIFIER )? 
         ///               "{" function* "}" ;
         /// </summary>
-        /// <returns></returns>
         private Stmt ClassDeclaration() {
             Token name = Consume(IDENTIFIER, "Expect class name.");
             Expr.Variable superClass = null;
@@ -123,13 +122,8 @@ namespace LoxScript {
             return new Stmt.Var(name, initializer);
         }
 
-        private Stmt WhileStatement() {
-            Consume(LEFT_PAREN, "Expect '(' after 'while'.");
-            Expr condition = Expression();
-            Consume(RIGHT_PAREN, "Expect ')' after condition.");
-            Stmt body = Statement();
-            return new Stmt.While(condition, body);
-        }
+        // === Statements ============================================================================================
+        // ===========================================================================================================
 
         /// <summary>
         /// statement   → exprStmt
@@ -248,6 +242,14 @@ namespace LoxScript {
             return new Stmt.Return(keyword, value);
         }
 
+        private Stmt WhileStatement() {
+            Consume(LEFT_PAREN, "Expect '(' after 'while'.");
+            Expr condition = Expression();
+            Consume(RIGHT_PAREN, "Expect ')' after condition.");
+            Stmt body = Statement();
+            return new Stmt.While(condition, body);
+        }
+
         private List<Stmt> Block() {
             List<Stmt> statements = new List<Stmt>();
             while (!Check(RIGHT_BRACE) && !IsAtEnd()) {
@@ -301,7 +303,6 @@ namespace LoxScript {
         /// <summary>
         /// logic_or    → logic_and ( "or" logic_and)* ;
         /// </summary>
-        /// <returns></returns>
         private Expr Or() {
             Expr expr = And();
             while (Match(OR)) {
@@ -315,7 +316,6 @@ namespace LoxScript {
         /// <summary>
         /// logic_and   → equality ( "and" equality )* ;
         /// </summary>
-        /// <returns></returns>
         private Expr And() {
             Expr expr = Equality();
             while (Match(AND)) {
@@ -455,8 +455,11 @@ namespace LoxScript {
             if (Match(NIL)) {
                 return new Expr.Literal(null);
             }
-            if (Match(NUMBER, STRING)) {
-                return new Expr.Literal(Previous().Literal);
+            if (Match(NUMBER)) {
+                return new Expr.Literal(Previous().LiteralAsNumber);
+            }
+            if (Match(STRING)) {
+                return new Expr.Literal(Previous().LiteralAsString);
             }
             if (Match(SUPER)) {
                 Token keyword = Previous();
@@ -512,14 +515,15 @@ namespace LoxScript {
         /// Returns true if the current token is of the given type
         /// </summary>
         private bool Check(TokenType type) {
-            if (IsAtEnd()) return false;
+            if (IsAtEnd()) {
+                return false;
+            }
             return Peek().Type == type;
         }
 
         /// <summary>
         /// consumes the current token and returns it.
         /// </summary>
-        /// <returns></returns>
         private Token Advance() {
             if (!IsAtEnd()) {
                 _Current++;
@@ -537,7 +541,6 @@ namespace LoxScript {
         /// <summary>
         /// returns the current token we have yet to consume
         /// </summary>
-        /// <returns></returns>
         private Token Peek() {
             return _Tokens[_Current];
         }

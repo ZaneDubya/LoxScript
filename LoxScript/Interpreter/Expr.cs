@@ -1,7 +1,7 @@
-using LoxScript.Grammar;
+using LoxScript.Compiling;
 using System.Collections.Generic;
 
-namespace LoxScript {
+namespace LoxScript.Interpreter {
     abstract class Expr {
 
         internal interface IVisitor<T> {

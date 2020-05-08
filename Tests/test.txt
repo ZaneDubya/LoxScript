@@ -1,0 +1,29 @@
+
+// === Fibonacci Benchmark ===================================================
+// ===========================================================================
+// Native C#                    12.8 ms
+// AST:                        58000 ms 4531x slower than native
+// GearsVM 4/29:                1554 ms 37x speed up, 127x slower than native
+// GearsVM 4/29 inline context: 1413 ms 41x speed up, 115x slower than native
+// GearsVM 4/29 inline frame:   1282 ms 45x speed up, 100x slower than native
+// GearsVM 5/02 closures:       1393 ms 42x speed up, 9% slower than 4/29
+// GearsVM 5/05 classes/init:   1340 ms 43x speed up, 5% slower than 4/20
+/*
+fun fibonacci(n) {
+    if (n <= 1) {
+        return n;
+    }
+    return fibonacci(n - 2) + fibonacci(n - 1);
+}
+var total = 0;
+for (var j = 0; j < 10; j = j + 1) {
+    var start = clock();
+    for (var i = 0; i < 30; i = i + 1) {
+        fibonacci(i);
+    }
+    var now = clock() - start;
+    total = total + now;
+    print now;
+}
+print total / 10;
+*/
