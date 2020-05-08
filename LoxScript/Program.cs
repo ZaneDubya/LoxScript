@@ -1,5 +1,4 @@
 ﻿using LoxScript.Compiling;
-using LoxScript.Grammar;
 using LoxScript.Interpreter;
 using LoxScript.VirtualMachine;
 using System;

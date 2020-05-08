@@ -1,5 +1,4 @@
 ﻿using LoxScript.Compiling;
-using LoxScript.Grammar;
 using System;
 using System.Collections.Generic;
 using static LoxScript.Compiling.TokenType;

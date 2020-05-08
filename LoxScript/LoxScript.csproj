@@ -55,8 +55,8 @@
     <Compile Include="Interpreter\EngineClassDeclaration.cs" />
     <Compile Include="Interpreter\EngineClassInstance.cs" />
     <Compile Include="Interpreter\EngineEnvironment.cs" />
-    <Compile Include="Grammar\Expr.cs" />
-    <Compile Include="Grammar\Stmt.cs" />
+    <Compile Include="Interpreter\Expr.cs" />
+    <Compile Include="Interpreter\Stmt.cs" />
     <Compile Include="Interpreter\Engine.cs" />
     <Compile Include="Compiling\Keywords.cs" />
     <Compile Include="Interpreter\EngineResolver.cs" />

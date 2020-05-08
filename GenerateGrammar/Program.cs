@@ -46,7 +46,7 @@ namespace GenerateGrammar {
         
         // --- Entry point -------------------------------------------------------------------------------------------
 
-        private const string DefaultOutputDirectory = "../../../LoxScript/Grammar";
+        private const string DefaultOutputDirectory = "../../../LoxScript/Interpreter";
 
         static void Main(string[] args) {
             string outputDir = string.Empty;
@@ -88,10 +88,10 @@ namespace GenerateGrammar {
 
         private static string DefineAst(string baseName, bool hasVisitorType, IEnumerable<string> types) {
             StringBuilder writer = new StringBuilder();
-            writer.AppendLine("using LoxScript.Scanning;");
+            writer.AppendLine("using LoxScript.Compiling;");
             writer.AppendLine("using System.Collections.Generic;");
             writer.AppendLine();
-            writer.AppendLine("namespace LoxScript.Grammar {");
+            writer.AppendLine("namespace LoxScript.Interpreter {");
             writer.AppendLine($"    abstract class {baseName} {{");
             writer.AppendLine();
             // the visitor interface:
