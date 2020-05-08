@@ -22,10 +22,10 @@ namespace LoxScript.VirtualMachine {
                     case OP_CONSTANT:
                         Push(ReadConstant());
                         break;
-                    case OP_STRING:
+                    case OP_LOAD_STRING:
                         Push(GearsValue.CreateObjPtr(HeapAddObject(new GearsObjString(ReadConstantString()))));
                         break;
-                    case OP_FUNCTION: {
+                    case OP_LOAD_FUNCTION: {
                             int arity = ReadByte();
                             string name = ReadConstantString();
                             int address = ReadShort();

@@ -21,9 +21,9 @@ namespace LoxScript.VirtualMachine {
             switch (instruction) {
                 case OP_CONSTANT:
                     return DisassembleConstant("OP_CONSTANT", chunk, offset, OP_CONSTANT);
-                case OP_STRING:
-                    return DisassembleConstant("OP_STRING", chunk, offset, OP_STRING);
-                case OP_FUNCTION:
+                case OP_LOAD_STRING:
+                    return DisassembleConstant("OP_STRING", chunk, offset, OP_LOAD_STRING);
+                case OP_LOAD_FUNCTION:
                     return DisassembleFunction("OP_FUNCTION", chunk, offset);
                 case OP_NIL:
                     return DisassembleSimple("OP_NIL", chunk, offset);
@@ -38,21 +38,21 @@ namespace LoxScript.VirtualMachine {
                 case OP_SET_LOCAL:
                     return DisassembleTwoParams("OP_SET_LOCAL", chunk, offset);
                 case OP_DEFINE_GLOBAL:
-                    return DisassembleConstant("OP_DEF_GLOBAL", chunk, offset, OP_STRING);
+                    return DisassembleConstant("OP_DEF_GLOBAL", chunk, offset, OP_LOAD_STRING);
                 case OP_GET_GLOBAL:
-                    return DisassembleConstant("OP_GET_GLOBAL", chunk, offset, OP_STRING);
+                    return DisassembleConstant("OP_GET_GLOBAL", chunk, offset, OP_LOAD_STRING);
                 case OP_SET_GLOBAL:
-                    return DisassembleConstant("OP_SET_GLOBAL", chunk, offset, OP_STRING);
+                    return DisassembleConstant("OP_SET_GLOBAL", chunk, offset, OP_LOAD_STRING);
                 case OP_GET_UPVALUE:
                     return DisassembleTwoParams("OP_GET_UPVALUE", chunk, offset);
                 case OP_SET_UPVALUE:
                     return DisassembleTwoParams("OP_SET_UPVALUE", chunk, offset);
                 case OP_GET_PROPERTY:
-                    return DisassembleConstant("OP_GET_PROPERTY", chunk, offset, OP_STRING);
+                    return DisassembleConstant("OP_GET_PROPERTY", chunk, offset, OP_LOAD_STRING);
                 case OP_SET_PROPERTY:
-                    return DisassembleConstant("OP_SET_PROPERTY", chunk, offset, OP_STRING);
+                    return DisassembleConstant("OP_SET_PROPERTY", chunk, offset, OP_LOAD_STRING);
                 case OP_GET_SUPER:
-                    return DisassembleConstant("OP_GET_SUPER", chunk, offset, OP_STRING);
+                    return DisassembleConstant("OP_GET_SUPER", chunk, offset, OP_LOAD_STRING);
                 case OP_EQUAL:
                     return DisassembleSimple("OP_EQUAL", chunk, offset);
                 case OP_GREATER:
@@ -92,7 +92,7 @@ namespace LoxScript.VirtualMachine {
                 case OP_RETURN:
                     return DisassembleSimple("OP_RETURN", chunk, offset);
                 case OP_CLASS:
-                    return DisassembleConstant("OP_CLASS", chunk, offset, OP_STRING);
+                    return DisassembleConstant("OP_CLASS", chunk, offset, OP_LOAD_STRING);
                 case OP_INHERIT:
                     return DisassembleSimple("OP_INHERIT", chunk, offset);
                 case OP_METHOD:
@@ -155,12 +155,12 @@ namespace LoxScript.VirtualMachine {
                         Console.WriteLine($"{name} const[{constantIndex}] ({value})");
                     }
                     break;
-                case OP_STRING: {
+                case OP_LOAD_STRING: {
                         string value = chunk.ReadStringConstant(constantIndex);
                         Console.WriteLine($"{name} const[{constantIndex}] ({value})");
                     }
                     break;
-                case OP_FUNCTION: {
+                case OP_LOAD_FUNCTION: {
                         string value = chunk.ReadStringConstant(constantIndex);
                         Console.WriteLine($"{name} const[{constantIndex}] ({value})");
                     }

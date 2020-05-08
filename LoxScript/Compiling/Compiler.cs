@@ -140,7 +140,7 @@ namespace LoxScript.Compiling {
                     return;
                 }
                 if (_Tokens.Match(FUNCTION)) {
-                    FunctionDeclaration("function", EFunctionType.TYPE_FUNCTION, OP_FUNCTION);
+                    FunctionDeclaration("function", EFunctionType.TYPE_FUNCTION);
                     return;
                 }
                 if (_Tokens.Match(VAR)) {
@@ -203,19 +203,18 @@ namespace LoxScript.Compiling {
         /// function    → IDENTIFIER "(" parameters? ")" block ;
         /// parameters  → IDENTIFIER( "," IDENTIFIER )* ;
         /// </summary>
-        private void FunctionDeclaration(string fnType, EFunctionType fnType2, EGearsOpCode fnOpCode) {
+        private void FunctionDeclaration(string fnType, EFunctionType fnType2) {
             int global = ParseVariable($"Expect {fnType} name.");
             MarkInitialized();
             string fnName = _Tokens.Previous().Lexeme;
             Compiler fnCompiler = new Compiler(_Tokens, fnType2, fnName, this, _CurrentClass);
             fnCompiler.FunctionBody();
             fnCompiler.EndCompiler();
-            EmitOpcode(fnOpCode);
+            EmitOpcode(OP_LOAD_FUNCTION);
             EmitData((byte)fnCompiler.Arity);
             EmitConstantIndex(MakeConstant(fnName), _FixupStrings);
             AddFixup(fnCompiler);
             EmitOpcode(OP_CLOSURE);
-            // todo: move this to closure definition - not all functions need upvalues.
             EmitData((byte)fnCompiler._UpvalueCount);
             for (int i = 0; i < fnCompiler._UpvalueCount; i++) {
                 EmitData((byte)(fnCompiler._UpvalueData[i].IsLocal ? 1 : 0));
@@ -236,12 +235,11 @@ namespace LoxScript.Compiling {
             Compiler fnCompiler = new Compiler(_Tokens, fnType2, fnName, this, _CurrentClass);
             fnCompiler.FunctionBody();
             EndCompiler();
-            EmitOpcode(OP_FUNCTION);
+            EmitOpcode(OP_LOAD_FUNCTION);
             EmitData((byte)Arity);
             EmitConstantIndex(MakeConstant(fnName), _FixupStrings);
             AddFixup(fnCompiler);
             EmitOpcode(OP_CLOSURE);
-            // todo: move this to closure definition - not all functions need upvalues.
             EmitData((byte)fnCompiler._UpvalueCount);
             for (int i = 0; i < fnCompiler._UpvalueCount; i++) {
                 EmitData((byte)(fnCompiler._UpvalueData[i].IsLocal ? 1 : 0));
@@ -728,7 +726,7 @@ namespace LoxScript.Compiling {
                 return;
             }
             if (_Tokens.Match(STRING)) {
-                EmitOpcode(OP_STRING);
+                EmitOpcode(OP_LOAD_STRING);
                 EmitConstantIndex(MakeConstant(_Tokens.Previous().LiteralAsString), _FixupStrings);
                 return;
             }

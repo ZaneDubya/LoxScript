@@ -8,12 +8,12 @@
         /// <summary>
         /// Loads the indexed string into the heap, and loads an object pointing to that string onto the stack.
         /// </summary>
-        OP_STRING,
+        OP_LOAD_STRING,
 
         /// <summary>
         /// Loads the indexed function into the heap, and loads an object pointing to that function onto the stack.
         /// </summary>
-        OP_FUNCTION,
+        OP_LOAD_FUNCTION,
 
         // Types of Values literal-ops
         OP_NIL,
