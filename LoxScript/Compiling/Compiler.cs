@@ -139,26 +139,20 @@ namespace LoxScript.Compiling {
             // todo? make the class declaration an expression, require explicit binding of class to variable (like var Pie = new Pie()); 27.2
             Emit(OP_CLASS);
             EmitConstantIndex(nameConstant);
+            DefineVariable(nameConstant);
+            _CurrentClass = new CompilerClass(className, _CurrentClass);
             // superclass:
-            bool hasSuperClass = false;
             if (_Tokens.Match(LESS)) { 
                 _Tokens.Consume(IDENTIFIER, "Expect superclass name.");
                 if (_Tokens.Previous().Lexeme == className.Lexeme) {
                     throw new CompilerException(_Tokens.Previous(), "A class cannot inherit from itself.");
                 }
-
-
-
                 NamedVariable(_Tokens.Previous(), false); // push super class onto stack
-                Emit(OP_INHERIT);
-                hasSuperClass = true;
-            }
-            DefineVariable(nameConstant);
-            _CurrentClass = new CompilerClass(className, _CurrentClass);
-            if (hasSuperClass) {
                 BeginScope();
                 AddLocal(MakeSyntheticToken(SUPER, "super", _Tokens.Previous().Line));
                 DefineVariable(0);
+                NamedVariable(className); // push class onto stack
+                Emit(OP_INHERIT);
                 _CurrentClass.HasSuperClass = true;
             }
             NamedVariable(className); // push class onto stack

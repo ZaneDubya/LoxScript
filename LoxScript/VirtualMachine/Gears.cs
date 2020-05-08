@@ -118,6 +118,10 @@ namespace LoxScript.VirtualMachine {
                         break;
                     case OP_GET_SUPER: {
                             string name = ReadConstantString(); // property name.
+                            GearsObjClass superclass = GetObjectFromPtr<GearsObjClass>(Pop());
+                            if (!BindMethod(superclass, name)) {
+                                throw new GearsRuntimeException(0, $"Could not get method {name} in superclass {superclass}");
+                            }
                         }
                         break;
                     case OP_EQUAL:
@@ -271,15 +275,15 @@ namespace LoxScript.VirtualMachine {
                             if (!Peek(0).IsObjType(this, GearsObj.ObjType.ObjClass)) {
                                 throw new GearsRuntimeException(0, "Superclass is not a class.");
                             }
-                            GearsObjClass sub = GetObjectFromPtr<GearsObjClass>(Peek(1));
-                            GearsObjClass super = GetObjectFromPtr<GearsObjClass>(Peek(0));
+                            GearsObjClass super = GetObjectFromPtr<GearsObjClass>(Peek(1));
+                            GearsObjClass sub = GetObjectFromPtr<GearsObjClass>(Peek(0));
                             foreach (string key in super.Methods.AllKeys) {
                                 if (!super.Methods.TryGet(key, out GearsValue methodPtr)) {
                                     throw new GearsRuntimeException(0, "Could not copy superclass method table.");
                                 }
                                 sub.Methods.Set(key, methodPtr);
                             }
-                            Pop(); // subclass
+                            Pop(); // pop subclass
                         }
                         break;
                     case OP_METHOD: {
