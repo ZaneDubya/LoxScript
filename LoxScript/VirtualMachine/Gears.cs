@@ -28,7 +28,8 @@ namespace LoxScript.VirtualMachine {
                     case OP_FUNCTION: {
                             int arity = ReadByte();
                             string name = ReadConstantString();
-                            Push(GearsValue.CreateObjPtr(HeapAddObject(new GearsObjFunction(this, name, arity))));
+                            int address = ReadShort();
+                            Push(GearsValue.CreateObjPtr(HeapAddObject(new GearsObjFunction(Chunk, name, arity, address))));
                         }
                         break;
                     case OP_NIL:
@@ -376,8 +377,9 @@ namespace LoxScript.VirtualMachine {
                 if (closure.Function.Arity != argCount) {
                     throw new GearsRuntimeException(0, $"{closure} expects {closure.Function.Arity} arguments but was passed {argCount}.");
                 }
+                int ip = closure.Function.IP;
                 int bp = _SP - (closure.Function.Arity + 1);
-                PushFrame(new GearsCallFrameClosure(closure, bp: bp));
+                PushFrame(new GearsCallFrameClosure(closure, ip, bp));
             }
             else {
                 InvokeFromClass(argCount, methodName, receiverPtr, instance.Class);
@@ -394,11 +396,12 @@ namespace LoxScript.VirtualMachine {
             if (method.Function.Arity != argCount) {
                 throw new GearsRuntimeException(0, $"{method} expects {method.Function.Arity} arguments but was passed {argCount}.");
             }
+            int ip = method.Function.IP;
             int bp = _SP - (method.Function.Arity + 1);
             if (!receiverPtr.IsNil) {
                 StackSet(bp, receiverPtr); // todo: this wipes out the method object. Is this bad?
             }
-            PushFrame(new GearsCallFrameClosure(method, bp: bp));
+            PushFrame(new GearsCallFrameClosure(method, ip, bp));
         }
 
         private void CallInvokeSuper() {
@@ -425,8 +428,9 @@ namespace LoxScript.VirtualMachine {
                 if (fn.Arity != argCount) {
                     throw new GearsRuntimeException(0, $"{fn} expects {fn.Arity} arguments but was passed {argCount}.");
                 }
+                int ip = fn.IP;
                 int bp = _SP - (fn.Arity + 1);
-                PushFrame(new GearsCallFrame(fn, bp: bp));
+                PushFrame(new GearsCallFrame(fn, ip, bp));
             }
             else if (obj is GearsObjClass classObj) {
                 StackSet(_SP - argCount - 1, GearsValue.CreateObjPtr(HeapAddObject(new GearsObjInstance(classObj))));
@@ -442,8 +446,9 @@ namespace LoxScript.VirtualMachine {
                 if (closure.Function.Arity != argCount) {
                     throw new GearsRuntimeException(0, $"{closure} expects {closure.Function.Arity} arguments but was passed {argCount}.");
                 }
+                int ip = closure.Function.IP;
                 int bp = _SP - (closure.Function.Arity + 1);
-                PushFrame(new GearsCallFrameClosure(closure, bp: bp));
+                PushFrame(new GearsCallFrameClosure(closure, ip, bp));
             }
             else if (obj is GearsObjFunctionNative native) {
                 if (native.Arity != argCount) {
@@ -460,9 +465,10 @@ namespace LoxScript.VirtualMachine {
                 if (method.Method.Function.Arity != argCount) {
                     throw new GearsRuntimeException(0, $"{method} expects {method.Method.Function.Arity} arguments but was passed {argCount}.");
                 }
+                int ip = method.Method.Function.IP;
                 int bp = _SP - (method.Method.Function.Arity + 1);
                 StackSet(bp, method.Receiver); // todo: this wipes out the method object. Is this bad?
-                PushFrame(new GearsCallFrameClosure(method.Method, bp: bp));
+                PushFrame(new GearsCallFrameClosure(method.Method, ip, bp));
             }
             else {
                 throw new GearsRuntimeException(0, $"Unhandled call to object {obj}");

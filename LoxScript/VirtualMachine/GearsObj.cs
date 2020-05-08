@@ -75,26 +75,18 @@
         /// </summary>
         public readonly GearsChunk Chunk;
 
-        public GearsObjFunction(GearsChunk chunk, string name, int arity) {
-            Type = ObjType.ObjFunction;
-            Name = name;
-            Arity = arity;
-            Chunk = chunk;
-        }
+        public readonly int IP;
 
         /// <summary>
         /// Deserialize from a chunk's constant storage...
         /// ... will be moed to code later.
         /// </summary>
-        public GearsObjFunction(Gears context, string name, int arity) {
+        public GearsObjFunction(GearsChunk chunk, string name, int arity, int ip = 0) {
             Type = ObjType.ObjFunction;
+            Chunk = chunk;
             Name = name;
             Arity = arity;
-            int index = context.ReadShort();
-            Chunk = new GearsChunk(
-                context.Chunk.ReadConstantBytes(ref index),
-                context.Chunk.ReadConstantBytes(ref index),
-                context.Chunk.ReadConstantBytes(ref index));
+            IP = ip;
         }
 
         /// <summary>

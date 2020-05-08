@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using LoxScript.VirtualMachine;
 using static LoxScript.Compiling.TokenType;
 using static LoxScript.VirtualMachine.EGearsOpCode;
@@ -35,10 +36,14 @@ namespace LoxScript.Compiling {
         // Compiling code to:
         private readonly string Name;
         private int Arity;
-        private readonly GearsChunk Chunk;
+        private readonly GearsChunk _Chunk;
         private readonly EFunctionType _FunctionType;
         private CompilerClass _CurrentClass;
         private bool _CanAssign = false;
+        private int _OriginAddress = 0;
+        private readonly List<Compiler> _FixupFns = new List<Compiler>();
+        private readonly List<CompilerFixup> _FixupConstants = new List<CompilerFixup>();
+        private readonly List<CompilerFixup> _FixupStrings = new List<CompilerFixup>();
 
         // scope and locals (locals are references to variables in scope; these are stored on the stack at runtime):
         private readonly Compiler _EnclosingCompiler;
@@ -57,7 +62,7 @@ namespace LoxScript.Compiling {
             _FunctionType = type;
             Name = name;
             Arity = 0;
-            Chunk = new GearsChunk();
+            _Chunk = new GearsChunk();
             _EnclosingCompiler = enclosing;
             _CurrentClass = enclosingClass;
             // stack slot zero is used for 'this' reference in methods, and is empty for script/functions:
@@ -69,11 +74,32 @@ namespace LoxScript.Compiling {
             }
         }
 
-        public override string ToString() => $"Compiling {Name}";
+        private void EndCompiler() {
+            EmitReturn();
+            foreach (Compiler fn in _FixupFns) {
+                int codeBase = _Chunk.CodeSize;
+                fn._Chunk.Compress();
+                _Chunk.WriteCode(fn._Chunk._Code);
+                _Chunk.WriteCodeAt(fn._OriginAddress, (byte)(codeBase >> 8));
+                _Chunk.WriteCodeAt(fn._OriginAddress + 1, (byte)(codeBase & 0xff));
+                foreach (CompilerFixup fixup in fn._FixupConstants) {
+                    int constantFixup = MakeConstant(fn._Chunk.ReadConstantValue(fixup.Value));
+                    _Chunk.WriteCodeAt(codeBase + fixup.Address, (byte)(constantFixup >> 8));
+                    _Chunk.WriteCodeAt(codeBase + fixup.Address + 1, (byte)(constantFixup & 0xff));
+                }
+                foreach (CompilerFixup fixup in fn._FixupStrings) {
+
+                }
+            }
+        }
 
         private void AddFixup(Compiler fn) {
+            _FixupFns.Add(fn);
+            fn._OriginAddress = _Chunk.CodeSize;
             EmitData(0, 0); // fn jump - to fix up
         }
+
+        public override string ToString() => $"Compiling {Name}";
 
         // === Declarations and Statements ===========================================================================
         // ===========================================================================================================
@@ -94,12 +120,8 @@ namespace LoxScript.Compiling {
                 }
             }
             EndCompiler();
-            fn = new GearsObjFunction(Chunk, Name, Arity);
+            fn = new GearsObjFunction(_Chunk, Name, Arity);
             return !_HadError;
-        }
-
-        private void EndCompiler() {
-            EmitReturn();
         }
 
         // === Declarations ==========================================================================================
@@ -139,11 +161,11 @@ namespace LoxScript.Compiling {
         /// </summary>
         private void ClassDeclaration() {
             Token className = _Tokens.Consume(IDENTIFIER, "Expect class name.");
-            int nameConstant = IdentifierConstant(className);
+            int nameConstant = MakeConstant(className.Lexeme);
             DeclareVariable(className); // The class name binds the class object type to a variable of the same name.
             // todo? make the class declaration an expression, require explicit binding of class to variable (like var Pie = new Pie()); 27.2
             EmitOpcode(OP_CLASS);
-            EmitConstantIndex(nameConstant);
+            EmitConstantIndex(nameConstant, _FixupStrings);
             DefineVariable(nameConstant);
             _CurrentClass = new CompilerClass(className, _CurrentClass);
             // superclass:
@@ -190,8 +212,8 @@ namespace LoxScript.Compiling {
             fnCompiler.EndCompiler();
             EmitOpcode(fnOpCode);
             EmitData((byte)fnCompiler.Arity);
-            EmitConstantIndex(MakeConstant(fnName));
-            AddFixup(fnCompiler); // EmitConstantIndex(fn.Serialize(Chunk));
+            EmitConstantIndex(MakeConstant(fnName), _FixupStrings);
+            AddFixup(fnCompiler);
             EmitOpcode(OP_CLOSURE);
             // todo: move this to closure definition - not all functions need upvalues.
             EmitData((byte)fnCompiler._UpvalueCount);
@@ -216,8 +238,8 @@ namespace LoxScript.Compiling {
             EndCompiler();
             EmitOpcode(OP_FUNCTION);
             EmitData((byte)Arity);
-            EmitConstantIndex(MakeConstant(fnName));
-            AddFixup(fnCompiler); // EmitConstantIndex(fn.Serialize(Chunk));
+            EmitConstantIndex(MakeConstant(fnName), _FixupStrings);
+            AddFixup(fnCompiler);
             EmitOpcode(OP_CLOSURE);
             // todo: move this to closure definition - not all functions need upvalues.
             EmitData((byte)fnCompiler._UpvalueCount);
@@ -267,14 +289,6 @@ namespace LoxScript.Compiling {
             if (_ScopeDepth > SCOPE_GLOBAL) {
                 return 0;
             }
-            return IdentifierConstant(name);
-        }
-
-        /// <summary>
-        /// Adds the given token's lexeme to the chunk's constant table as a string.
-        /// Returns the index of that constant in the constant table.
-        /// </summary>
-        private int IdentifierConstant(Token name) {
             return MakeConstant(name.Lexeme);
         }
 
@@ -373,7 +387,7 @@ namespace LoxScript.Compiling {
                 ExpressionStatement();
             }
             // loop just before the condition:
-            int loopStart = Chunk.CodeSize;
+            int loopStart = _Chunk.CodeSize;
             // loop condition:
             int exitJump = -1;
             if (!_Tokens.Match(SEMICOLON)) {
@@ -386,7 +400,7 @@ namespace LoxScript.Compiling {
             // increment:
             if (!_Tokens.Match(RIGHT_PAREN)) {
                 int bodyJump = EmitJump(OP_JUMP);
-                int incrementStart = Chunk.CodeSize;
+                int incrementStart = _Chunk.CodeSize;
                 Expression();
                 EmitOpcode(OP_POP);
                 _Tokens.Consume(RIGHT_PAREN, "Expect ')' after for clauses.");
@@ -454,7 +468,7 @@ namespace LoxScript.Compiling {
         }
 
         private void WhileStatement() {
-            int loopStart = Chunk.CodeSize; // code point just before the condition
+            int loopStart = _Chunk.CodeSize; // code point just before the condition
             _Tokens.Consume(LEFT_PAREN, "Expect '(' after 'while'.");
             Expression();
             _Tokens.Consume(RIGHT_PAREN, "Expect ')' after condition.");
@@ -647,19 +661,19 @@ namespace LoxScript.Compiling {
                 }
                 else if (_Tokens.Match(DOT)) {
                     Token name = _Tokens.Consume(IDENTIFIER, "Expect a property name after '.'.");
-                    int nameConstant = IdentifierConstant(name);
+                    int nameConstant = MakeConstant(name.Lexeme);
                     if (_CanAssign && _Tokens.Match(EQUAL)) {
                         Expression();
                         EmitOpcode(OP_SET_PROPERTY);
-                        EmitConstantIndex(nameConstant);
+                        EmitConstantIndex(nameConstant, _FixupStrings);
                     }
                     else if (_Tokens.Match(LEFT_PAREN)) {
                         FinishCall(OP_INVOKE);
-                        EmitConstantIndex(nameConstant);
+                        EmitConstantIndex(nameConstant, _FixupStrings);
                     }
                     else {
                         EmitOpcode(OP_GET_PROPERTY);
-                        EmitConstantIndex(nameConstant);
+                        EmitConstantIndex(nameConstant, _FixupStrings);
                     }
                 }
                 else {
@@ -710,12 +724,12 @@ namespace LoxScript.Compiling {
             }
             if (_Tokens.Match(NUMBER)) {
                 EmitOpcode(OP_CONSTANT);
-                EmitConstantIndex(MakeConstant(_Tokens.Previous().LiteralAsNumber));
+                EmitConstantIndex(MakeConstant(_Tokens.Previous().LiteralAsNumber), _FixupConstants);
                 return;
             }
             if (_Tokens.Match(STRING)) {
                 EmitOpcode(OP_STRING);
-                EmitConstantIndex(MakeConstant(_Tokens.Previous().LiteralAsString));
+                EmitConstantIndex(MakeConstant(_Tokens.Previous().LiteralAsString), _FixupStrings);
                 return;
             }
             if (_Tokens.Match(SUPER)) {
@@ -728,17 +742,17 @@ namespace LoxScript.Compiling {
                 Token keyword = _Tokens.Previous();
                 _Tokens.Consume(DOT, "Expect '.' after 'super'.");
                 Token methodName = _Tokens.Consume(IDENTIFIER, "Expect superclass method name.");
-                int name = IdentifierConstant(methodName);
+                int nameIndex = MakeConstant(methodName.Lexeme);
                 NamedVariable(MakeSyntheticToken(THIS, "this", 0), false); // look up this - load instance onto stack
                 if (_Tokens.Match(LEFT_PAREN)) {
                     FinishCall(OP_SUPER_INVOKE);
                     NamedVariable(MakeSyntheticToken(SUPER, "super", 0), false); // look up this.super - load superclass of instance
-                    EmitConstantIndex(name);
+                    EmitConstantIndex(nameIndex, _FixupStrings);
                 }
                 else {
                     NamedVariable(MakeSyntheticToken(SUPER, "super", 0), false); // look up this.super - load superclass of instance
                     EmitOpcode(OP_GET_SUPER); // look up super.name - encode name of method to access as operand
-                    EmitConstantIndex(name);
+                    EmitConstantIndex(nameIndex, _FixupStrings);
                 }
                 return;
             }
@@ -779,7 +793,7 @@ namespace LoxScript.Compiling {
                 setOp = OP_SET_UPVALUE;
             }
             else {
-                index = IdentifierConstant(name);
+                index = MakeConstant(name.Lexeme);
                 getOp = OP_GET_GLOBAL;
                 setOp = OP_SET_GLOBAL;
             }
@@ -835,18 +849,18 @@ namespace LoxScript.Compiling {
         // ===========================================================================================================
 
         private void EmitOpcode(EGearsOpCode opcode) {
-            Chunk.WriteCode(opcode);
+            _Chunk.WriteCode(opcode);
         }
 
         private void EmitData(params byte[] data) {
             foreach (byte i in data) {
-                Chunk.WriteCode(i);
+                _Chunk.WriteCode(i);
             }
         }
 
         private void EmitLoop(int loopStart) {
             EmitOpcode(OP_LOOP);
-            int offset = Chunk.CodeSize - loopStart + 2;
+            int offset = _Chunk.CodeSize - loopStart + 2;
             if (offset > ushort.MaxValue) {
                 throw new CompilerException(_Tokens.Peek(), "Loop body too large.");
             }
@@ -855,17 +869,17 @@ namespace LoxScript.Compiling {
 
         private int EmitJump(EGearsOpCode instruction) {
             EmitData((byte)instruction, 0xff, 0xff);
-            return Chunk.CodeSize - 2;
+            return _Chunk.CodeSize - 2;
         }
 
         private void PatchJump(int offset) {
             // We adjust by two for the jump offset
-            int jump = Chunk.CodeSize - offset - 2;
+            int jump = _Chunk.CodeSize - offset - 2;
             if (jump > ushort.MaxValue) {
                 throw new CompilerException(_Tokens.Peek(), "Too much code to jump over.");
             }
-            Chunk.WriteCodeAt(offset, (byte)((jump >> 8) & 0xff));
-            Chunk.WriteCodeAt(offset + 1, (byte)(jump & 0xff));
+            _Chunk.WriteCodeAt(offset, (byte)((jump >> 8) & 0xff));
+            _Chunk.WriteCodeAt(offset + 1, (byte)(jump & 0xff));
         }
 
         /// <summary>
@@ -873,8 +887,8 @@ namespace LoxScript.Compiling {
         /// </summary>
         private void EmitReturn() {
             if (_FunctionType == EFunctionType.TYPE_INITIALIZER) {
-                EmitOpcode(OP_GET_LOCAL); //, 0);
-                EmitConstantIndex(0);
+                EmitOpcode(OP_GET_LOCAL);
+                EmitConstantIndex(0); // not fixup required
             }
             else {
                 EmitOpcode(OP_NIL);
@@ -885,20 +899,31 @@ namespace LoxScript.Compiling {
         // === Constants =============================================================================================
         // ===========================================================================================================
 
-        private void EmitConstantIndex(int index) {
+        private void EmitConstantIndex(int index, List<CompilerFixup> fixups = null) {
+            if (fixups != null) {
+                fixups.Add(new CompilerFixup(_Chunk.CodeSize, index));
+            }
             EmitData((byte)((index >> 8) & 0xff), (byte)(index & 0xff));
         }
 
+        /// <summary>
+        /// Adds the given value to the chunk's constant table.
+        /// Returns the index of that constant in the constant table.
+        /// </summary>
         private int MakeConstant(GearsValue value) {
-            int index = Chunk.WriteConstantValue(value);
+            int index = _Chunk.WriteConstantValue(value);
             if (index > short.MaxValue) {
                 throw new CompilerException(_Tokens.Peek(), "Too many constants in one chunk.");
             }
             return index;
         }
 
+        /// <summary>
+        /// Adds the given string to the chunk's string table.
+        /// Returns the index of that string in the string table.
+        /// </summary>
         private int MakeConstant(string value) {
-            int index = Chunk.WriteStringConstant(value);
+            int index = _Chunk.WriteStringConstant(value);
             if (index > short.MaxValue) {
                 throw new CompilerException(_Tokens.Peek(), "Too many constants in one chunk.");
             }

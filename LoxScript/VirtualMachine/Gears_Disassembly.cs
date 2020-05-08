@@ -125,8 +125,8 @@ namespace LoxScript.VirtualMachine {
             int argCount = chunk.ReadCode(ref offset);
             int nameIndex = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
             string value = chunk.ReadStringConstant(nameIndex);
-            offset += 2; // ptr to serialized function
-            Console.WriteLine($"{name} {value}({argCount} arguments)");
+            int fnAddress = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
+            Console.WriteLine($"{name} {value}({argCount} arguments) @{fnAddress:X4}");
             return offset;
         }
 
@@ -151,7 +151,7 @@ namespace LoxScript.VirtualMachine {
             int constantIndex = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
             switch (constantType) {
                 case OP_CONSTANT: {
-                        GearsValue value = chunk.ReadConstantValue(ref constantIndex);
+                        GearsValue value = chunk.ReadConstantValue(constantIndex);
                         Console.WriteLine($"{name} const[{constantIndex}] ({value})");
                     }
                     break;

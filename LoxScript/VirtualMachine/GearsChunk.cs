@@ -91,6 +91,12 @@ namespace LoxScript.VirtualMachine {
             _Code[CodeSize++] = value;
         }
 
+        internal void WriteCode(byte[] value) {
+            foreach (byte b in value) {
+                WriteCode(b);
+            }
+        }
+
         internal void WriteCodeAt(int offset, byte value) {
             _Code[offset] = value;
         }
@@ -121,12 +127,11 @@ namespace LoxScript.VirtualMachine {
         // === Constants =============================================================================================
         // ===========================================================================================================
 
-        internal GearsValue ReadConstantValue(ref int offset) {
+        internal GearsValue ReadConstantValue(int offset) {
             if (offset < 0 || offset + 8 > ConstantSize) {
                 return -1; // todo: runtime error
             }
             GearsValue value = new GearsValue(BitConverter.ToUInt64(_Constants, offset));
-            offset += 8;
             return value;
         }
 

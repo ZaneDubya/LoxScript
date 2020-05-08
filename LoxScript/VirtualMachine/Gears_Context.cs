@@ -101,7 +101,7 @@ namespace LoxScript.VirtualMachine {
 
         internal GearsValue ReadConstant() {
             int index = ReadShort();
-            return Chunk.ReadConstantValue(ref index);
+            return Chunk.ReadConstantValue(index);
         }
 
         internal string ReadConstantString() {
