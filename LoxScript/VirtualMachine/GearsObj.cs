@@ -75,14 +75,8 @@
         /// </summary>
         public readonly GearsChunk Chunk;
 
-        public GearsObjFunction(string name, int arity) {
+        public GearsObjFunction(GearsChunk chunk, string name, int arity) {
             Type = ObjType.ObjFunction;
-            Name = name;
-            Arity = arity;
-            Chunk = new GearsChunk(name);
-        }
-
-        public GearsObjFunction(string name, int arity, GearsChunk chunk) {
             Name = name;
             Arity = arity;
             Chunk = chunk;

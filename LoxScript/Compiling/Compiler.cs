@@ -32,15 +32,13 @@ namespace LoxScript.Compiling {
         private bool _HadError = false;
 
         // Compiling code to:
-        private readonly GearsObjFunction _Function;
+        private readonly CompilerChunk _Function;
         private readonly EFunctionType _FunctionType;
         private CompilerClass _CurrentClass;
         private bool _CanAssign = false;
 
-        // enclosing compiler:
-        private readonly Compiler _Enclosing;
-
         // scope and locals (locals are references to variables in scope; these are stored on the stack at runtime):
+        private readonly Compiler _EnclosingCompiler;
         private const int SCOPE_GLOBAL = 0;
         private const int SCOPE_NONE = -1;
         private const int MAX_LOCALS = 256;
@@ -54,8 +52,8 @@ namespace LoxScript.Compiling {
         private Compiler(TokenList tokens, EFunctionType type, string name, Compiler enclosing, CompilerClass enclosingClass) {
             _Tokens = tokens;
             _FunctionType = type;
-            _Function = new GearsObjFunction(name, 0);
-            _Enclosing = enclosing;
+            _Function = new CompilerChunk(name, 0);
+            _EnclosingCompiler = enclosing;
             _CurrentClass = enclosingClass;
             // stack slot zero is used for 'this' reference in methods, and is empty for script/functions:
             if (type != EFunctionType.TYPE_FUNCTION) {
@@ -94,7 +92,7 @@ namespace LoxScript.Compiling {
 
         private GearsObjFunction EndCompiler() {
             EmitReturn();
-            return _Function;
+            return new GearsObjFunction(_Function.Chunk, _Function.Name, _Function.Arity);
         }
 
         // === Declarations ==========================================================================================
@@ -777,15 +775,15 @@ namespace LoxScript.Compiling {
         /// Called after failing to find a local in the current scope. Checks for a local in the enclosing scope.
         /// </summary>
         private int ResolveUpvalue(Token name) {
-            if (_Enclosing == null) {
+            if (_EnclosingCompiler == null) {
                 return -1;
             }
-            int local = _Enclosing.ResolveLocal(name);
+            int local = _EnclosingCompiler.ResolveLocal(name);
             if (local != -1) {
-                _Enclosing._LocalVarData[local].IsCaptured = true;
+                _EnclosingCompiler._LocalVarData[local].IsCaptured = true;
                 return AddUpvalue(name, local, true);
             }
-            int upvalue = _Enclosing.ResolveUpvalue(name);
+            int upvalue = _EnclosingCompiler.ResolveUpvalue(name);
             if (upvalue != -1) {
                 return AddUpvalue(name, upvalue, false);
             }

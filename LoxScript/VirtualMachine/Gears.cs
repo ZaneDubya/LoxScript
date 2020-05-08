@@ -516,6 +516,9 @@ namespace LoxScript.VirtualMachine {
         // === String speedup ========================================================================================
         // ===========================================================================================================
 
+        /// <summary>
+        /// TODO: MUST REWRITE THIS TO ENCODE \0 as 000000.
+        /// </summary>
         public static ulong GetBitString(string value) {
             ulong bits = 0;
             int bitPosition = 0;
