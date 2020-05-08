@@ -120,7 +120,7 @@
         /// <summary>
         /// Creates a closure for the preceding function on the stack.
         /// </summary>
-        OP_CLOSURE,
+        // OP_CLOSURE,
 
         /// <summary>
         /// Creates an upvalue for a local variable captured by a closure. The local variable is on top of the stack.

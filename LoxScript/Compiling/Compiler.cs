@@ -14,13 +14,14 @@ namespace LoxScript.Compiling {
         /// If compilation is successful, compiler.Chunk will be set.
         /// If compilation fails, status will be the error message.
         /// </summary>
-        public static bool TryCompile(TokenList tokens, out GearsObjFunction fn, out string status) {
+        public static bool TryCompile(TokenList tokens, out GearsChunk chunk, out string status) {
             Compiler compiler = new Compiler(tokens, EFunctionType.TYPE_SCRIPT, null, null, null);
-            if (compiler.Compile(out fn)) {
+            if (compiler.Compile()) {
+                chunk = compiler._Chunk;
                 status = null;
                 return true;
             }
-            fn = null;
+            chunk = null;
             status = compiler._ErrorMessage;
             return false;
         }
@@ -83,12 +84,16 @@ namespace LoxScript.Compiling {
                 _Chunk.WriteCodeAt(fn._OriginAddress, (byte)(codeBase >> 8));
                 _Chunk.WriteCodeAt(fn._OriginAddress + 1, (byte)(codeBase & 0xff));
                 foreach (CompilerFixup fixup in fn._FixupConstants) {
-                    int constantFixup = MakeConstant(fn._Chunk.ReadConstantValue(fixup.Value));
+                    GearsValue value = fn._Chunk.ReadConstantValue(fixup.Value);
+                    int constantFixup = MakeConstant(value); // as fixup
                     _Chunk.WriteCodeAt(codeBase + fixup.Address, (byte)(constantFixup >> 8));
                     _Chunk.WriteCodeAt(codeBase + fixup.Address + 1, (byte)(constantFixup & 0xff));
                 }
                 foreach (CompilerFixup fixup in fn._FixupStrings) {
-
+                    string value = fn._Chunk.ReadStringConstant(fixup.Value);
+                    int constantFixup = MakeConstant(value); // as fixup
+                    _Chunk.WriteCodeAt(codeBase + fixup.Address, (byte)(constantFixup >> 8));
+                    _Chunk.WriteCodeAt(codeBase + fixup.Address + 1, (byte)(constantFixup & 0xff));
                 }
             }
         }
@@ -108,7 +113,7 @@ namespace LoxScript.Compiling {
         /// program     → declaration* EOF ;
         /// Called from TryCompile.
         /// </summary>
-        internal bool Compile(out GearsObjFunction fn) {
+        internal bool Compile() {
             while (!_Tokens.IsAtEnd()) {
                 try {
                     Declaration();
@@ -120,7 +125,6 @@ namespace LoxScript.Compiling {
                 }
             }
             EndCompiler();
-            fn = new GearsObjFunction(_Chunk, Name, Arity);
             return !_HadError;
         }
 
@@ -161,7 +165,7 @@ namespace LoxScript.Compiling {
         /// </summary>
         private void ClassDeclaration() {
             Token className = _Tokens.Consume(IDENTIFIER, "Expect class name.");
-            int nameConstant = MakeConstant(className.Lexeme);
+            int nameConstant = MakeConstant(className.Lexeme); // no fixup needed
             DeclareVariable(className); // The class name binds the class object type to a variable of the same name.
             // todo? make the class declaration an expression, require explicit binding of class to variable (like var Pie = new Pie()); 27.2
             EmitOpcode(OP_CLASS);
@@ -188,7 +192,7 @@ namespace LoxScript.Compiling {
             while (!_Tokens.Check(RIGHT_BRACE) && !_Tokens.IsAtEnd()) {
                 // lox doesn't have field declarations, so anything before the brace that ends the class body must be a method.
                 // initializer is a special method
-                MethodDeclaration("method", EFunctionType.TYPE_METHOD, OP_METHOD);
+                MethodDeclaration("method", EFunctionType.TYPE_METHOD);
             }
             _Tokens.Consume(RIGHT_BRACE, "Expect '}' after class body.");
             EmitOpcode(OP_POP); // pop class from stack
@@ -212,9 +216,9 @@ namespace LoxScript.Compiling {
             fnCompiler.EndCompiler();
             EmitOpcode(OP_LOAD_FUNCTION);
             EmitData((byte)fnCompiler.Arity);
-            EmitConstantIndex(MakeConstant(fnName), _FixupStrings);
+            EmitConstantIndex(MakeConstant(fnName), _FixupStrings); // has fixup
             AddFixup(fnCompiler);
-            EmitOpcode(OP_CLOSURE);
+            // EmitOpcode(OP_CLOSURE);
             EmitData((byte)fnCompiler._UpvalueCount);
             for (int i = 0; i < fnCompiler._UpvalueCount; i++) {
                 EmitData((byte)(fnCompiler._UpvalueData[i].IsLocal ? 1 : 0));
@@ -226,7 +230,7 @@ namespace LoxScript.Compiling {
         /// <summary>
         /// Todo: merge this with FunctionDeclaration
         /// </summary>
-        private void MethodDeclaration(string fnType, EFunctionType fnType2, EGearsOpCode fnOpCode) {
+        private void MethodDeclaration(string fnType, EFunctionType fnType2) {
             _Tokens.Consume(IDENTIFIER, $"Expect {fnType} name.");
             if (_Tokens.Previous().Lexeme == "init") {
                 fnType2 = EFunctionType.TYPE_INITIALIZER;
@@ -237,15 +241,15 @@ namespace LoxScript.Compiling {
             EndCompiler();
             EmitOpcode(OP_LOAD_FUNCTION);
             EmitData((byte)Arity);
-            EmitConstantIndex(MakeConstant(fnName), _FixupStrings);
+            EmitConstantIndex(MakeConstant(fnName), _FixupStrings); // has fixup
             AddFixup(fnCompiler);
-            EmitOpcode(OP_CLOSURE);
+            // EmitOpcode(OP_CLOSURE);
             EmitData((byte)fnCompiler._UpvalueCount);
             for (int i = 0; i < fnCompiler._UpvalueCount; i++) {
                 EmitData((byte)(fnCompiler._UpvalueData[i].IsLocal ? 1 : 0));
                 EmitData((byte)(fnCompiler._UpvalueData[i].Index));
             }
-            EmitOpcode(fnOpCode);
+            EmitOpcode(OP_METHOD);
         }
 
         private void FunctionBody() {
@@ -287,7 +291,7 @@ namespace LoxScript.Compiling {
             if (_ScopeDepth > SCOPE_GLOBAL) {
                 return 0;
             }
-            return MakeConstant(name.Lexeme);
+            return MakeConstant(name.Lexeme); // needs fixup
         }
 
         private void DeclareVariable(Token name) {
@@ -305,6 +309,9 @@ namespace LoxScript.Compiling {
             AddLocal(name);
         }
 
+        /// <summary>
+        /// For global variables, emits the ptr to the string table. For local variables, marks them as initialized. No fixup needed.
+        /// </summary>
         private void DefineVariable(int global) {
             if (_ScopeDepth > SCOPE_GLOBAL) {
                 MarkInitialized();
@@ -659,7 +666,7 @@ namespace LoxScript.Compiling {
                 }
                 else if (_Tokens.Match(DOT)) {
                     Token name = _Tokens.Consume(IDENTIFIER, "Expect a property name after '.'.");
-                    int nameConstant = MakeConstant(name.Lexeme);
+                    int nameConstant = MakeConstant(name.Lexeme); // needs fixup
                     if (_CanAssign && _Tokens.Match(EQUAL)) {
                         Expression();
                         EmitOpcode(OP_SET_PROPERTY);
@@ -740,7 +747,7 @@ namespace LoxScript.Compiling {
                 Token keyword = _Tokens.Previous();
                 _Tokens.Consume(DOT, "Expect '.' after 'super'.");
                 Token methodName = _Tokens.Consume(IDENTIFIER, "Expect superclass method name.");
-                int nameIndex = MakeConstant(methodName.Lexeme);
+                int nameIndex = MakeConstant(methodName.Lexeme); // needs fixup
                 NamedVariable(MakeSyntheticToken(THIS, "this", 0), false); // look up this - load instance onto stack
                 if (_Tokens.Match(LEFT_PAREN)) {
                     FinishCall(OP_SUPER_INVOKE);
@@ -782,6 +789,7 @@ namespace LoxScript.Compiling {
         private void NamedVariable(Token name, bool overrideCanAssign = true) {
             EGearsOpCode getOp, setOp;
             int index = ResolveLocal(name);
+            bool needsFixup = false;
             if (index != -1) {
                 getOp = OP_GET_LOCAL;
                 setOp = OP_SET_LOCAL;
@@ -791,19 +799,22 @@ namespace LoxScript.Compiling {
                 setOp = OP_SET_UPVALUE;
             }
             else {
-                index = MakeConstant(name.Lexeme);
+                index = MakeConstant(name.Lexeme); // has fixup
                 getOp = OP_GET_GLOBAL;
                 setOp = OP_SET_GLOBAL;
+                needsFixup = true;
             }
             if (_Tokens.Match(EQUAL)) {
                 if (!(_CanAssign & overrideCanAssign)) {
                     throw new CompilerException(name, $"Invalid assignment target '{name}'.");
                 }
                 Expression();
-                EmitData((byte)setOp, (byte)((index >> 8) & 0xff), (byte)(index & 0xff));
+                EmitData((byte)setOp);
+                EmitConstantIndex(index, needsFixup ? _FixupStrings : null);
             }
             else {
-                EmitData((byte)getOp, (byte)((index >> 8) & 0xff), (byte)(index & 0xff));
+                EmitData((byte)getOp);
+                EmitConstantIndex(index, needsFixup ? _FixupStrings : null);
             }
         }
 
@@ -886,7 +897,7 @@ namespace LoxScript.Compiling {
         private void EmitReturn() {
             if (_FunctionType == EFunctionType.TYPE_INITIALIZER) {
                 EmitOpcode(OP_GET_LOCAL);
-                EmitConstantIndex(0); // not fixup required
+                EmitConstantIndex(0); // no fixup required
             }
             else {
                 EmitOpcode(OP_NIL);

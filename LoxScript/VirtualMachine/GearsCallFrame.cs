@@ -1,22 +1,18 @@
 ﻿namespace LoxScript.VirtualMachine {
     class GearsCallFrame {
-        public virtual GearsObjFunction Function { get; private set; }
+        public readonly GearsObjFunction Function;
 
         public int IP;
 
         public int BP;
 
-        public GearsCallFrame(int ip = 0, int bp = 0) {
+        public GearsCallFrame(GearsObjFunction function, int ip = 0, int bp = 0)  {
             IP = ip;
             BP = bp;
-        }
-
-        public GearsCallFrame(GearsObjFunction fn, int ip = 0, int bp = 0) :
-            this(ip, bp) {
-            Function = fn;
+            Function = function;
         }
     }
-
+    /*
     /// <summary>
     /// A closure is a function that references local variables from enclosing scopes. These surrounding variables
     /// are 'closed over' with upvalues. Upvalues are a level of indirection needed to find a captured local variable
@@ -32,4 +28,5 @@
             Closure = closure;
         }
     }
+    */
 }

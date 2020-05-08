@@ -13,8 +13,8 @@ namespace LoxScript.VirtualMachine {
             return new GearsValue((double)DateTimeOffset.Now.ToUnixTimeMilliseconds());
         }
 
-        internal bool Run(GearsObjFunction script) {
-            Reset(script);
+        internal bool Run(GearsChunk chunk) {
+            Reset(chunk);
             DefineNative("clock", 0, NativeFnClock);
             while (true) {
                 EGearsOpCode instruction = (EGearsOpCode)ReadByte();
@@ -29,7 +29,20 @@ namespace LoxScript.VirtualMachine {
                             int arity = ReadByte();
                             string name = ReadConstantString();
                             int address = ReadShort();
-                            Push(GearsValue.CreateObjPtr(HeapAddObject(new GearsObjFunction(Chunk, name, arity, address))));
+                            int upvalueCount = ReadByte();
+                            GearsObjFunction closure = new GearsObjFunction(Chunk, name, arity, upvalueCount, address);
+                            for (int i = 0; i < upvalueCount; i++) {
+                                bool isLocal = ReadByte() == 1;
+                                int index = ReadByte();
+                                if (isLocal) {
+                                    int location = _OpenFrame.BP + index;
+                                    closure.Upvalues[i] = CaptureUpvalue(location);
+                                }
+                                else {
+                                    closure.Upvalues[i] = (_OpenFrame as GearsCallFrame).Function.Upvalues[index];
+                                }
+                            }
+                            Push(GearsValue.CreateObjPtr(HeapAddObject(closure)));
                         }
                         break;
                     case OP_NIL:
@@ -78,7 +91,7 @@ namespace LoxScript.VirtualMachine {
                         }
                     case OP_GET_UPVALUE: {
                             int slot = ReadShort();
-                            GearsObjUpvalue upvalue = (_OpenFrame as GearsCallFrameClosure).Closure.Upvalues[slot];
+                            GearsObjUpvalue upvalue = (_OpenFrame as GearsCallFrame).Function.Upvalues[slot];
                             if (upvalue.IsClosed) {
                                 Push(upvalue.Value);
                             }
@@ -89,7 +102,7 @@ namespace LoxScript.VirtualMachine {
                         break;
                     case OP_SET_UPVALUE: {
                             int slot = ReadShort();
-                            GearsObjUpvalue upvalue = (_OpenFrame as GearsCallFrameClosure).Closure.Upvalues[slot];
+                            GearsObjUpvalue upvalue = (_OpenFrame as GearsCallFrame).Function.Upvalues[slot];
                             if (upvalue.IsClosed) {
                                 upvalue.Value = Peek();
                             }
@@ -99,7 +112,7 @@ namespace LoxScript.VirtualMachine {
                         }
                         break;
                     case OP_GET_PROPERTY: {
-                            GearsObjInstance instance = GetObjectFromPtr<GearsObjInstance>(Peek());
+                            GearsObjClassInstance instance = GetObjectFromPtr<GearsObjClassInstance>(Peek());
                             string name = ReadConstantString(); // property name.
                             if (instance.Fields.TryGet(name, out GearsValue value)) {
                                 Pop(); // instance
@@ -112,7 +125,7 @@ namespace LoxScript.VirtualMachine {
                         }
                         break;
                     case OP_SET_PROPERTY: {
-                            GearsObjInstance instance = GetObjectFromPtr<GearsObjInstance>(Peek(1));
+                            GearsObjClassInstance instance = GetObjectFromPtr<GearsObjClassInstance>(Peek(1));
                             string name = ReadConstantString(); // property name.
                             GearsValue value = Pop(); // value
                             instance.Fields.Set(name, value);
@@ -234,31 +247,6 @@ namespace LoxScript.VirtualMachine {
                             CallInvokeSuper();
                         }
                         break;
-                    case OP_CLOSURE: {
-                            GearsValue ptr = Pop();
-                            if (!ptr.IsObjPtr) {
-                                throw new GearsRuntimeException(0, "Attempted closure of non-pointer.");
-                            }
-                            GearsObj obj = HeapGetObject(ptr.AsObjPtr);
-                            if (obj.Type == GearsObj.ObjType.ObjFunction) {
-                                int upvalueCount = ReadByte();
-                                GearsObjClosure closure = new GearsObjClosure(obj as GearsObjFunction, upvalueCount);
-                                for (int i = 0; i < upvalueCount; i++) {
-                                    bool isLocal = ReadByte() == 1;
-                                    int index = ReadByte();
-                                    if (isLocal) {
-                                        int location = _OpenFrame.BP + index;
-                                        closure.Upvalues[i] = CaptureUpvalue(location);
-                                    }
-                                    else {
-                                        closure.Upvalues[i] = (_OpenFrame as GearsCallFrameClosure).Closure.Upvalues[index];
-                                    }
-                                }
-                                Push(GearsValue.CreateObjPtr(HeapAddObject(closure)));
-                                break;
-                            }
-                        }
-                        throw new GearsRuntimeException(0, "Can only make closures from functions.");
                     case OP_CLOSE_UPVALUE:
                         CloseUpvalues(_SP - 1);
                         Pop();
@@ -344,9 +332,9 @@ namespace LoxScript.VirtualMachine {
 
         private void DefineMethod() {
             GearsValue methodPtr = Peek();
-            GearsObjClosure method = GetObjectFromPtr<GearsObjClosure>(methodPtr);
+            GearsObjFunction method = GetObjectFromPtr<GearsObjFunction>(methodPtr);
             GearsObjClass objClass = GetObjectFromPtr<GearsObjClass>(Peek(1));
-            objClass.Methods.Set(method.Function.Name, methodPtr);
+            objClass.Methods.Set(method.Name, methodPtr);
             Pop();
         }
 
@@ -354,7 +342,7 @@ namespace LoxScript.VirtualMachine {
             if (!classObj.Methods.TryGet(name, out GearsValue method)) {
                 return false;
             }
-            int objPtr = HeapAddObject(new GearsObjBoundMethod(Peek(), HeapGetObject(method.AsObjPtr) as GearsObjClosure));
+            int objPtr = HeapAddObject(new GearsObjBoundMethod(Peek(), HeapGetObject(method.AsObjPtr) as GearsObjFunction));
             Pop();
             Push(GearsValue.CreateObjPtr(objPtr));
             return true;
@@ -366,20 +354,20 @@ namespace LoxScript.VirtualMachine {
             int argCount = ReadByte();
             string methodName = ReadConstantString();
             GearsValue receiverPtr = Peek(argCount);
-            if (!(receiverPtr.IsObjPtr) || !(receiverPtr.AsObject(this) is GearsObjInstance instance)) {
+            if (!(receiverPtr.IsObjPtr) || !(receiverPtr.AsObject(this) is GearsObjClassInstance instance)) {
                 throw new GearsRuntimeException(0, "Attempted invoke to non-pointer or non-method.");
             }
             if (instance.Fields.TryGet(methodName, out GearsValue value)) {
                 // check fields first 28.5.1:
-                if ((!value.IsObjPtr) || !(HeapGetObject(value.AsObjPtr) is GearsObjClosure closure)) {
+                if ((!value.IsObjPtr) || !(HeapGetObject(value.AsObjPtr) is GearsObjFunction function)) {
                     throw new GearsRuntimeException(0, $"Could not resolve method {methodName} in class {instance.Class}.");
                 }
-                if (closure.Function.Arity != argCount) {
-                    throw new GearsRuntimeException(0, $"{closure} expects {closure.Function.Arity} arguments but was passed {argCount}.");
+                if (function.Arity != argCount) {
+                    throw new GearsRuntimeException(0, $"{function} expects {function.Arity} arguments but was passed {argCount}.");
                 }
-                int ip = closure.Function.IP;
-                int bp = _SP - (closure.Function.Arity + 1);
-                PushFrame(new GearsCallFrameClosure(closure, ip, bp));
+                int ip = function.IP;
+                int bp = _SP - (function.Arity + 1);
+                PushFrame(new GearsCallFrame(function, ip, bp));
             }
             else {
                 InvokeFromClass(argCount, methodName, receiverPtr, instance.Class);
@@ -390,18 +378,18 @@ namespace LoxScript.VirtualMachine {
             if (!objClass.Methods.TryGet(methodName, out GearsValue methodPtr)) {
                 throw new GearsRuntimeException(0, $"{objClass} has no method with name {methodName}.");
             }
-            if ((!methodPtr.IsObjPtr) || !(HeapGetObject(methodPtr.AsObjPtr) is GearsObjClosure method)) {
+            if ((!methodPtr.IsObjPtr) || !(HeapGetObject(methodPtr.AsObjPtr) is GearsObjFunction method)) {
                 throw new GearsRuntimeException(0, $"Could not resolve method {methodName} in class {objClass}.");
             }
-            if (method.Function.Arity != argCount) {
-                throw new GearsRuntimeException(0, $"{method} expects {method.Function.Arity} arguments but was passed {argCount}.");
+            if (method.Arity != argCount) {
+                throw new GearsRuntimeException(0, $"{method} expects {method.Arity} arguments but was passed {argCount}.");
             }
-            int ip = method.Function.IP;
-            int bp = _SP - (method.Function.Arity + 1);
+            int ip = method.IP;
+            int bp = _SP - (method.Arity + 1);
             if (!receiverPtr.IsNil) {
                 StackSet(bp, receiverPtr); // todo: this wipes out the method object. Is this bad?
             }
-            PushFrame(new GearsCallFrameClosure(method, ip, bp));
+            PushFrame(new GearsCallFrame(method, ip, bp));
         }
 
         private void CallInvokeSuper() {
@@ -411,7 +399,7 @@ namespace LoxScript.VirtualMachine {
                 throw new GearsRuntimeException(0, "OP_SUPER_INVOKE must be followed by OP_GET_UPVALUE.");
             }
             int slot = ReadShort();
-            GearsObjUpvalue upvalue = (_OpenFrame as GearsCallFrameClosure).Closure.Upvalues[slot];
+            GearsObjUpvalue upvalue = (_OpenFrame as GearsCallFrame).Function.Upvalues[slot];
             GearsObjClass superclass = GetObjectFromPtr<GearsObjClass>(upvalue.IsClosed ? upvalue.Value : StackGet(upvalue.OriginalSP));
             string methodName = ReadConstantString();
             InvokeFromClass(argCount, methodName, GearsValue.NilValue, superclass);
@@ -424,31 +412,13 @@ namespace LoxScript.VirtualMachine {
                 throw new GearsRuntimeException(0, "Attempted call to non-pointer.");
             }
             GearsObj obj = HeapGetObject(ptr.AsObjPtr);
-            if (obj is GearsObjFunction fn) { // this is not currently used - all fns currently wrapped in closures
-                if (fn.Arity != argCount) {
-                    throw new GearsRuntimeException(0, $"{fn} expects {fn.Arity} arguments but was passed {argCount}.");
+            if (obj is GearsObjFunction function) {
+                if (function.Arity != argCount) {
+                    throw new GearsRuntimeException(0, $"{function} expects {function.Arity} arguments but was passed {argCount}.");
                 }
-                int ip = fn.IP;
-                int bp = _SP - (fn.Arity + 1);
-                PushFrame(new GearsCallFrame(fn, ip, bp));
-            }
-            else if (obj is GearsObjClass classObj) {
-                StackSet(_SP - argCount - 1, GearsValue.CreateObjPtr(HeapAddObject(new GearsObjInstance(classObj))));
-                if (classObj.Methods.TryGet(InitString, out GearsValue initPtr)) {
-                    if (!initPtr.IsObjPtr) {
-                        throw new GearsRuntimeException(0, "Attempted call to non-pointer.");
-                    }
-                    GearsObjClosure initFn = HeapGetObject(initPtr.AsObjPtr) as GearsObjClosure;
-                    PushFrame(new GearsCallFrame(initFn.Function, bp: _SP - argCount - 1));
-                }
-            }
-            else if (obj is GearsObjClosure closure) {
-                if (closure.Function.Arity != argCount) {
-                    throw new GearsRuntimeException(0, $"{closure} expects {closure.Function.Arity} arguments but was passed {argCount}.");
-                }
-                int ip = closure.Function.IP;
-                int bp = _SP - (closure.Function.Arity + 1);
-                PushFrame(new GearsCallFrameClosure(closure, ip, bp));
+                int ip = function.IP;
+                int bp = _SP - (function.Arity + 1);
+                PushFrame(new GearsCallFrame(function, ip, bp));
             }
             else if (obj is GearsObjFunctionNative native) {
                 if (native.Arity != argCount) {
@@ -462,13 +432,23 @@ namespace LoxScript.VirtualMachine {
                 Push(native.Invoke(args));
             }
             else if (obj is GearsObjBoundMethod method) {
-                if (method.Method.Function.Arity != argCount) {
-                    throw new GearsRuntimeException(0, $"{method} expects {method.Method.Function.Arity} arguments but was passed {argCount}.");
+                if (method.Method.Arity != argCount) {
+                    throw new GearsRuntimeException(0, $"{method} expects {method.Method.Arity} arguments but was passed {argCount}.");
                 }
-                int ip = method.Method.Function.IP;
-                int bp = _SP - (method.Method.Function.Arity + 1);
+                int ip = method.Method.IP;
+                int bp = _SP - (method.Method.Arity + 1);
                 StackSet(bp, method.Receiver); // todo: this wipes out the method object. Is this bad?
-                PushFrame(new GearsCallFrameClosure(method.Method, ip, bp));
+                PushFrame(new GearsCallFrame(method.Method, ip, bp));
+            }
+            else if (obj is GearsObjClass classObj) {
+                StackSet(_SP - argCount - 1, GearsValue.CreateObjPtr(HeapAddObject(new GearsObjClassInstance(classObj))));
+                if (classObj.Methods.TryGet(InitString, out GearsValue initPtr)) {
+                    if (!initPtr.IsObjPtr) {
+                        throw new GearsRuntimeException(0, "Attempted call to non-pointer.");
+                    }
+                    GearsObjFunction initFn = HeapGetObject(initPtr.AsObjPtr) as GearsObjFunction;
+                    PushFrame(new GearsCallFrame(initFn, bp: _SP - argCount - 1));
+                }
             }
             else {
                 throw new GearsRuntimeException(0, $"Unhandled call to object {obj}");
@@ -517,48 +497,6 @@ namespace LoxScript.VirtualMachine {
                 upvalue.IsClosed = true;
                 _OpenUpvalues = upvalue.Next;
             }
-        }
-
-        // === String speedup ========================================================================================
-        // ===========================================================================================================
-
-        /// <summary>
-        /// TODO: MUST REWRITE THIS TO ENCODE \0 as 000000.
-        /// </summary>
-        public static ulong GetBitString(string value) {
-            ulong bits = 0;
-            int bitPosition = 0;
-            for (int i = 0; i < value.Length; i++) {
-                char ch = value[i];
-                if (ch == '0') {
-                    // encode as 000000
-                }
-                else if (ch >= '1' && ch <= '9') {
-                    // encode as binary (000001 - 001001)
-                    ulong bitValue = (ulong)(ch - '1');
-                    bits |= (bitValue << bitPosition);
-                }
-                else if (ch >= 'A' && ch <= 'Z') {
-                    // encode as 001010 - 100011
-                    ulong bitValue = (ulong)(ch - 'A');
-                    bits |= (bitValue << bitPosition);
-                }
-                else if (ch >= 'a' && ch <= 'z') {
-                    // encode as 100100 - 111101
-                    ulong bitValue = (ulong)(ch - 'a');
-                    bits |= (bitValue << bitPosition);
-                }
-                else if (ch == '_') {
-                    // encode as 111110
-                    ulong bitValue = 62;
-                    bits |= (bitValue << bitPosition);
-                }
-                else {
-                    throw new Exception($"Cannot use character '{ch}' in string '{value}'.");
-                }
-                bitPosition += 6;
-            }
-            return bits;
         }
     }
 }

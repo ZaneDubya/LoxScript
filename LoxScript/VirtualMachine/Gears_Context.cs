@@ -19,7 +19,7 @@ namespace LoxScript.VirtualMachine {
             Globals = new GearsHashTable();
         }
 
-        internal void Reset(GearsObjFunction fn) {
+        internal void Reset(GearsChunk chunk) {
             _FrameCount = 0;
             _SP = 0;
             for (int i = 0; i < _Heap.Length; i++) {
@@ -27,11 +27,12 @@ namespace LoxScript.VirtualMachine {
             }
             Globals.Reset();
             _GrayList.Clear();
-            PushFrame(new GearsCallFrame(fn));
-            Push(GearsValue.CreateObjPtr(HeapAddObject(fn)));
+            GearsObjFunction closure = new GearsObjFunction(chunk, "script", 0, 0);
+            PushFrame(new GearsCallFrame(closure));
+            Push(GearsValue.CreateObjPtr(HeapAddObject(closure)));
         }
 
-        public override string ToString() => $"{_OpenFrame.Function}@{_IP}";
+        public override string ToString() => $"{_OpenFrame.Function.Name}@{_IP}";
 
         // === Call frames ==========================================================================================
         // === This should be part of the stack! See todo.md ========================================================
@@ -216,7 +217,7 @@ namespace LoxScript.VirtualMachine {
             }
             MarkTable(Globals);
             for (int i = 0; i < _FrameCount; i++) {
-                MarkObject((_Frames[i] as GearsCallFrameClosure)?.Closure);
+                MarkObject((_Frames[i] as GearsCallFrame)?.Function);
             }
             GearsObjUpvalue upvalue = _OpenUpvalues;
             while (upvalue != null) {
@@ -269,8 +270,8 @@ namespace LoxScript.VirtualMachine {
                     MarkTable((obj as GearsObjClass).Methods);
                     break;
                 case GearsObj.ObjType.ObjClosure:
-                    MarkObject((obj as GearsObjClosure).Function);
-                    foreach (GearsObjUpvalue upvalue in (obj as GearsObjClosure).Upvalues) {
+                    // MarkObject((obj as GearsObjClosure).Function);
+                    foreach (GearsObjUpvalue upvalue in (obj as GearsObjFunction).Upvalues) {
                         MarkObject(upvalue);
                     }
                     break;
@@ -278,8 +279,8 @@ namespace LoxScript.VirtualMachine {
                     MarkValue((obj as GearsObjUpvalue).Value);
                     break;
                 case GearsObj.ObjType.ObjInstance:
-                    MarkObject((obj as GearsObjInstance).Class);
-                    MarkTable((obj as GearsObjInstance).Fields);
+                    MarkObject((obj as GearsObjClassInstance).Class);
+                    MarkTable((obj as GearsObjClassInstance).Fields);
                     break;
                 case GearsObj.ObjType.ObjFunction:
                 case GearsObj.ObjType.ObjNative:
@@ -295,7 +296,9 @@ namespace LoxScript.VirtualMachine {
         private void Sweep() {
             for (int i = 0; i < _Heap.Length; i++) {
                 if (!_Heap[i].IsMarked) {
+#if DEBUG_LOG_GC
                     Console.WriteLine($"Collect {i}");
+#endif
                     _Heap[i] = null;
                 }
             }

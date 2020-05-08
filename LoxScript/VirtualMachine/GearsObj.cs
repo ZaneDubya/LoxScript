@@ -22,15 +22,15 @@
 
     class GearsObjBoundMethod : GearsObj {
         public readonly GearsValue Receiver;
-        public readonly GearsObjClosure Method;
+        public readonly GearsObjFunction Method;
 
-        public GearsObjBoundMethod(GearsValue receiver, GearsObjClosure method) {
+        public GearsObjBoundMethod(GearsValue receiver, GearsObjFunction method) {
             Type = ObjType.ObjBoundMethod;
             Receiver = receiver;
             Method = method;
         }
 
-        public override string ToString() => Method.Function.ToString();
+        public override string ToString() => Method.ToString();
     }
 
     class GearsObjClass : GearsObj {
@@ -46,21 +46,21 @@
         public override string ToString() => $"{Name}";
     }
 
-    class GearsObjClosure : GearsObj {
-        public readonly GearsObjFunction Function;
-        public readonly GearsObjUpvalue[] Upvalues;
+    class GearsObjClassInstance : GearsObj {
+        public readonly GearsObjClass Class;
+        public readonly GearsHashTable Fields;
 
-        public GearsObjClosure(GearsObjFunction fn, int upvalueCount) {
-            Type = ObjType.ObjClosure;
-            Function = fn;
-            Upvalues = new GearsObjUpvalue[upvalueCount];
+        public GearsObjClassInstance(GearsObjClass classObj) {
+            Type = ObjType.ObjInstance;
+            Class = classObj;
+            Fields = new GearsHashTable();
         }
 
-        public override string ToString() => Function.ToString();
+        public override string ToString() => $"instance of {Class}";
     }
 
     /// <summary>
-    /// A function is a first class variable, and so must be an object.
+    /// A lox function with enclosed scope and upvalues.
     /// </summary>
     class GearsObjFunction : GearsObj {
         public readonly string Name;
@@ -77,38 +77,15 @@
 
         public readonly int IP;
 
-        /// <summary>
-        /// Deserialize from a chunk's constant storage...
-        /// ... will be moed to code later.
-        /// </summary>
-        public GearsObjFunction(GearsChunk chunk, string name, int arity, int ip = 0) {
-            Type = ObjType.ObjFunction;
+        public readonly GearsObjUpvalue[] Upvalues;
+
+        public GearsObjFunction(GearsChunk chunk, string name, int arity, int upvalueCount, int ip = 0) {
+            Type = ObjType.ObjClosure;
             Chunk = chunk;
             Name = name;
             Arity = arity;
             IP = ip;
-        }
-
-        /// <summary>
-        /// Serialize to a chunk's constant storage...
-        /// ... will be moved to code later.
-        /// </summary>
-        internal int Serialize(GearsChunk writer) {
-            int constantIndex = writer.ConstantSize;
-            Chunk.Compress();
-            writer.WriteConstantShort(Chunk.CodeSize);
-            if (Chunk.CodeSize > 0) {
-                writer.WriteConstantBytes(Chunk._Code);
-            }
-            writer.WriteConstantShort(Chunk.ConstantSize);
-            if (Chunk.ConstantSize > 0) {
-                writer.WriteConstantBytes(Chunk._Constants);
-            }
-            writer.WriteConstantShort(Chunk.StringTableSize);
-            if (Chunk.StringTableSize > 0) {
-                writer.WriteConstantBytes(Chunk._StringTable);
-            }
-            return constantIndex;
+            Upvalues = new GearsObjUpvalue[upvalueCount];
         }
 
         public override string ToString() => Name == null ? "<script>" : $"<fn {Name}>";
@@ -139,19 +116,6 @@
     }
 
     delegate GearsValue GearsFunctionNativeDelegate(GearsValue[] args);
-
-    class GearsObjInstance : GearsObj {
-        public readonly GearsObjClass Class;
-        public readonly GearsHashTable Fields;
-
-        public GearsObjInstance(GearsObjClass classObj) {
-            Type = ObjType.ObjInstance;
-            Class = classObj;
-            Fields = new GearsHashTable();
-        }
-
-        public override string ToString() => $"instance of {Class}";
-    }
 
     class GearsObjString : GearsObj {
         public readonly string Value;

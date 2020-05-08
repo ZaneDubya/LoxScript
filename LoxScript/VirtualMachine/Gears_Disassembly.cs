@@ -16,7 +16,7 @@ namespace LoxScript.VirtualMachine {
         }
 
         private int Disassemble(GearsChunk chunk, int offset) {
-            Console.Write($"{offset:X4}  ");
+            Console.Write($"{offset:D4}  ");
             EGearsOpCode instruction = (EGearsOpCode)chunk.ReadCode(ref offset);
             switch (instruction) {
                 case OP_CONSTANT:
@@ -85,8 +85,8 @@ namespace LoxScript.VirtualMachine {
                     return DisassembleInvoke("OP_INVOKE", chunk, offset);
                 case OP_SUPER_INVOKE:
                     return DisassembleInvoke("OP_SUPER_INVOKE", chunk, offset);
-                case OP_CLOSURE:
-                    return DisassembleClosure("OP_CLOSURE", chunk, offset);
+                // case OP_CLOSURE:
+                //     return DisassembleClosure("OP_CLOSURE", chunk, offset);
                 case OP_CLOSE_UPVALUE:
                     return DisassembleSimple("OP_CLOSE_UPVALUE", chunk, offset);
                 case OP_RETURN:
@@ -111,7 +111,7 @@ namespace LoxScript.VirtualMachine {
             return offset;
         }
 
-        private int DisassembleClosure(string name, GearsChunk chunk, int offset) {
+        /*private int DisassembleClosure(string name, GearsChunk chunk, int offset) {
             int upvalueCount = chunk.ReadCode(ref offset);
             Console.WriteLine($"{name} ({upvalueCount} upvalues)");
             for (int i = 0; i < upvalueCount; i++) {
@@ -119,14 +119,14 @@ namespace LoxScript.VirtualMachine {
                 chunk.ReadCode(ref offset); // index
             }
             return offset;
-        }
+        }*/
 
         private int DisassembleFunction(string name, GearsChunk chunk, int offset) {
             int argCount = chunk.ReadCode(ref offset);
             int nameIndex = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
             string value = chunk.ReadStringConstant(nameIndex);
             int fnAddress = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
-            Console.WriteLine($"{name} {value}({argCount} arguments) @{fnAddress:X4}");
+            Console.WriteLine($"{name} {value}({argCount} arguments) @{fnAddress:D4}");
             return offset;
         }
 
