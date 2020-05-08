@@ -1,4 +1,5 @@
-﻿using LoxScript.VirtualMachine;
+﻿using System;
+using LoxScript.VirtualMachine;
 using static LoxScript.Compiling.TokenType;
 using static LoxScript.VirtualMachine.EGearsOpCode;
 
@@ -68,6 +69,10 @@ namespace LoxScript.Compiling {
 
         public override string ToString() => $"Compiling {_Function}";
 
+        private void AddFixup(CompilerChunk fn) {
+            EmitData((byte)0, 0); // to fix up
+        }
+
         // === Declarations and Statements ===========================================================================
         // ===========================================================================================================
 
@@ -86,13 +91,14 @@ namespace LoxScript.Compiling {
                     Synchronize();
                 }
             }
-            fn = EndCompiler();
+            CompilerChunk chunk = EndCompiler();
+            fn = new GearsObjFunction(chunk.Chunk, chunk.Name, chunk.Arity);
             return !_HadError;
         }
 
-        private GearsObjFunction EndCompiler() {
+        private CompilerChunk EndCompiler() {
             EmitReturn();
-            return new GearsObjFunction(_Function.Chunk, _Function.Name, _Function.Arity);
+            return _Function;
         }
 
         // === Declarations ==========================================================================================
@@ -135,7 +141,7 @@ namespace LoxScript.Compiling {
             int nameConstant = IdentifierConstant(className);
             DeclareVariable(className); // The class name binds the class object type to a variable of the same name.
             // todo? make the class declaration an expression, require explicit binding of class to variable (like var Pie = new Pie()); 27.2
-            Emit(OP_CLASS);
+            EmitOpcode(OP_CLASS);
             EmitConstantIndex(nameConstant);
             DefineVariable(nameConstant);
             _CurrentClass = new CompilerClass(className, _CurrentClass);
@@ -150,7 +156,7 @@ namespace LoxScript.Compiling {
                 AddLocal(MakeSyntheticToken(SUPER, "super", _Tokens.Previous().Line));
                 DefineVariable(0);
                 NamedVariable(className); // push class onto stack
-                Emit(OP_INHERIT);
+                EmitOpcode(OP_INHERIT);
                 _CurrentClass.HasSuperClass = true;
             }
             NamedVariable(className); // push class onto stack
@@ -162,7 +168,7 @@ namespace LoxScript.Compiling {
                 MethodDeclaration("method", EFunctionType.TYPE_METHOD, OP_METHOD);
             }
             _Tokens.Consume(RIGHT_BRACE, "Expect '}' after class body.");
-            Emit(OP_POP); // pop class from stack
+            EmitOpcode(OP_POP); // pop class from stack
             if (_CurrentClass.HasSuperClass) {
                 EndScope();
             }
@@ -180,17 +186,17 @@ namespace LoxScript.Compiling {
             string fnName = _Tokens.Previous().Lexeme;
             Compiler fnCompiler = new Compiler(_Tokens, fnType2, fnName, this, _CurrentClass);
             fnCompiler.FunctionBody();
-            GearsObjFunction fn = fnCompiler.EndCompiler();
-            Emit(fnOpCode);
-            Emit((byte)fn.Arity);
+            CompilerChunk fn = fnCompiler.EndCompiler();
+            EmitOpcode(fnOpCode);
+            EmitData((byte)fn.Arity);
             EmitConstantIndex(MakeConstant(fnName));
-            EmitConstantIndex(fn.Serialize(Chunk));
-            Emit(OP_CLOSURE);
+            AddFixup(fn); // EmitConstantIndex(fn.Serialize(Chunk));
+            EmitOpcode(OP_CLOSURE);
             // todo: move this to closure definition - not all functions need upvalues.
-            Emit((byte)fnCompiler._UpvalueCount);
+            EmitData((byte)fnCompiler._UpvalueCount);
             for (int i = 0; i < fnCompiler._UpvalueCount; i++) {
-                Emit((byte)(fnCompiler._UpvalueData[i].IsLocal ? 1 : 0));
-                Emit((byte)(fnCompiler._UpvalueData[i].Index));
+                EmitData((byte)(fnCompiler._UpvalueData[i].IsLocal ? 1 : 0));
+                EmitData((byte)(fnCompiler._UpvalueData[i].Index));
             }
             DefineVariable(global);
         }
@@ -206,19 +212,19 @@ namespace LoxScript.Compiling {
             string fnName = _Tokens.Previous().Lexeme;
             Compiler fnCompiler = new Compiler(_Tokens, fnType2, fnName, this, _CurrentClass);
             fnCompiler.FunctionBody();
-            GearsObjFunction fn = fnCompiler.EndCompiler();
-            Emit(OP_FUNCTION);
-            Emit((byte)fn.Arity);
+            CompilerChunk fn = fnCompiler.EndCompiler();
+            EmitOpcode(OP_FUNCTION);
+            EmitData((byte)fn.Arity);
             EmitConstantIndex(MakeConstant(fnName));
-            EmitConstantIndex(fn.Serialize(Chunk));
-            Emit(OP_CLOSURE);
+            AddFixup(fn); // EmitConstantIndex(fn.Serialize(Chunk));
+            EmitOpcode(OP_CLOSURE);
             // todo: move this to closure definition - not all functions need upvalues.
-            Emit((byte)fnCompiler._UpvalueCount);
+            EmitData((byte)fnCompiler._UpvalueCount);
             for (int i = 0; i < fnCompiler._UpvalueCount; i++) {
-                Emit((byte)(fnCompiler._UpvalueData[i].IsLocal ? 1 : 0));
-                Emit((byte)(fnCompiler._UpvalueData[i].Index));
+                EmitData((byte)(fnCompiler._UpvalueData[i].IsLocal ? 1 : 0));
+                EmitData((byte)(fnCompiler._UpvalueData[i].Index));
             }
-            Emit(fnOpCode);
+            EmitOpcode(fnOpCode);
         }
 
         private void FunctionBody() {
@@ -247,7 +253,7 @@ namespace LoxScript.Compiling {
                 Expression(); // var x = value;
             }
             else {
-                Emit(OP_NIL); // equivalent to var x = nil;
+                EmitOpcode(OP_NIL); // equivalent to var x = nil;
             }
             _Tokens.Consume(SEMICOLON, "Expect ';' after variable declaration.");
             DefineVariable(global);
@@ -291,7 +297,8 @@ namespace LoxScript.Compiling {
                 MarkInitialized();
                 return;
             }
-            Emit(OP_DEFINE_GLOBAL, (byte)((global >> 8) & 0xff), (byte)(global & 0xff));
+            EmitOpcode(OP_DEFINE_GLOBAL);
+            EmitData((byte)((global >> 8) & 0xff), (byte)(global & 0xff));
         }
 
         /// <summary>
@@ -373,14 +380,14 @@ namespace LoxScript.Compiling {
                 _Tokens.Consume(SEMICOLON, "Expect ';' after loop condition.");
                 // jump out of the for loop if the condition if false.
                 exitJump = EmitJump(OP_JUMP_IF_FALSE);
-                Emit(OP_POP);
+                EmitOpcode(OP_POP);
             }
             // increment:
             if (!_Tokens.Match(RIGHT_PAREN)) {
                 int bodyJump = EmitJump(OP_JUMP);
                 int incrementStart = Chunk.CodeSize;
                 Expression();
-                Emit(OP_POP);
+                EmitOpcode(OP_POP);
                 _Tokens.Consume(RIGHT_PAREN, "Expect ')' after for clauses.");
                 EmitLoop(loopStart);
                 loopStart = incrementStart;
@@ -392,7 +399,7 @@ namespace LoxScript.Compiling {
             if (exitJump != -1) {
                 // we only do this if there is a condition clause that might skip the for loop entirely.
                 PatchJump(exitJump);
-                Emit(OP_POP);
+                EmitOpcode(OP_POP);
             }
             EndScope();
         }
@@ -405,11 +412,11 @@ namespace LoxScript.Compiling {
             Expression();
             _Tokens.Consume(RIGHT_PAREN, "Expect ')' after if condition.");
             int thenJump = EmitJump(OP_JUMP_IF_FALSE);
-            Emit(OP_POP);
+            EmitOpcode(OP_POP);
             Statement(); // then statement
             int elseJump = EmitJump(OP_JUMP);
             PatchJump(thenJump);
-            Emit(OP_POP);
+            EmitOpcode(OP_POP);
             if (_Tokens.Match(ELSE)) {
                 Statement();
             }
@@ -422,7 +429,7 @@ namespace LoxScript.Compiling {
         private void PrintStatement() {
             Expression();
             _Tokens.Consume(SEMICOLON, "Expect ';' after value.");
-            Emit(OP_PRINT);
+            EmitOpcode(OP_PRINT);
         }
 
         /// <summary>
@@ -441,7 +448,7 @@ namespace LoxScript.Compiling {
                 }
                 Expression();
                 _Tokens.Consume(SEMICOLON, "Expect ';' after return value.");
-                Emit(OP_RETURN);
+                EmitOpcode(OP_RETURN);
             }
         }
 
@@ -451,11 +458,11 @@ namespace LoxScript.Compiling {
             Expression();
             _Tokens.Consume(RIGHT_PAREN, "Expect ')' after condition.");
             int exitJump = EmitJump(OP_JUMP_IF_FALSE);
-            Emit(OP_POP);
+            EmitOpcode(OP_POP);
             Statement();
             EmitLoop(loopStart);
             PatchJump(exitJump);
-            Emit(OP_POP);
+            EmitOpcode(OP_POP);
         }
 
         private void Block() {
@@ -473,7 +480,7 @@ namespace LoxScript.Compiling {
             // semantically, an expression statement evaluates the expression and discards the result.
             Expression();
             _Tokens.Consume(SEMICOLON, "Expect ';' after expression.");
-            Emit(OP_POP);
+            EmitOpcode(OP_POP);
             return;
         }
 
@@ -506,7 +513,7 @@ namespace LoxScript.Compiling {
                 int elseJump = EmitJump(OP_JUMP_IF_FALSE);
                 int endJump = EmitJump(OP_JUMP);
                 PatchJump(elseJump);
-                Emit(OP_POP);
+                EmitOpcode(OP_POP);
                 And();
                 PatchJump(endJump);
             }
@@ -520,7 +527,7 @@ namespace LoxScript.Compiling {
             while (_Tokens.Match(AND)) {
                 _CanAssign = false;
                 int endJump = EmitJump(OP_JUMP_IF_FALSE);
-                Emit(OP_POP);
+                EmitOpcode(OP_POP);
                 Equality();
                 PatchJump(endJump);
             }
@@ -536,8 +543,13 @@ namespace LoxScript.Compiling {
                 Token op = _Tokens.Previous();
                 Comparison();
                 switch (op.Type) {
-                    case BANG_EQUAL: Emit(OP_EQUAL, OP_NOT); break;
-                    case EQUAL_EQUAL: Emit(OP_EQUAL); break;
+                    case BANG_EQUAL:
+                        EmitOpcode(OP_EQUAL);
+                        EmitOpcode(OP_NOT);
+                        break;
+                    case EQUAL_EQUAL:
+                        EmitOpcode(OP_EQUAL);
+                        break;
                 }
             }
         }
@@ -552,10 +564,20 @@ namespace LoxScript.Compiling {
                 Token op = _Tokens.Previous();
                 Addition();
                 switch (op.Type) {
-                    case GREATER: Emit(OP_GREATER); break;
-                    case GREATER_EQUAL: Emit(OP_LESS, OP_NOT); break;
-                    case LESS: Emit(OP_LESS); break; 
-                    case LESS_EQUAL: Emit(OP_GREATER, OP_NOT); break; 
+                    case GREATER:
+                        EmitOpcode(OP_GREATER);
+                        break;
+                    case GREATER_EQUAL:
+                        EmitOpcode(OP_LESS);
+                        EmitOpcode(OP_NOT);
+                        break;
+                    case LESS:
+                        EmitOpcode(OP_LESS);
+                        break; 
+                    case LESS_EQUAL:
+                        EmitOpcode(OP_GREATER);
+                        EmitOpcode(OP_NOT);
+                        break; 
                 }
             }
         }
@@ -570,8 +592,8 @@ namespace LoxScript.Compiling {
                 Token op = _Tokens.Previous();
                 Multiplication();
                 switch (op.Type) {
-                    case PLUS: Emit(OP_ADD); break;
-                    case MINUS: Emit(OP_SUBTRACT); break;
+                    case PLUS: EmitOpcode(OP_ADD); break;
+                    case MINUS: EmitOpcode(OP_SUBTRACT); break;
                 }
             }
         }
@@ -586,8 +608,8 @@ namespace LoxScript.Compiling {
                 Token op = _Tokens.Previous();
                 Unary();
                 switch (op.Type) {
-                    case SLASH: Emit(OP_DIVIDE); break;
-                    case STAR: Emit(OP_MULTIPLY); break;
+                    case SLASH: EmitOpcode(OP_DIVIDE); break;
+                    case STAR: EmitOpcode(OP_MULTIPLY); break;
                 }
             }
         }
@@ -601,8 +623,8 @@ namespace LoxScript.Compiling {
                 Token op = _Tokens.Previous();
                 Unary();
                 switch (op.Type) {
-                    case MINUS: Emit(OP_NEGATE); break;
-                    case BANG: Emit(OP_NOT); break;
+                    case MINUS: EmitOpcode(OP_NEGATE); break;
+                    case BANG: EmitOpcode(OP_NOT); break;
                 }
                 return; // !!! return new Expr.Unary(op, right);
             }
@@ -627,7 +649,7 @@ namespace LoxScript.Compiling {
                     int nameConstant = IdentifierConstant(name);
                     if (_CanAssign && _Tokens.Match(EQUAL)) {
                         Expression();
-                        Emit(OP_SET_PROPERTY);
+                        EmitOpcode(OP_SET_PROPERTY);
                         EmitConstantIndex(nameConstant);
                     }
                     else if (_Tokens.Match(LEFT_PAREN)) {
@@ -635,7 +657,7 @@ namespace LoxScript.Compiling {
                         EmitConstantIndex(nameConstant);
                     }
                     else {
-                        Emit(OP_GET_PROPERTY);
+                        EmitOpcode(OP_GET_PROPERTY);
                         EmitConstantIndex(nameConstant);
                     }
                 }
@@ -663,7 +685,8 @@ namespace LoxScript.Compiling {
                 } while (_Tokens.Match(COMMA));
             }
             Token paren = _Tokens.Consume(RIGHT_PAREN, "Expect ')' ending call operator parens (following any arguments).");
-            Emit(opCode, (byte)argumentCount);
+            EmitOpcode(opCode);
+            EmitData((byte)argumentCount);
         }
 
         /// <summary>
@@ -673,24 +696,24 @@ namespace LoxScript.Compiling {
         /// </summary>
         private void Primary() {
             if (_Tokens.Match(FALSE)) {
-                Emit(OP_FALSE);
+                EmitOpcode(OP_FALSE);
                 return;
             }
             if (_Tokens.Match(TRUE)) {
-                Emit(OP_TRUE);
+                EmitOpcode(OP_TRUE);
                 return;
             }
             if (_Tokens.Match(NIL)) {
-                Emit(OP_NIL);
+                EmitOpcode(OP_NIL);
                 return;
             }
             if (_Tokens.Match(NUMBER)) {
-                Emit(OP_CONSTANT);
+                EmitOpcode(OP_CONSTANT);
                 EmitConstantIndex(MakeConstant(_Tokens.Previous().LiteralAsNumber));
                 return;
             }
             if (_Tokens.Match(STRING)) {
-                Emit(OP_STRING);
+                EmitOpcode(OP_STRING);
                 EmitConstantIndex(MakeConstant(_Tokens.Previous().LiteralAsString));
                 return;
             }
@@ -713,7 +736,7 @@ namespace LoxScript.Compiling {
                 }
                 else {
                     NamedVariable(MakeSyntheticToken(SUPER, "super", 0), false); // look up this.super - load superclass of instance
-                    Emit(OP_GET_SUPER); // look up super.name - encode name of method to access as operand
+                    EmitOpcode(OP_GET_SUPER); // look up super.name - encode name of method to access as operand
                     EmitConstantIndex(name);
                 }
                 return;
@@ -764,10 +787,10 @@ namespace LoxScript.Compiling {
                     throw new CompilerException(name, $"Invalid assignment target '{name}'.");
                 }
                 Expression();
-                Emit((byte)setOp, (byte)((index >> 8) & 0xff), (byte)(index & 0xff));
+                EmitData((byte)setOp, (byte)((index >> 8) & 0xff), (byte)(index & 0xff));
             }
             else {
-                Emit((byte)getOp, (byte)((index >> 8) & 0xff), (byte)(index & 0xff));
+                EmitData((byte)getOp, (byte)((index >> 8) & 0xff), (byte)(index & 0xff));
             }
         }
 
@@ -810,34 +833,27 @@ namespace LoxScript.Compiling {
         // === Emit Infrastructure ===================================================================================
         // ===========================================================================================================
 
-        private void Emit(EGearsOpCode opcode0, EGearsOpCode opcode1, params byte[] data) {
-            Chunk.WriteCode(opcode0);
-            Chunk.WriteCode(opcode1);
-            Emit(data);
-        }
-
-        private void Emit(EGearsOpCode opcode, params byte[] data) {
+        private void EmitOpcode(EGearsOpCode opcode) {
             Chunk.WriteCode(opcode);
-            Emit(data);
         }
 
-        private void Emit(params byte[] data) {
+        private void EmitData(params byte[] data) {
             foreach (byte i in data) {
                 Chunk.WriteCode(i);
             }
         }
 
         private void EmitLoop(int loopStart) {
-            Emit(OP_LOOP);
+            EmitOpcode(OP_LOOP);
             int offset = Chunk.CodeSize - loopStart + 2;
             if (offset > ushort.MaxValue) {
                 throw new CompilerException(_Tokens.Peek(), "Loop body too large.");
             }
-            Emit((byte)((offset >> 8) & 0xff), (byte)(offset & 0xff));
+            EmitData((byte)((offset >> 8) & 0xff), (byte)(offset & 0xff));
         }
 
         private int EmitJump(EGearsOpCode instruction) {
-            Emit((byte)instruction, 0xff, 0xff);
+            EmitData((byte)instruction, 0xff, 0xff);
             return Chunk.CodeSize - 2;
         }
 
@@ -856,20 +872,20 @@ namespace LoxScript.Compiling {
         /// </summary>
         private void EmitReturn() {
             if (_FunctionType == EFunctionType.TYPE_INITIALIZER) {
-                Emit(OP_GET_LOCAL); //, 0);
+                EmitOpcode(OP_GET_LOCAL); //, 0);
                 EmitConstantIndex(0);
             }
             else {
-                Emit(OP_NIL);
+                EmitOpcode(OP_NIL);
             }
-            Emit(OP_RETURN);
+            EmitOpcode(OP_RETURN);
         }
 
         // === Constants =============================================================================================
         // ===========================================================================================================
 
         private void EmitConstantIndex(int index) {
-            Emit((byte)((index >> 8) & 0xff), (byte)(index & 0xff));
+            EmitData((byte)((index >> 8) & 0xff), (byte)(index & 0xff));
         }
 
         private int MakeConstant(GearsValue value) {
@@ -903,10 +919,10 @@ namespace LoxScript.Compiling {
             _ScopeDepth -= 1;
             while (_LocalCount > 0 && _LocalVarData[_LocalCount - 1].Depth > _ScopeDepth) {
                 if (_LocalVarData[_LocalCount - 1].IsCaptured) {
-                    Emit(OP_CLOSE_UPVALUE);
+                    EmitOpcode(OP_CLOSE_UPVALUE);
                 }
                 else {
-                    Emit(OP_POP);
+                    EmitOpcode(OP_POP);
                 }
                 _LocalCount -= 1;
             }
