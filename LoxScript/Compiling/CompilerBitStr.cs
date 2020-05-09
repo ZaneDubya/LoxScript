@@ -1,14 +1,14 @@
 ﻿using System;
 
 namespace LoxScript.Compiling {
-    class CompilerStrings {
+    class CompilerBitStr {
         // === String speedup ========================================================================================
         // ===========================================================================================================
 
         /// <summary>
         /// Encodes up to the first ten characters of a string as 6-bit representations in a 64 bit ulong.
         /// </summary>
-        public static ulong GetBitString(string value) {
+        public static ulong GetBitStr(string value) {
             ulong bits = 0;
             int bitPosition = 0;
             for (int i = 0; i < value.Length; i++) {
@@ -25,7 +25,7 @@ namespace LoxScript.Compiling {
                 }
                 else if (ch >= 'a' && ch <= 'z') {
                     // encode as 100101‬ - 111110 (37-62)
-                    ulong bitValue = (ulong)(ch - 'a') + 0b100101‬;
+                    ulong bitValue = (ulong)(ch - 'a') + 0b100101;
                     bits |= (bitValue << bitPosition);
                 }
                 else if (ch == '_') {

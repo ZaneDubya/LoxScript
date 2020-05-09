@@ -155,7 +155,7 @@ namespace LoxScript.VirtualMachine {
         // === Heap ==================================================================================================
         // ===========================================================================================================
 
-        private const int HEAP_MAX = 32;
+        private const int HEAP_MAX = 64;
         private GearsObj[] _Heap;
 
         internal int HeapAddObject(GearsObj obj, bool allowGC = true) {

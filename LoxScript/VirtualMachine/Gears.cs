@@ -447,7 +447,7 @@ namespace LoxScript.VirtualMachine {
                         throw new GearsRuntimeException(0, "Attempted call to non-pointer.");
                     }
                     GearsObjFunction initFn = HeapGetObject(initPtr.AsObjPtr) as GearsObjFunction;
-                    PushFrame(new GearsCallFrame(initFn, bp: _SP - argCount - 1));
+                    PushFrame(new GearsCallFrame(initFn, initFn.IP, _SP - argCount - 1));
                 }
             }
             else {

@@ -126,7 +126,12 @@ namespace LoxScript.VirtualMachine {
             int nameIndex = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
             string value = chunk.ReadStringConstant(nameIndex);
             int fnAddress = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
-            Console.WriteLine($"{name} {value}({argCount} arguments) @{fnAddress:D4}");
+            int upvalueCount = chunk.ReadCode(ref offset);
+            Console.WriteLine($"{name} {value}({argCount} arguments, {upvalueCount} upvalues) @{fnAddress:D4}");
+            for (int i = 0; i < upvalueCount; i++) {
+                chunk.ReadCode(ref offset); // is local?
+                chunk.ReadCode(ref offset); // index
+            }
             return offset;
         }
 
