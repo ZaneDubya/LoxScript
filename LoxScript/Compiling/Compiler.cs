@@ -45,6 +45,7 @@ namespace LoxScript.Compiling {
         private readonly List<Compiler> _FixupFns = new List<Compiler>();
         private readonly List<CompilerFixup> _FixupConstants = new List<CompilerFixup>();
         private readonly List<CompilerFixup> _FixupStrings = new List<CompilerFixup>();
+        private readonly Dictionary<ulong, string> _OptimizedStrings = new Dictionary<ulong, string>();
 
         // scope and locals (locals are references to variables in scope; these are stored on the stack at runtime):
         private readonly Compiler _EnclosingCompiler;
@@ -951,13 +952,19 @@ namespace LoxScript.Compiling {
             }
             int index = _Chunk.WriteStringConstant(value);
             if (index > short.MaxValue) {
-                throw new CompilerException(_Tokens.Peek(), "Too many constants in one chunk.");
+                throw new CompilerException(_Tokens.Previous(), "Too many constants in one chunk.");
             }
             return index;
         }
 
         private int MakeBitStrConstant(string value) {
             ulong bitstr = CompilerBitStr.GetBitStr(value);
+            if (_OptimizedStrings.TryGetValue(bitstr, out string optimized)) {
+                if (optimized != value) {
+                    throw new CompilerException(_Tokens.Previous(), $"String collision: '{value}' != '{optimized}'. First 10 characters of all identifiers must be distinct.");
+                }
+            }
+            _OptimizedStrings[bitstr] = value;
             return MakeValueConstant(bitstr);
         }
 

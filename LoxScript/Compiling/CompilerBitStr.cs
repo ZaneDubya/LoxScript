@@ -11,7 +11,7 @@ namespace LoxScript.Compiling {
         public static ulong GetBitStr(string value) {
             ulong bits = 0;
             int bitPosition = 0;
-            for (int i = 0; i < value.Length; i++) {
+            for (int i = 0; i < value.Length && i < 10; i++) {
                 char ch = value[i];
                  if (ch >= '0' && ch <= '9') {
                     // encode as binary (000001 - 001010) (1-10)
