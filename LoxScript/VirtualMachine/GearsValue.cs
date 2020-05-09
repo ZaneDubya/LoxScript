@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace LoxScript.VirtualMachine {
@@ -57,9 +58,7 @@ namespace LoxScript.VirtualMachine {
         public int AsObjPtr => IsObjPtr ? (int)(_AsLong & ~(TAG_OBJECTPTR)) : -1;
 
         public GearsObj AsObject(Gears context) => context.HeapGetObject(AsObjPtr); // todo: fix with reference to context's heap...
-
-        public byte[] AsBytes => BitConverter.GetBytes(_AsLong);
-
+        
         // --- Ctor and ToString -------------------------------------------------------------------------------------
 
         public GearsValue(ulong value) : this() {
@@ -105,6 +104,7 @@ namespace LoxScript.VirtualMachine {
         /// <summary>
         /// Implicit conversion from bool to GearsValue (no cast operator required).
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator GearsValue(bool value) => new GearsValue(value ? TAG_TRUE : TAG_FALSE);
         
         /// <summary>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace LoxScript.VirtualMachine {
@@ -116,6 +117,7 @@ namespace LoxScript.VirtualMachine {
         // === Constants =============================================================================================
         // ===========================================================================================================
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal GearsValue ReadConstantValue(int offset) {
             if (offset < 0 || offset > ConstantSize) {
                 return -1; // todo: runtime error

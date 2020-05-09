@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace LoxScript.VirtualMachine {
     /// <summary>
@@ -32,7 +33,7 @@ namespace LoxScript.VirtualMachine {
             Push(GearsValue.CreateObjPtr(HeapAddObject(closure)));
         }
 
-        public override string ToString() => $"{_OpenFrame.Function.Name}@{_IP}";
+        public override string ToString() => $"{_OpenFrame.Function}@{_IP}";
 
         // === Call frames ==========================================================================================
         // === This should be part of the stack! See todo.md ========================================================
@@ -92,19 +93,23 @@ namespace LoxScript.VirtualMachine {
             _IP += value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal int ReadByte() {
             return _Code[_IP++];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal int ReadShort() {
             return (_Code[_IP++] << 8) | _Code[_IP++];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal GearsValue ReadConstant() {
             int index = ReadShort();
             return Chunk.ReadConstantValue(index);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal string ReadConstantString() {
             int index = ReadShort();
             return Chunk.ReadStringConstant(index);
@@ -117,6 +122,7 @@ namespace LoxScript.VirtualMachine {
         private readonly GearsValue[] _Stack;
         protected int _SP;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal GearsValue StackGet(int index) {
             if (index < 0 || index >= _SP) {
                 throw new GearsRuntimeException(0, "Stack exception");
@@ -124,6 +130,7 @@ namespace LoxScript.VirtualMachine {
             return _Stack[index];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void StackSet(int index, GearsValue value) {
             if (index < 0 || index >= _SP) {
                 throw new GearsRuntimeException(0, "Stack exception");
@@ -131,6 +138,7 @@ namespace LoxScript.VirtualMachine {
             _Stack[index] = value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void Push(GearsValue value) {
             if (_SP >= STACK_MAX) {
                 throw new GearsRuntimeException(0, "Stack exception");
@@ -138,6 +146,7 @@ namespace LoxScript.VirtualMachine {
             _Stack[_SP++] = value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal GearsValue Pop() {
             if (_SP == 0) {
                 throw new GearsRuntimeException(0, "Stack exception");
@@ -145,6 +154,7 @@ namespace LoxScript.VirtualMachine {
             return _Stack[--_SP];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal GearsValue Peek(int offset = 0) {
             int index = _SP - 1 - offset;
             if (index < 0 || index >= _SP) {

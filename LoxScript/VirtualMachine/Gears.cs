@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using static LoxScript.VirtualMachine.EGearsOpCode;
 
 namespace LoxScript.VirtualMachine {
@@ -27,10 +28,9 @@ namespace LoxScript.VirtualMachine {
                         break;
                     case OP_LOAD_FUNCTION: {
                             int arity = ReadByte();
-                            ulong name = (ulong)ReadConstant();
                             int address = ReadShort();
                             int upvalueCount = ReadByte();
-                            GearsObjFunction closure = new GearsObjFunction(Chunk, name, arity, upvalueCount, address);
+                            GearsObjFunction closure = new GearsObjFunction(Chunk, arity, upvalueCount, address);
                             for (int i = 0; i < upvalueCount; i++) {
                                 bool isLocal = ReadByte() == 1;
                                 int index = ReadByte();
@@ -308,6 +308,7 @@ namespace LoxScript.VirtualMachine {
         /// <summary>
         /// Lox has a simple rule for boolean values: 'false' and 'nil' are falsey, and everything else is truthy.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool IsFalsey(GearsValue value) {
             return value.IsNil || (value.IsBool && !value.AsBool);
         }
@@ -331,10 +332,11 @@ namespace LoxScript.VirtualMachine {
         }
 
         private void DefineMethod() {
+            ulong methodName = (ulong)ReadConstant();
             GearsValue methodPtr = Peek();
             GearsObjFunction method = GetObjectFromPtr<GearsObjFunction>(methodPtr);
             GearsObjClass objClass = GetObjectFromPtr<GearsObjClass>(Peek(1));
-            objClass.Methods.Set(method.Name, methodPtr);
+            objClass.Methods.Set(methodName, methodPtr);
             Pop();
         }
 

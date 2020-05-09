@@ -223,7 +223,7 @@ namespace LoxScript.Compiling {
             fnCompiler.EndCompiler();
             EmitOpcode(OP_LOAD_FUNCTION);
             EmitData((byte)fnCompiler.Arity);
-            EmitConstantIndex(MakeBitStrConstant(fnName), _FixupConstants); // has fixup
+            // EmitConstantIndex(MakeBitStrConstant(fnName), _FixupConstants); // has fixup
             AddFixup(fnCompiler);
             // EmitOpcode(OP_CLOSURE);
             EmitData((byte)fnCompiler._UpvalueCount);
@@ -248,15 +248,15 @@ namespace LoxScript.Compiling {
             fnCompiler.EndCompiler();
             EmitOpcode(OP_LOAD_FUNCTION);
             EmitData((byte)fnCompiler.Arity);
-            EmitConstantIndex(MakeBitStrConstant(fnName), _FixupConstants); // has fixup
+            // EmitConstantIndex(MakeBitStrConstant(fnName), _FixupConstants); // has fixup
             AddFixup(fnCompiler);
-            // EmitOpcode(OP_CLOSURE);
             EmitData((byte)fnCompiler._UpvalueCount);
             for (int i = 0; i < fnCompiler._UpvalueCount; i++) {
                 EmitData((byte)(fnCompiler._UpvalueData[i].IsLocal ? 1 : 0));
                 EmitData((byte)(fnCompiler._UpvalueData[i].Index));
             }
             EmitOpcode(OP_METHOD);
+            EmitConstantIndex(MakeBitStrConstant(fnName), _FixupConstants); // has fixup
         }
 
         private void FunctionBody() {
