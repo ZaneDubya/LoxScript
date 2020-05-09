@@ -8,7 +8,7 @@
 // GearsVM 4/29 inline frame:   1282 ms 45x speed up, 100x slower than native
 // GearsVM 5/02 closures:       1393 ms 42x speed up, 9% slower than 4/29
 // GearsVM 5/05 classes/init:   1340 ms 43x speed up, 5% slower than 4/20
-/*
+
 fun fibonacci(n) {
     if (n <= 1) {
         return n;
@@ -26,4 +26,3 @@ for (var j = 0; j < 10; j = j + 1) {
     print now;
 }
 print total / 10;
-*/

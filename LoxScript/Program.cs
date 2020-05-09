@@ -3,6 +3,7 @@ using LoxScript.Interpreter;
 using LoxScript.VirtualMachine;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 namespace LoxScript {
@@ -12,8 +13,6 @@ namespace LoxScript {
         private static bool _HadRuntimeError = false;
 
         static void Main(string[] args) {
-            // Gears gears = new Gears();
-            args = new string[] { "../../../Tests/test.txt" };
             if (args.Length > 1) {
                 Console.WriteLine("Usage: loxscript [script]");
                 Exit(64);
@@ -23,10 +22,22 @@ namespace LoxScript {
                 Exit(0, true);
             }
             else {
-                RunPrompt();
+                Console.WriteLine("LoxScript - Written by Zane Wagner.\n  1. Lox Interpreter\n  2. Gears benchmark\n  3. Native benchmark");
+                while (true) {
+                    switch (Console.ReadKey(true).Key) {
+                        case ConsoleKey.D1:
+                            RunPrompt();
+                            break;
+                        case ConsoleKey.D2:
+                            RunFile("../../../Tests/benchmark.lox");
+                            break;
+                        case ConsoleKey.D3:
+                            RunNativeBenchmark();
+                            break;
+                    }
+                }
             }
         }
-
         private static void Exit(int code, bool waitForKey = false) {
             if (waitForKey) {
                 Console.ReadKey();
@@ -123,5 +134,35 @@ namespace LoxScript {
             Console.Error.WriteLine($"[line {line}] Error{where}: {message}");
             _HadError = true;
         }
+
+        // === Native Benchmark ======================================================================================
+        // ===========================================================================================================
+
+        private static void RunNativeBenchmark() {
+            double total = 0;
+            for (var j = 0; j < 10; j = j + 1) {
+                double start = RunNativeBenchmarkClock();
+                for (var i = 0; i < 30; i = i + 1) {
+                    RunNativeBenchmarkFibonacci(i);
+                }
+                double now = RunNativeBenchmarkClock() - start;
+                total = total + now;
+                Console.WriteLine(j);
+            }
+            Console.WriteLine($"{total / 10:F2} ms");
+        }
+
+        private static double RunNativeBenchmarkFibonacci(double n) {
+            if (n <= 1) {
+                return n;
+            }
+            return RunNativeBenchmarkFibonacci(n - 2) + RunNativeBenchmarkFibonacci(n - 1);
+        }
+
+        private static double RunNativeBenchmarkClock() {
+            double frequency = Stopwatch.Frequency / 1000;
+            return Stopwatch.GetTimestamp() / frequency;
+        }
+
     }
 }

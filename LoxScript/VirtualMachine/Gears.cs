@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using static LoxScript.VirtualMachine.EGearsOpCode;
 
 namespace LoxScript.VirtualMachine {
@@ -10,7 +11,7 @@ namespace LoxScript.VirtualMachine {
         private const string InitString = "init";
 
         private GearsValue NativeFnClock(GearsValue[] args) {
-            return new GearsValue((double)DateTimeOffset.Now.ToUnixTimeMilliseconds());
+            return (double)Stopwatch.GetTimestamp() / (Stopwatch.Frequency / 1000);
         }
 
         internal bool Run(GearsObjFunction script) {
