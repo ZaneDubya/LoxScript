@@ -258,6 +258,7 @@ namespace LoxScript.VirtualMachine {
 #if DEBUG_LOG_GC                 
             Console.WriteLine($"Mark {obj}");
 #endif
+            _GrayList.Enqueue(obj);
             obj.IsMarked = true;
         }
 

@@ -23,7 +23,7 @@ namespace LoxScript {
             }
             else {
                 while (true) {
-                    Console.WriteLine("LoxScript:\n  1. Lox Interpreter Prompt\n  2. Gears (bytecode vm) benchmark\n  3. Engine (interpreter) benchmark\n  4. Native benchmark");
+                    Console.WriteLine("LoxScript:\n  1. Lox Interpreter Prompt\n  2. Gears (bytecode vm) benchmark\n  3. Engine (interpreter) benchmark\n  4. Native benchmark\n  5. Test suite");
                     switch (Console.ReadKey(true).Key) {
                         case ConsoleKey.D1:
                             RunPrompt();
@@ -36,6 +36,9 @@ namespace LoxScript {
                             break;
                         case ConsoleKey.D4:
                             RunNativeBenchmark();
+                            break;
+                        case ConsoleKey.D5:
+                            RunFile("../../../Tests/test.pass.txt", true);
                             break;
                         default:
                             break;

@@ -178,7 +178,7 @@ namespace LoxScript.Compiling {
             // todo? make the class declaration an expression, require explicit binding of class to variable (like var Pie = new Pie()); 27.2
             EmitOpcode(OP_CLASS);
             EmitConstantIndex(nameConstant, _FixupStrings);
-            DefineVariable(nameConstant);
+            DefineVariable(MakeBitStrConstant(className.Lexeme));
             _CurrentClass = new CompilerClass(className, _CurrentClass);
             // superclass:
             if (_Tokens.Match(LESS)) { 
@@ -318,7 +318,7 @@ namespace LoxScript.Compiling {
         }
 
         /// <summary>
-        /// For global variables, emits the ptr to the string table. For local variables, marks them as initialized. No fixup needed.
+        /// For global variables, emits the bitstring that identifies the variable. For local variables, marks them as initialized. No fixup needed.
         /// </summary>
         private void DefineVariable(int global) {
             if (_ScopeDepth > SCOPE_GLOBAL) {
@@ -674,19 +674,19 @@ namespace LoxScript.Compiling {
                 }
                 else if (_Tokens.Match(DOT)) {
                     Token name = _Tokens.Consume(IDENTIFIER, "Expect a property name after '.'.");
-                    int nameConstant = MakeStringConstant(name.Lexeme); // needs fixup
+                    int nameConstant = MakeBitStrConstant(name.Lexeme); // needs fixup
                     if (_CanAssign && _Tokens.Match(EQUAL)) {
                         Expression();
                         EmitOpcode(OP_SET_PROPERTY);
-                        EmitConstantIndex(nameConstant, _FixupStrings);
+                        EmitConstantIndex(nameConstant, _FixupConstants);
                     }
                     else if (_Tokens.Match(LEFT_PAREN)) {
                         FinishCall(OP_INVOKE);
-                        EmitConstantIndex(nameConstant, _FixupStrings);
+                        EmitConstantIndex(nameConstant, _FixupConstants);
                     }
                     else {
                         EmitOpcode(OP_GET_PROPERTY);
-                        EmitConstantIndex(nameConstant, _FixupStrings);
+                        EmitConstantIndex(nameConstant, _FixupConstants);
                     }
                 }
                 else {

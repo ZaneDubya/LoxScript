@@ -18,278 +18,284 @@ namespace LoxScript.VirtualMachine {
         internal bool Run(GearsChunk chunk) {
             Reset(chunk);
             DefineNative("clock", 0, NativeFnClock);
-            while (true) {
-                EGearsOpCode instruction = (EGearsOpCode)ReadByte();
-                switch (instruction) {
-                    case OP_LOAD_CONSTANT:
-                        Push(ReadConstant());
-                        break;
-                    case OP_LOAD_STRING:
-                        Push(GearsValue.CreateObjPtr(HeapAddObject(new GearsObjString(ReadConstantString()))));
-                        break;
-                    case OP_LOAD_FUNCTION: {
-                            int arity = ReadByte();
-                            int address = ReadShort();
-                            int upvalueCount = ReadByte();
-                            GearsObjFunction closure = new GearsObjFunction(Chunk, arity, upvalueCount, address);
-                            for (int i = 0; i < upvalueCount; i++) {
-                                bool isLocal = ReadByte() == 1;
-                                int index = ReadByte();
-                                if (isLocal) {
-                                    int location = _OpenFrame.BP + index;
-                                    closure.Upvalues[i] = CaptureUpvalue(location);
-                                }
-                                else {
-                                    closure.Upvalues[i] = (_OpenFrame as GearsCallFrame).Function.Upvalues[index];
-                                }
-                            }
-                            Push(GearsValue.CreateObjPtr(HeapAddObject(closure)));
-                        }
-                        break;
-                    case OP_NIL:
-                        Push(GearsValue.NilValue);
-                        break;
-                    case OP_TRUE:
-                        Push(GearsValue.TrueValue);
-                        break;
-                    case OP_FALSE:
-                        Push(GearsValue.FalseValue);
-                        break;
-                    case OP_POP:
-                        Pop();
-                        break;
-                    case OP_GET_LOCAL: {
-                            int slot = ReadShort();
-                            Push(StackGet(slot + _BP));
-                        }
-                        break;
-                    case OP_SET_LOCAL: {
-                            int slot = ReadShort();
-                            StackSet(slot + _BP, Peek());
-                        }
-                        break;
-                    case OP_GET_GLOBAL: {
-                            ulong name = (ulong)ReadConstant();
-                            if (!Globals.TryGet(name, out GearsValue value)) {
-                                throw new GearsRuntimeException(0, $"Undefined variable '{name}'.");
-                            }
-                            Push(value);
-                        }
-                        break;
-                    case OP_DEFINE_GLOBAL: {
-                            ulong name = (ulong)ReadConstant();
-                            Globals.Set(name, Peek());
-                            Pop();
-                        }
-                        break;
-                    case OP_SET_GLOBAL: {
-                            ulong name = (ulong)ReadConstant();
-                            if (!Globals.ContainsKey(name)) {
-                                throw new GearsRuntimeException(0, $"Undefined variable '{name}'.");
-                            }
-                            Globals.Set(name, Peek());
+            try {
+                while (true) {
+                    EGearsOpCode instruction = (EGearsOpCode)ReadByte();
+                    switch (instruction) {
+                        case OP_LOAD_CONSTANT:
+                            Push(ReadConstant());
                             break;
-                        }
-                    case OP_GET_UPVALUE: {
-                            int slot = ReadShort();
-                            GearsObjUpvalue upvalue = (_OpenFrame as GearsCallFrame).Function.Upvalues[slot];
-                            if (upvalue.IsClosed) {
-                                Push(upvalue.Value);
+                        case OP_LOAD_STRING:
+                            Push(GearsValue.CreateObjPtr(HeapAddObject(new GearsObjString(ReadConstantString()))));
+                            break;
+                        case OP_LOAD_FUNCTION: {
+                                int arity = ReadByte();
+                                int address = ReadShort();
+                                int upvalueCount = ReadByte();
+                                GearsObjFunction closure = new GearsObjFunction(Chunk, arity, upvalueCount, address);
+                                for (int i = 0; i < upvalueCount; i++) {
+                                    bool isLocal = ReadByte() == 1;
+                                    int index = ReadByte();
+                                    if (isLocal) {
+                                        int location = _OpenFrame.BP + index;
+                                        closure.Upvalues[i] = CaptureUpvalue(location);
+                                    }
+                                    else {
+                                        closure.Upvalues[i] = (_OpenFrame as GearsCallFrame).Function.Upvalues[index];
+                                    }
+                                }
+                                Push(GearsValue.CreateObjPtr(HeapAddObject(closure)));
                             }
-                            else {
-                                Push(StackGet(upvalue.OriginalSP));
+                            break;
+                        case OP_NIL:
+                            Push(GearsValue.NilValue);
+                            break;
+                        case OP_TRUE:
+                            Push(GearsValue.TrueValue);
+                            break;
+                        case OP_FALSE:
+                            Push(GearsValue.FalseValue);
+                            break;
+                        case OP_POP:
+                            Pop();
+                            break;
+                        case OP_GET_LOCAL: {
+                                int slot = ReadShort();
+                                Push(StackGet(slot + _BP));
                             }
-                        }
-                        break;
-                    case OP_SET_UPVALUE: {
-                            int slot = ReadShort();
-                            GearsObjUpvalue upvalue = (_OpenFrame as GearsCallFrame).Function.Upvalues[slot];
-                            if (upvalue.IsClosed) {
-                                upvalue.Value = Peek();
+                            break;
+                        case OP_SET_LOCAL: {
+                                int slot = ReadShort();
+                                StackSet(slot + _BP, Peek());
                             }
-                            else {
-                                StackSet(upvalue.OriginalSP, Peek());
+                            break;
+                        case OP_GET_GLOBAL: {
+                                ulong name = (ulong)ReadConstant();
+                                if (!Globals.TryGet(name, out GearsValue value)) {
+                                    throw new GearsRuntimeException(0, $"Undefined variable '{Compiling.CompilerBitStr.GetBitStr(name)}'.");
+                                }
+                                Push(value);
                             }
-                        }
-                        break;
-                    case OP_GET_PROPERTY: {
-                            GearsObjClassInstance instance = GetObjectFromPtr<GearsObjClassInstance>(Peek());
-                            ulong name = (ulong)ReadConstant(); // property name
-                            if (instance.Fields.TryGet(name, out GearsValue value)) {
-                                Pop(); // instance
-                                Push(value); // property value
+                            break;
+                        case OP_DEFINE_GLOBAL: {
+                                ulong name = (ulong)ReadConstant();
+                                Globals.Set(name, Peek());
+                                Pop();
+                            }
+                            break;
+                        case OP_SET_GLOBAL: {
+                                ulong name = (ulong)ReadConstant();
+                                if (!Globals.ContainsKey(name)) {
+                                    throw new GearsRuntimeException(0, $"Undefined variable '{Compiling.CompilerBitStr.GetBitStr(name)}'.");
+                                }
+                                Globals.Set(name, Peek());
                                 break;
                             }
-                            if (!BindMethod(instance.Class, name)) {
-                                throw new GearsRuntimeException(0, $"Undefined property or method '{name}'.");
+                        case OP_GET_UPVALUE: {
+                                int slot = ReadShort();
+                                GearsObjUpvalue upvalue = (_OpenFrame as GearsCallFrame).Function.Upvalues[slot];
+                                if (upvalue.IsClosed) {
+                                    Push(upvalue.Value);
+                                }
+                                else {
+                                    Push(StackGet(upvalue.OriginalSP));
+                                }
                             }
-                        }
-                        break;
-                    case OP_SET_PROPERTY: {
-                            GearsObjClassInstance instance = GetObjectFromPtr<GearsObjClassInstance>(Peek(1));
-                            ulong name = (ulong)ReadConstant(); // property name
-                            GearsValue value = Pop(); // value
-                            instance.Fields.Set(name, value);
-                            Pop(); // ptr
-                            Push(value); // value
-                        }
-                        break;
-                    case OP_GET_SUPER: {
-                            ulong name = (ulong)ReadConstant(); // method/property name
-                            GearsObjClass superclass = GetObjectFromPtr<GearsObjClass>(Pop());
-                            if (!BindMethod(superclass, name)) {
-                                throw new GearsRuntimeException(0, $"Could not get {name} in superclass {superclass}");
+                            break;
+                        case OP_SET_UPVALUE: {
+                                int slot = ReadShort();
+                                GearsObjUpvalue upvalue = (_OpenFrame as GearsCallFrame).Function.Upvalues[slot];
+                                if (upvalue.IsClosed) {
+                                    upvalue.Value = Peek();
+                                }
+                                else {
+                                    StackSet(upvalue.OriginalSP, Peek());
+                                }
                             }
-                        }
-                        break;
-                    case OP_EQUAL:
-                        Push(AreValuesEqual(Pop(), Pop()));
-                        break;
-                    case OP_GREATER: {
-                            if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
-                                throw new GearsRuntimeException(0, "Operands must be numbers.");
+                            break;
+                        case OP_GET_PROPERTY: {
+                                GearsObjClassInstance instance = GetObjectFromPtr<GearsObjClassInstance>(Peek());
+                                ulong name = (ulong)ReadConstant(); // property name
+                                if (instance.Fields.TryGet(name, out GearsValue value)) {
+                                    Pop(); // instance
+                                    Push(value); // property value
+                                    break;
+                                }
+                                if (!BindMethod(instance.Class, name)) {
+                                    throw new GearsRuntimeException(0, $"Undefined property or method '{name}'.");
+                                }
                             }
-                            GearsValue b = Pop();
-                            GearsValue a = Pop();
-                            Push(a > b);
-                        }
-                        break;
-                    case OP_LESS: {
-                            if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
-                                throw new GearsRuntimeException(0, "Operands must be numbers.");
+                            break;
+                        case OP_SET_PROPERTY: {
+                                GearsObjClassInstance instance = GetObjectFromPtr<GearsObjClassInstance>(Peek(1));
+                                ulong name = (ulong)ReadConstant(); // property name
+                                GearsValue value = Pop(); // value
+                                instance.Fields.Set(name, value);
+                                Pop(); // ptr
+                                Push(value); // value
                             }
-                            GearsValue b = Pop();
-                            GearsValue a = Pop();
-                            Push(a < b);
-                        }
-                        break;
-                    case OP_ADD: {
-                            if (Peek(0).IsNumber && Peek(1).IsNumber) {
+                            break;
+                        case OP_GET_SUPER: {
+                                ulong name = (ulong)ReadConstant(); // method/property name
+                                GearsObjClass superclass = GetObjectFromPtr<GearsObjClass>(Pop());
+                                if (!BindMethod(superclass, name)) {
+                                    throw new GearsRuntimeException(0, $"Could not get {name} in superclass {superclass}");
+                                }
+                            }
+                            break;
+                        case OP_EQUAL:
+                            Push(AreValuesEqual(Pop(), Pop()));
+                            break;
+                        case OP_GREATER: {
+                                if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
+                                    throw new GearsRuntimeException(0, "Operands must be numbers.");
+                                }
                                 GearsValue b = Pop();
                                 GearsValue a = Pop();
-                                Push(a + b);
+                                Push(a > b);
                             }
-                            else if (Peek(0).IsObjType(this, GearsObj.ObjType.ObjString) && Peek(1).IsObjType(this, GearsObj.ObjType.ObjString)) {
-                                string b = GetObjectFromPtr<GearsObjString>(Pop()).Value;
-                                string a = GetObjectFromPtr<GearsObjString>(Pop()).Value;
-                                Push(GearsValue.CreateObjPtr(HeapAddObject(new GearsObjString(a + b))));
+                            break;
+                        case OP_LESS: {
+                                if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
+                                    throw new GearsRuntimeException(0, "Operands must be numbers.");
+                                }
+                                GearsValue b = Pop();
+                                GearsValue a = Pop();
+                                Push(a < b);
                             }
-                            else {
-                                throw new GearsRuntimeException(0, "Operands must be numbers or strings.");
+                            break;
+                        case OP_ADD: {
+                                if (Peek(0).IsNumber && Peek(1).IsNumber) {
+                                    GearsValue b = Pop();
+                                    GearsValue a = Pop();
+                                    Push(a + b);
+                                }
+                                else if (Peek(0).IsObjType(this, GearsObj.ObjType.ObjString) && Peek(1).IsObjType(this, GearsObj.ObjType.ObjString)) {
+                                    string b = GetObjectFromPtr<GearsObjString>(Pop()).Value;
+                                    string a = GetObjectFromPtr<GearsObjString>(Pop()).Value;
+                                    Push(GearsValue.CreateObjPtr(HeapAddObject(new GearsObjString(a + b))));
+                                }
+                                else {
+                                    throw new GearsRuntimeException(0, "Operands must be numbers or strings.");
+                                }
                             }
-                        }
-                        break;
-                    case OP_SUBTRACT: {
-                            if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
-                                throw new GearsRuntimeException(0, "Operands must be numbers.");
+                            break;
+                        case OP_SUBTRACT: {
+                                if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
+                                    throw new GearsRuntimeException(0, "Operands must be numbers.");
+                                }
+                                GearsValue b = Pop();
+                                GearsValue a = Pop();
+                                Push(a - b);
                             }
-                            GearsValue b = Pop();
-                            GearsValue a = Pop();
-                            Push(a - b);
-                        }
-                        break;
-                    case OP_MULTIPLY: {
-                            if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
-                                throw new GearsRuntimeException(0, "Operands must be numbers.");
+                            break;
+                        case OP_MULTIPLY: {
+                                if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
+                                    throw new GearsRuntimeException(0, "Operands must be numbers.");
+                                }
+                                GearsValue b = Pop();
+                                GearsValue a = Pop();
+                                Push(a * b);
                             }
-                            GearsValue b = Pop();
-                            GearsValue a = Pop();
-                            Push(a * b);
-                        }
-                        break;
-                    case OP_DIVIDE: {
-                            if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
-                                throw new GearsRuntimeException(0, "Operands must be numbers.");
+                            break;
+                        case OP_DIVIDE: {
+                                if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
+                                    throw new GearsRuntimeException(0, "Operands must be numbers.");
+                                }
+                                GearsValue b = Pop();
+                                GearsValue a = Pop();
+                                Push(a / b);
                             }
-                            GearsValue b = Pop();
-                            GearsValue a = Pop();
-                            Push(a / b);
-                        }
-                        break;
-                    case OP_NOT:
-                        Push(IsFalsey(Pop()));
-                        break;
-                    case OP_NEGATE: {
-                            if (!Peek(0).IsNumber) {
-                                throw new GearsRuntimeException(0, "Operand must be a number.");
+                            break;
+                        case OP_NOT:
+                            Push(IsFalsey(Pop()));
+                            break;
+                        case OP_NEGATE: {
+                                if (!Peek(0).IsNumber) {
+                                    throw new GearsRuntimeException(0, "Operand must be a number.");
+                                }
+                                Push(-Pop());
                             }
-                            Push(-Pop());
-                        }
-                        break;
-                    case OP_PRINT:
-                        Console.WriteLine(Pop().ToString(this));
-                        break;
-                    case OP_JUMP: {
-                            int offset = ReadShort();
-                            ModIP(offset);
-                        }
-                        break;
-                    case OP_JUMP_IF_FALSE: {
-                            int offset = ReadShort();
-                            if (IsFalsey(Peek())) {
+                            break;
+                        case OP_PRINT:
+                            Console.WriteLine(Pop().ToString(this));
+                            break;
+                        case OP_JUMP: {
+                                int offset = ReadShort();
                                 ModIP(offset);
                             }
-                        }
-                        break;
-                    case OP_LOOP: {
-                            int offset = ReadShort();
-                            ModIP(-offset);
-                        }
-                        break;
-                    case OP_CALL: {
-                            Call();
-                        }
-                        break;
-                    case OP_INVOKE: {
-                            CallInvoke();
-                        }
-                        break;
-                    case OP_SUPER_INVOKE: {
-                            CallInvokeSuper();
-                        }
-                        break;
-                    case OP_CLOSE_UPVALUE:
-                        CloseUpvalues(_SP - 1);
-                        Pop();
-                        break;
-                    case OP_RETURN: {
-                            GearsValue result = Pop();
-                            CloseUpvalues(_OpenFrame.BP);
-                            if (PopFrame()) {
-                                if (_SP != 0) {
-                                    Console.WriteLine($"Report error: SP is '{_SP}', not '0'.");
+                            break;
+                        case OP_JUMP_IF_FALSE: {
+                                int offset = ReadShort();
+                                if (IsFalsey(Peek())) {
+                                    ModIP(offset);
                                 }
-                                return true;
                             }
-                            Push(result);
-                        }
-                        break;
-                    case OP_CLASS: {
-                            Push(GearsValue.CreateObjPtr(HeapAddObject(new GearsObjClass(ReadConstantString()))));
-                        }
-                        break;
-                    case OP_INHERIT: {
-                            if (!Peek(0).IsObjType(this, GearsObj.ObjType.ObjClass)) {
-                                throw new GearsRuntimeException(0, "Superclass is not a class.");
+                            break;
+                        case OP_LOOP: {
+                                int offset = ReadShort();
+                                ModIP(-offset);
                             }
-                            GearsObjClass super = GetObjectFromPtr<GearsObjClass>(Peek(1));
-                            GearsObjClass sub = GetObjectFromPtr<GearsObjClass>(Peek(0));
-                            foreach (ulong key in super.Methods.AllKeys) {
-                                if (!super.Methods.TryGet(key, out GearsValue methodPtr)) {
-                                    throw new GearsRuntimeException(0, "Could not copy superclass method table.");
+                            break;
+                        case OP_CALL: {
+                                Call();
+                            }
+                            break;
+                        case OP_INVOKE: {
+                                CallInvoke();
+                            }
+                            break;
+                        case OP_SUPER_INVOKE: {
+                                CallInvokeSuper();
+                            }
+                            break;
+                        case OP_CLOSE_UPVALUE:
+                            CloseUpvalues(_SP - 1);
+                            Pop();
+                            break;
+                        case OP_RETURN: {
+                                GearsValue result = Pop();
+                                CloseUpvalues(_OpenFrame.BP);
+                                if (PopFrame()) {
+                                    if (_SP != 0) {
+                                        Console.WriteLine($"Report error: SP is '{_SP}', not '0'.");
+                                    }
+                                    return true;
                                 }
-                                sub.Methods.Set(key, methodPtr);
+                                Push(result);
                             }
-                            Pop(); // pop subclass
-                        }
-                        break;
-                    case OP_METHOD: {
-                            DefineMethod();
-                        }
-                        break;
-                    default:
-                        throw new GearsRuntimeException(0, $"Unknown opcode {instruction}");
+                            break;
+                        case OP_CLASS: {
+                                Push(GearsValue.CreateObjPtr(HeapAddObject(new GearsObjClass(ReadConstantString()))));
+                            }
+                            break;
+                        case OP_INHERIT: {
+                                if (!Peek(0).IsObjType(this, GearsObj.ObjType.ObjClass)) {
+                                    throw new GearsRuntimeException(0, "Superclass is not a class.");
+                                }
+                                GearsObjClass super = GetObjectFromPtr<GearsObjClass>(Peek(1));
+                                GearsObjClass sub = GetObjectFromPtr<GearsObjClass>(Peek(0));
+                                foreach (ulong key in super.Methods.AllKeys) {
+                                    if (!super.Methods.TryGet(key, out GearsValue methodPtr)) {
+                                        throw new GearsRuntimeException(0, "Could not copy superclass method table.");
+                                    }
+                                    sub.Methods.Set(key, methodPtr);
+                                }
+                                Pop(); // pop subclass
+                            }
+                            break;
+                        case OP_METHOD: {
+                                DefineMethod();
+                            }
+                            break;
+                        default:
+                            throw new GearsRuntimeException(0, $"Unknown opcode {instruction}");
+                    }
                 }
+            }
+            catch (GearsRuntimeException e) {
+                Console.WriteLine(e.Message);
+                return false;
             }
         }
 
@@ -379,10 +385,10 @@ namespace LoxScript.VirtualMachine {
 
         private void InvokeFromClass(int argCount, ulong methodName, GearsValue receiverPtr, GearsObjClass objClass) {
             if (!objClass.Methods.TryGet(methodName, out GearsValue methodPtr)) {
-                throw new GearsRuntimeException(0, $"{objClass} has no method with name {methodName}.");
+                throw new GearsRuntimeException(0, $"{objClass} has no method with name '{Compiling.CompilerBitStr.GetBitStr(methodName)}'.");
             }
             if ((!methodPtr.IsObjPtr) || !(HeapGetObject(methodPtr.AsObjPtr) is GearsObjFunction method)) {
-                throw new GearsRuntimeException(0, $"Could not resolve method {methodName} in class {objClass}.");
+                throw new GearsRuntimeException(0, $"Could not resolve method '{Compiling.CompilerBitStr.GetBitStr(methodName)}' in class {objClass}.");
             }
             if (method.Arity != argCount) {
                 throw new GearsRuntimeException(0, $"{method} expects {method.Arity} arguments but was passed {argCount}.");

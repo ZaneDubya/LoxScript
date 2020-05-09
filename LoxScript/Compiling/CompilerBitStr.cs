@@ -63,7 +63,7 @@ namespace LoxScript.Compiling {
                 }
                 bitPosition += 6;
             }
-            return new string(chars);
+            return new string(chars).TrimEnd('\0');
         }
     }
 }
