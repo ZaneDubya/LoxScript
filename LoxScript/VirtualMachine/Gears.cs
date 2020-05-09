@@ -41,7 +41,7 @@ namespace LoxScript.VirtualMachine {
                                         closure.Upvalues[i] = CaptureUpvalue(location);
                                     }
                                     else {
-                                        closure.Upvalues[i] = (_OpenFrame as GearsCallFrame).Function.Upvalues[index];
+                                        closure.Upvalues[i] = _OpenFrame.Function.Upvalues[index];
                                     }
                                 }
                                 Push(GearsValue.CreateObjPtr(HeapAddObject(closure)));
@@ -93,7 +93,7 @@ namespace LoxScript.VirtualMachine {
                             }
                         case OP_GET_UPVALUE: {
                                 int slot = ReadShort();
-                                GearsObjUpvalue upvalue = (_OpenFrame as GearsCallFrame).Function.Upvalues[slot];
+                                GearsObjUpvalue upvalue = _OpenFrame.Function.Upvalues[slot];
                                 if (upvalue.IsClosed) {
                                     Push(upvalue.Value);
                                 }
@@ -104,7 +104,7 @@ namespace LoxScript.VirtualMachine {
                             break;
                         case OP_SET_UPVALUE: {
                                 int slot = ReadShort();
-                                GearsObjUpvalue upvalue = (_OpenFrame as GearsCallFrame).Function.Upvalues[slot];
+                                GearsObjUpvalue upvalue = _OpenFrame.Function.Upvalues[slot];
                                 if (upvalue.IsClosed) {
                                     upvalue.Value = Peek();
                                 }
@@ -408,7 +408,7 @@ namespace LoxScript.VirtualMachine {
                 throw new GearsRuntimeException(0, "OP_SUPER_INVOKE must be followed by OP_GET_UPVALUE.");
             }
             int slot = ReadShort();
-            GearsObjUpvalue upvalue = (_OpenFrame as GearsCallFrame).Function.Upvalues[slot];
+            GearsObjUpvalue upvalue = _OpenFrame.Function.Upvalues[slot];
             GearsObjClass superclass = GetObjectFromPtr<GearsObjClass>(upvalue.IsClosed ? upvalue.Value : StackGet(upvalue.OriginalSP));
             ulong methodName = (ulong)ReadConstant();
             InvokeFromClass(argCount, methodName, GearsValue.NilValue, superclass);

@@ -9,7 +9,6 @@
         public enum ObjType {
             ObjBoundMethod,
             ObjClass,
-            ObjClosure,
             ObjFunction,
             ObjInstance,
             ObjNative,
@@ -78,7 +77,7 @@
         public readonly GearsObjUpvalue[] Upvalues;
 
         public GearsObjFunction(GearsChunk chunk, int arity, int upvalueCount, int ip = 0) {
-            Type = ObjType.ObjClosure;
+            Type = ObjType.ObjFunction;
             Chunk = chunk;
             Arity = arity;
             IP = ip;

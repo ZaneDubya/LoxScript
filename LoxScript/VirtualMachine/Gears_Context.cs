@@ -281,7 +281,7 @@ namespace LoxScript.VirtualMachine {
                 case GearsObj.ObjType.ObjClass:
                     MarkTable((obj as GearsObjClass).Methods);
                     break;
-                case GearsObj.ObjType.ObjClosure:
+                case GearsObj.ObjType.ObjFunction:
                     // MarkObject((obj as GearsObjClosure).Function);
                     foreach (GearsObjUpvalue upvalue in (obj as GearsObjFunction).Upvalues) {
                         MarkObject(upvalue);
@@ -294,7 +294,6 @@ namespace LoxScript.VirtualMachine {
                     MarkObject((obj as GearsObjClassInstance).Class);
                     MarkTable((obj as GearsObjClassInstance).Fields);
                     break;
-                case GearsObj.ObjType.ObjFunction:
                 case GearsObj.ObjType.ObjNative:
                 case GearsObj.ObjType.ObjString:
                     // these have no outgoing references, so there is nothing to traverse.
