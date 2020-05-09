@@ -18,21 +18,26 @@ namespace LoxScript {
                 Exit(64);
             }
             else if (args.Length == 1) {
-                RunFile(args[0]);
+                RunFile(args[0], useGears: true);
                 Exit(0, true);
             }
             else {
-                Console.WriteLine("LoxScript - Written by Zane Wagner.\n  1. Lox Interpreter\n  2. Gears benchmark\n  3. Native benchmark");
                 while (true) {
+                    Console.WriteLine("LoxScript:\n  1. Lox Interpreter Prompt\n  2. Gears (bytecode vm) benchmark\n  3. Engine (interpreter) benchmark\n  4. Native benchmark");
                     switch (Console.ReadKey(true).Key) {
                         case ConsoleKey.D1:
                             RunPrompt();
                             break;
                         case ConsoleKey.D2:
-                            RunFile("../../../Tests/benchmark.lox");
+                            RunFile("../../../Tests/benchmark.lox", true);
                             break;
                         case ConsoleKey.D3:
+                            RunFile("../../../Tests/benchmark.lox", false);
+                            break;
+                        case ConsoleKey.D4:
                             RunNativeBenchmark();
+                            break;
+                        default:
                             break;
                     }
                 }
@@ -45,9 +50,9 @@ namespace LoxScript {
             Environment.Exit(code);
         }
 
-        private static void RunFile(string path) {
+        private static void RunFile(string path, bool useGears) {
             string source = ReadFile(path);
-            Run(source);
+            Run(source, useGears);
             if (_HadError) {
                 Exit(65, true);
             }
@@ -59,33 +64,35 @@ namespace LoxScript {
         private static void RunPrompt() {
             while (true) {
                 Console.Write("> ");
-                Run(Console.ReadLine());
+                Run(Console.ReadLine(), false);
                 _HadError = false;
             }
         }
 
-        private static void Run(string source) {
+        private static void Run(string source, bool useGears) {
             TokenList tokens = new Tokenizer(source).ScanTokens();
-            if (Compiler.TryCompile(tokens, out GearsObjFunction fn, out string status)) {
-                Gears gears = new Gears();
-                gears.Disassemble(fn.Chunk);
-                Console.WriteLine("Press enter to run.");
-                Console.ReadKey();
-                gears.Run(fn);
+            if (useGears) {
+                if (Compiler.TryCompile(tokens, out GearsChunk chunk, out string status)) {
+                    Gears gears = new Gears();
+                    gears.Disassemble(chunk);
+                    Console.WriteLine("Press enter to run.");
+                    Console.ReadKey();
+                    gears.Run(chunk);
+                }
             }
-            Console.ReadLine();
-            // Exit(1);
-            List<Stmt> statements = new Parser(tokens).Parse();
-            // Stop if there was a syntax error.
-            if (_HadError) {
-                return;
+            else {
+                List<Stmt> statements = new Parser(tokens).Parse();
+                // Stop if there was a syntax error.
+                if (_HadError) {
+                    return;
+                }
+                EngineResolver resolver = new EngineResolver(_Interpreter);
+                resolver.Resolve(statements);
+                if (_HadError) {
+                    return;
+                }
+                _Interpreter.Interpret(statements);
             }
-            EngineResolver resolver = new EngineResolver(_Interpreter);
-            resolver.Resolve(statements);
-            if (_HadError) {
-                return;
-            }
-            _Interpreter.Interpret(statements);
         }
 
         // === Helpers ===============================================================================================

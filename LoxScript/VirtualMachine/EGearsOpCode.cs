@@ -3,17 +3,17 @@
         /// <summary>
         /// Loads the indexed constant onto the stack.
         /// </summary>
-        OP_CONSTANT,
+        OP_LOAD_CONSTANT,
 
         /// <summary>
         /// Loads the indexed string into the heap, and loads an object pointing to that string onto the stack.
         /// </summary>
-        OP_STRING,
+        OP_LOAD_STRING,
 
         /// <summary>
         /// Loads the indexed function into the heap, and loads an object pointing to that function onto the stack.
         /// </summary>
-        OP_FUNCTION,
+        OP_LOAD_FUNCTION,
 
         // Types of Values literal-ops
         OP_NIL,
@@ -120,7 +120,7 @@
         /// <summary>
         /// Creates a closure for the preceding function on the stack.
         /// </summary>
-        OP_CLOSURE,
+        // OP_CLOSURE,
 
         /// <summary>
         /// Creates an upvalue for a local variable captured by a closure. The local variable is on top of the stack.

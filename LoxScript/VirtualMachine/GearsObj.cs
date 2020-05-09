@@ -22,15 +22,15 @@
 
     class GearsObjBoundMethod : GearsObj {
         public readonly GearsValue Receiver;
-        public readonly GearsObjClosure Method;
+        public readonly GearsObjFunction Method;
 
-        public GearsObjBoundMethod(GearsValue receiver, GearsObjClosure method) {
+        public GearsObjBoundMethod(GearsValue receiver, GearsObjFunction method) {
             Type = ObjType.ObjBoundMethod;
             Receiver = receiver;
             Method = method;
         }
 
-        public override string ToString() => Method.Function.ToString();
+        public override string ToString() => Method.ToString();
     }
 
     class GearsObjClass : GearsObj {
@@ -46,25 +46,23 @@
         public override string ToString() => $"{Name}";
     }
 
-    class GearsObjClosure : GearsObj {
-        public readonly GearsObjFunction Function;
-        public readonly GearsObjUpvalue[] Upvalues;
+    class GearsObjClassInstance : GearsObj {
+        public readonly GearsObjClass Class;
+        public readonly GearsHashTable Fields;
 
-        public GearsObjClosure(GearsObjFunction fn, int upvalueCount) {
-            Type = ObjType.ObjClosure;
-            Function = fn;
-            Upvalues = new GearsObjUpvalue[upvalueCount];
+        public GearsObjClassInstance(GearsObjClass classObj) {
+            Type = ObjType.ObjInstance;
+            Class = classObj;
+            Fields = new GearsHashTable();
         }
 
-        public override string ToString() => Function.ToString();
+        public override string ToString() => $"instance of {Class}";
     }
 
     /// <summary>
-    /// A function is a first class variable, and so must be an object.
+    /// A lox function with enclosed scope and upvalues.
     /// </summary>
     class GearsObjFunction : GearsObj {
-        public readonly string Name;
-
         /// <summary>
         /// The number of parameters expected by the function.
         /// </summary>
@@ -75,53 +73,19 @@
         /// </summary>
         public readonly GearsChunk Chunk;
 
-        public GearsObjFunction(string name, int arity) {
-            Type = ObjType.ObjFunction;
-            Name = name;
-            Arity = arity;
-            Chunk = new GearsChunk(name);
-        }
+        public readonly int IP;
 
-        public GearsObjFunction(string name, int arity, GearsChunk chunk) {
-            Name = name;
-            Arity = arity;
+        public readonly GearsObjUpvalue[] Upvalues;
+
+        public GearsObjFunction(GearsChunk chunk, int arity, int upvalueCount, int ip = 0) {
+            Type = ObjType.ObjClosure;
             Chunk = chunk;
+            Arity = arity;
+            IP = ip;
+            Upvalues = new GearsObjUpvalue[upvalueCount];
         }
 
-        /// <summary>
-        /// Deserialize from a chunk's constant storage...
-        /// ... will be moed to code later.
-        /// </summary>
-        public GearsObjFunction(Gears context) {
-            Type = ObjType.ObjFunction;
-            int index = context.ReadShort();
-            Name = context.Chunk.ReadConstantString(ref index);
-            Arity = context.Chunk.ReadConstantByte(ref index);
-            Chunk = new GearsChunk(Name,
-                context.Chunk.ReadConstantBytes(ref index),
-                context.Chunk.ReadConstantBytes(ref index));
-        }
-
-        /// <summary>
-        /// Serialize to a chunk's constant storage...
-        /// ... will be moved to code later.
-        /// </summary>
-        internal int Serialize(GearsChunk writer) {
-            int index = writer.WriteConstantString(Name);
-            writer.WriteConstantByte((byte)Arity);
-            Chunk.Compress();
-            writer.WriteConstantShort(Chunk.CodeSize);
-            if (Chunk.CodeSize > 0) {
-                writer.WriteConstantBytes(Chunk._Code);
-            }
-            writer.WriteConstantShort(Chunk.ConstantSize);
-            if (Chunk.ConstantSize > 0) {
-                writer.WriteConstantBytes(Chunk._Constants);
-            }
-            return index;
-        }
-
-        public override string ToString() => Name == null ? "<script>" : $"<fn {Name}>";
+        public override string ToString() => "<fn>";
     }
 
     class GearsObjFunctionNative : GearsObj {
@@ -149,19 +113,6 @@
     }
 
     delegate GearsValue GearsFunctionNativeDelegate(GearsValue[] args);
-
-    class GearsObjInstance : GearsObj {
-        public readonly GearsObjClass Class;
-        public readonly GearsHashTable Fields;
-
-        public GearsObjInstance(GearsObjClass classObj) {
-            Type = ObjType.ObjInstance;
-            Class = classObj;
-            Fields = new GearsHashTable();
-        }
-
-        public override string ToString() => $"instance of {Class}";
-    }
 
     class GearsObjString : GearsObj {
         public readonly string Value;

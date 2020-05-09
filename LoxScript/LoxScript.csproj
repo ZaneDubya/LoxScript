@@ -23,6 +23,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -47,7 +48,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Compiling\CompilerClass.cs" />
+    <Compile Include="Compiling\CompilerFixup.cs" />
     <Compile Include="Compiling\CompilerLocal.cs" />
+    <Compile Include="Compiling\CompilerBitStr.cs" />
     <Compile Include="Compiling\CompilerUpvalue.cs" />
     <Compile Include="Compiling\EFunctionType.cs" />
     <Compile Include="Compiling\TokenList.cs" />

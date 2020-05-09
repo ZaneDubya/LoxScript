@@ -1,13 +1,16 @@
 
 // === Fibonacci Benchmark ===================================================
+// Compiler flags: release mode/optimize+/prefer 64-bit
+// Native C#                     8.4 ms
+// AST:                        40090 ms                        5725x slower than native
+// GearsVM 5/08 complete        1445 ms 28x faster than AST     172x slower than native
+// GearsVM 5/08 single chunk    1378 ms 29x faster than AST     164x slower than native    
+// GearsVM 5/08 bitstrings      1073 ms 37x faster than AST     127x slower than native
+// GearsVM 5/08 prefer 64bit     712 ms 56x faster than AST     85x slower than native
+// GearsVM 5/08 agressiveInline  662 ms 60x faster than AST     79x slower than native
+// GearsVM 5/09 e/i ulong cast   636 ms 63x faster than AST     76x slower than native
+// GearsVM 5/09 undup consts     626 ms 64x faster than AST     75x slower than native
 // ===========================================================================
-// Native C#                    12.8 ms
-// AST:                        58000 ms 4531x slower than native
-// GearsVM 4/29:                1554 ms 37x speed up, 127x slower than native
-// GearsVM 4/29 inline context: 1413 ms 41x speed up, 115x slower than native
-// GearsVM 4/29 inline frame:   1282 ms 45x speed up, 100x slower than native
-// GearsVM 5/02 closures:       1393 ms 42x speed up, 9% slower than 4/29
-// GearsVM 5/05 classes/init:   1340 ms 43x speed up, 5% slower than 4/20
 
 fun fibonacci(n) {
     if (n <= 1) {
@@ -15,6 +18,7 @@ fun fibonacci(n) {
     }
     return fibonacci(n - 2) + fibonacci(n - 1);
 }
+
 var total = 0;
 for (var j = 0; j < 10; j = j + 1) {
     var start = clock();
