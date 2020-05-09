@@ -146,10 +146,11 @@ namespace LoxScript.VirtualMachine {
         }
 
         internal GearsValue Peek(int offset = 0) {
-            if (_SP - 1 - offset < 0) {
+            int index = _SP - 1 - offset;
+            if (index < 0 || index >= _SP) {
                 throw new GearsRuntimeException(0, "Stack exception");
             }
-            return _Stack[_SP - 1 - offset];
+            return _Stack[index];
         }
 
         // === Heap ==================================================================================================
