@@ -223,7 +223,7 @@ namespace LoxScript.Compiling {
             fnCompiler.EndCompiler();
             EmitOpcode(OP_LOAD_FUNCTION);
             EmitData((byte)fnCompiler.Arity);
-            EmitConstantIndex(MakeStringConstant(fnName), _FixupStrings); // has fixup
+            EmitConstantIndex(MakeBitStrConstant(fnName), _FixupConstants); // has fixup
             AddFixup(fnCompiler);
             // EmitOpcode(OP_CLOSURE);
             EmitData((byte)fnCompiler._UpvalueCount);
@@ -248,7 +248,7 @@ namespace LoxScript.Compiling {
             fnCompiler.EndCompiler();
             EmitOpcode(OP_LOAD_FUNCTION);
             EmitData((byte)fnCompiler.Arity);
-            EmitConstantIndex(MakeStringConstant(fnName), _FixupStrings); // has fixup
+            EmitConstantIndex(MakeBitStrConstant(fnName), _FixupConstants); // has fixup
             AddFixup(fnCompiler);
             // EmitOpcode(OP_CLOSURE);
             EmitData((byte)fnCompiler._UpvalueCount);
@@ -298,7 +298,7 @@ namespace LoxScript.Compiling {
             if (_ScopeDepth > SCOPE_GLOBAL) {
                 return 0;
             }
-            return MakeStringConstant(name.Lexeme); // needs fixup
+            return MakeBitStrConstant(name.Lexeme);
         }
 
         private void DeclareVariable(Token name) {
@@ -735,7 +735,7 @@ namespace LoxScript.Compiling {
                 return;
             }
             if (_Tokens.Match(NUMBER)) {
-                EmitOpcode(OP_CONSTANT);
+                EmitOpcode(OP_LOAD_CONSTANT);
                 EmitConstantIndex(MakeValueConstant(_Tokens.Previous().LiteralAsNumber), _FixupConstants);
                 return;
             }
@@ -754,17 +754,17 @@ namespace LoxScript.Compiling {
                 Token keyword = _Tokens.Previous();
                 _Tokens.Consume(DOT, "Expect '.' after 'super'.");
                 Token methodName = _Tokens.Consume(IDENTIFIER, "Expect superclass method name.");
-                int nameIndex = MakeStringConstant(methodName.Lexeme); // needs fixup
+                int nameIndex = MakeBitStrConstant(methodName.Lexeme);
                 NamedVariable(MakeSyntheticToken(THIS, "this", 0), false); // look up this - load instance onto stack
                 if (_Tokens.Match(LEFT_PAREN)) {
                     FinishCall(OP_SUPER_INVOKE);
                     NamedVariable(MakeSyntheticToken(SUPER, "super", 0), false); // look up this.super - load superclass of instance
-                    EmitConstantIndex(nameIndex, _FixupStrings);
+                    EmitConstantIndex(nameIndex, _FixupConstants);
                 }
                 else {
                     NamedVariable(MakeSyntheticToken(SUPER, "super", 0), false); // look up this.super - load superclass of instance
                     EmitOpcode(OP_GET_SUPER); // look up super.name - encode name of method to access as operand
-                    EmitConstantIndex(nameIndex, _FixupStrings);
+                    EmitConstantIndex(nameIndex, _FixupConstants);
                 }
                 return;
             }
@@ -806,7 +806,7 @@ namespace LoxScript.Compiling {
                 setOp = OP_SET_UPVALUE;
             }
             else {
-                index = MakeStringConstant(name.Lexeme); // has fixup
+                index = MakeBitStrConstant(name.Lexeme); // has fixup
                 getOp = OP_GET_GLOBAL;
                 setOp = OP_SET_GLOBAL;
                 needsFixup = true;
@@ -817,11 +817,11 @@ namespace LoxScript.Compiling {
                 }
                 Expression();
                 EmitData((byte)setOp);
-                EmitConstantIndex(index, needsFixup ? _FixupStrings : null);
+                EmitConstantIndex(index, needsFixup ? _FixupConstants : null);
             }
             else {
                 EmitData((byte)getOp);
-                EmitConstantIndex(index, needsFixup ? _FixupStrings : null);
+                EmitConstantIndex(index, needsFixup ? _FixupConstants : null);
             }
         }
 
@@ -948,7 +948,7 @@ namespace LoxScript.Compiling {
 
         private int MakeBitStrConstant(string value) {
             ulong bitstr = CompilerBitStr.GetBitStr(value);
-            return 0;
+            return MakeValueConstant(bitstr);
         }
 
         private Token MakeSyntheticToken(TokenType type, string name, int line) {

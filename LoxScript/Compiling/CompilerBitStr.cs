@@ -15,7 +15,7 @@ namespace LoxScript.Compiling {
                 char ch = value[i];
                  if (ch >= '0' && ch <= '9') {
                     // encode as binary (000001 - 001010) (1-10)
-                    ulong bitValue = (ulong)(ch - '1') + 0b000001;
+                    ulong bitValue = (ulong)(ch - '0') + 0b000001;
                     bits |= (bitValue << bitPosition);
                 }
                 else if (ch >= 'A' && ch <= 'Z') {
@@ -39,6 +39,31 @@ namespace LoxScript.Compiling {
                 bitPosition += 6;
             }
             return bits;
+        }
+
+        public static string GetBitStr(ulong value) {
+            int bitPosition = 0;
+            char[] chars = new char[10];
+            for (int i = 0; i < 10; i++) {
+                ulong bits = (value >> bitPosition) & 0x3f;
+                if (bits == 0) {
+                    break;
+                }
+                else if (bits <= 10) {
+                    chars[i] = (char)('0' + bits - 1);
+                }
+                else if (bits <= 36) {
+                    chars[i] = (char)('A' + bits - 11);
+                }
+                else if (bits <= 62) {
+                    chars[i] = (char)('a' + bits - 37);
+                }
+                else if (bits == 63) {
+                    chars[i] = '_';
+                }
+                bitPosition += 6;
+            }
+            return new string(chars);
         }
     }
 }

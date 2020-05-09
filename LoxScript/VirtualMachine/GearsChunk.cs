@@ -27,25 +27,14 @@ namespace LoxScript.VirtualMachine {
 
         internal byte[] _Code = null;
 
-        internal byte[] _Constants = null;
+        internal ulong[] _Constants = null;
 
         internal byte[] _StringTable = null;
 
         private int[] _Lines = null; // todo: optimize with RLE.
 
-        internal GearsChunk(byte[] code = null, byte[] constants = null, byte[] stringTable = null) {
-            if (code != null) {
-                _Code = code;
-                CodeSize = code.Length;
-            }
-            if (constants != null) {
-                _Constants = constants;
-                ConstantSize = constants.Length;
-            }
-            if (stringTable != null) {
-                _StringTable = stringTable;
-                StringTableSize = stringTable.Length;
-            }
+        internal GearsChunk() {
+
         }
 
         internal void Compress() {
@@ -55,7 +44,7 @@ namespace LoxScript.VirtualMachine {
                 _Code = newCode;
             }
             if (ConstantSize > 0) {
-                byte[] newConstants = new byte[ConstantSize];
+                ulong[] newConstants = new ulong[ConstantSize];
                 Array.Copy(_Constants, newConstants, ConstantSize);
                 _Constants = newConstants;
             }
@@ -128,76 +117,27 @@ namespace LoxScript.VirtualMachine {
         // ===========================================================================================================
 
         internal GearsValue ReadConstantValue(int offset) {
-            if (offset < 0 || offset + 8 > ConstantSize) {
+            if (offset < 0 || offset > ConstantSize) {
                 return -1; // todo: runtime error
             }
-            GearsValue value = new GearsValue(BitConverter.ToUInt64(_Constants, offset));
+            GearsValue value = _Constants[offset];
             return value;
         }
 
-        internal byte ReadConstantByte(ref int offset) {
-            if (offset < 0 || offset + 1 > ConstantSize) {
-                return byte.MaxValue; // todo: runtime error
-            }
-            byte value = _Constants[offset];
-            offset += 1;
-            return value;
-        }
-
-        internal byte[] ReadConstantBytes(ref int offset) {
-            if (offset < 0 || offset + 2 > ConstantSize) {
-                return null; // todo: runtime error
-            }
-            int size = ReadConstantShort(ref offset);
-            if (size == 0 || offset + size > ConstantSize) {
-                return null;
-            }
-            byte[] value = new byte[size];
-            Array.Copy(_Constants, offset, value, 0, size);
-            offset += size;
-            return value;
-        }
-
-        internal int ReadConstantShort(ref int offset) {
-            return (ReadConstantByte(ref offset) << 8) | ReadConstantByte(ref offset);
+        internal string ReadConstantValueAsBitStr(int offset) {
+            GearsValue value = ReadConstantValue(offset);
+            return Compiling.CompilerBitStr.GetBitStr((ulong)value);
         }
 
         internal int WriteConstantValue(GearsValue value) {
-            CheckGrowConstantCapcity(8);
+            CheckGrowConstantCapacity(1);
             int index = ConstantSize;
-            Array.Copy(value.AsBytes, 0, _Constants, index, 8);
-            ConstantSize += 8;
-            return index;
-        }
-
-        internal int WriteConstantByte(byte value) {
-            CheckGrowConstantCapcity(1);
-            int index = ConstantSize;
-            _Constants[ConstantSize] = value;
+            _Constants[index] = (ulong)value;
             ConstantSize += 1;
             return index;
         }
 
-        internal int WriteConstantShort(int value) {
-            int index = ConstantSize;
-            WriteConstantByte((byte)((value >> 8) & 0xff));
-            WriteConstantByte((byte)(value & 0xff));
-            return index;
-        }
-
-        internal int WriteConstantBytes(byte[] value) {
-            int size = value.Length;
-            int capacity = _Constants?.Length ?? 0;
-            if (capacity < ConstantSize + size) {
-                CheckGrowConstantCapcity(size);
-            }
-            int index = ConstantSize;
-            Array.Copy(value, 0, _Constants, index, size);
-            ConstantSize += size;
-            return index;
-        }
-
-        private void CheckGrowConstantCapcity(int size) {
+        private void CheckGrowConstantCapacity(int size) {
             int capacity = _Constants?.Length ?? 0;
             if (capacity < ConstantSize + size) {
                 int newCapacity = _Constants == null ? InitialConstantCapcity : _Constants.Length * GrowCapacityFactor;
@@ -205,10 +145,10 @@ namespace LoxScript.VirtualMachine {
                     newCapacity *= GrowCapacityFactor;
                 }
                 if (_Constants == null) {
-                    _Constants = new byte[newCapacity];
+                    _Constants = new ulong[newCapacity];
                 }
                 else {
-                    byte[] newData = new byte[newCapacity];
+                    ulong[] newData = new ulong[newCapacity];
                     Array.Copy(_Constants, newData, _Constants.Length);
                     _Constants = newData;
                 }

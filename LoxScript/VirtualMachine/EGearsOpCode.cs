@@ -3,7 +3,7 @@
         /// <summary>
         /// Loads the indexed constant onto the stack.
         /// </summary>
-        OP_CONSTANT,
+        OP_LOAD_CONSTANT,
 
         /// <summary>
         /// Loads the indexed string into the heap, and loads an object pointing to that string onto the stack.

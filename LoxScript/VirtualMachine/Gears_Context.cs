@@ -27,7 +27,7 @@ namespace LoxScript.VirtualMachine {
             }
             Globals.Reset();
             _GrayList.Clear();
-            GearsObjFunction closure = new GearsObjFunction(chunk, "script", 0, 0);
+            GearsObjFunction closure = new GearsObjFunction(chunk, 0, 0, 0);
             PushFrame(new GearsCallFrame(closure));
             Push(GearsValue.CreateObjPtr(HeapAddObject(closure)));
         }

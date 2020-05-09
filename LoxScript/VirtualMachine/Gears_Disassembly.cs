@@ -19,12 +19,12 @@ namespace LoxScript.VirtualMachine {
             Console.Write($"{offset:D4}  ");
             EGearsOpCode instruction = (EGearsOpCode)chunk.ReadCode(ref offset);
             switch (instruction) {
-                case OP_CONSTANT:
-                    return DisassembleConstant("OP_CONSTANT", chunk, offset, OP_CONSTANT);
+                case OP_LOAD_CONSTANT:
+                    return DisassembleConstant("OP_LOAD_CONSTANT", chunk, offset, OP_LOAD_CONSTANT);
                 case OP_LOAD_STRING:
-                    return DisassembleConstant("OP_STRING", chunk, offset, OP_LOAD_STRING);
+                    return DisassembleConstant("OP_LOAD_STRING", chunk, offset, OP_LOAD_STRING);
                 case OP_LOAD_FUNCTION:
-                    return DisassembleFunction("OP_FUNCTION", chunk, offset);
+                    return DisassembleFunction("OP_LOAD_FUNCTION", chunk, offset);
                 case OP_NIL:
                     return DisassembleSimple("OP_NIL", chunk, offset);
                 case OP_TRUE:
@@ -124,7 +124,7 @@ namespace LoxScript.VirtualMachine {
         private int DisassembleFunction(string name, GearsChunk chunk, int offset) {
             int argCount = chunk.ReadCode(ref offset);
             int nameIndex = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
-            string value = chunk.ReadStringConstant(nameIndex);
+            string value = chunk.ReadConstantValueAsBitStr(nameIndex);
             int fnAddress = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
             int upvalueCount = chunk.ReadCode(ref offset);
             Console.WriteLine($"{name} {value}({argCount} arguments, {upvalueCount} upvalues) @{fnAddress:D4}");
@@ -155,7 +155,7 @@ namespace LoxScript.VirtualMachine {
         private int DisassembleConstant(string name, GearsChunk chunk, int offset, EGearsOpCode constantType) {
             int constantIndex = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
             switch (constantType) {
-                case OP_CONSTANT: {
+                case OP_LOAD_CONSTANT: {
                         GearsValue value = chunk.ReadConstantValue(constantIndex);
                         Console.WriteLine($"{name} const[{constantIndex}] ({value})");
                     }

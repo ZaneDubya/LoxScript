@@ -63,7 +63,7 @@
     /// A lox function with enclosed scope and upvalues.
     /// </summary>
     class GearsObjFunction : GearsObj {
-        public readonly string Name;
+        public readonly ulong Name;
 
         /// <summary>
         /// The number of parameters expected by the function.
@@ -79,7 +79,7 @@
 
         public readonly GearsObjUpvalue[] Upvalues;
 
-        public GearsObjFunction(GearsChunk chunk, string name, int arity, int upvalueCount, int ip = 0) {
+        public GearsObjFunction(GearsChunk chunk, ulong name, int arity, int upvalueCount, int ip = 0) {
             Type = ObjType.ObjClosure;
             Chunk = chunk;
             Name = name;
@@ -88,7 +88,7 @@
             Upvalues = new GearsObjUpvalue[upvalueCount];
         }
 
-        public override string ToString() => Name == null ? "<script>" : $"<fn {Name}>";
+        public override string ToString() => Name == 0 ? "<script>" : $"<fn {Name}>";
     }
 
     class GearsObjFunctionNative : GearsObj {

@@ -7,7 +7,7 @@ namespace LoxScript.VirtualMachine {
     /// </summary>
     partial class Gears {
 
-        private const string InitString = "init";
+        private readonly static ulong InitString = Compiling.CompilerBitStr.GetBitStr("init");
 
         private GearsValue NativeFnClock(GearsValue[] args) {
             return new GearsValue((double)DateTimeOffset.Now.ToUnixTimeMilliseconds());
@@ -19,7 +19,7 @@ namespace LoxScript.VirtualMachine {
             while (true) {
                 EGearsOpCode instruction = (EGearsOpCode)ReadByte();
                 switch (instruction) {
-                    case OP_CONSTANT:
+                    case OP_LOAD_CONSTANT:
                         Push(ReadConstant());
                         break;
                     case OP_LOAD_STRING:
@@ -27,7 +27,7 @@ namespace LoxScript.VirtualMachine {
                         break;
                     case OP_LOAD_FUNCTION: {
                             int arity = ReadByte();
-                            string name = ReadConstantString();
+                            ulong name = (ulong)ReadConstant();
                             int address = ReadShort();
                             int upvalueCount = ReadByte();
                             GearsObjFunction closure = new GearsObjFunction(Chunk, name, arity, upvalueCount, address);
@@ -68,7 +68,7 @@ namespace LoxScript.VirtualMachine {
                         }
                         break;
                     case OP_GET_GLOBAL: {
-                            string name = ReadConstantString();
+                            ulong name = (ulong)ReadConstant();
                             if (!Globals.TryGet(name, out GearsValue value)) {
                                 throw new GearsRuntimeException(0, $"Undefined variable '{name}'.");
                             }
@@ -76,13 +76,13 @@ namespace LoxScript.VirtualMachine {
                         }
                         break;
                     case OP_DEFINE_GLOBAL: {
-                            string name = ReadConstantString();
+                            ulong name = (ulong)ReadConstant();
                             Globals.Set(name, Peek());
                             Pop();
                         }
                         break;
                     case OP_SET_GLOBAL: {
-                            string name = ReadConstantString();
+                            ulong name = (ulong)ReadConstant();
                             if (!Globals.ContainsKey(name)) {
                                 throw new GearsRuntimeException(0, $"Undefined variable '{name}'.");
                             }
@@ -113,7 +113,7 @@ namespace LoxScript.VirtualMachine {
                         break;
                     case OP_GET_PROPERTY: {
                             GearsObjClassInstance instance = GetObjectFromPtr<GearsObjClassInstance>(Peek());
-                            string name = ReadConstantString(); // property name.
+                            ulong name = (ulong)ReadConstant(); // property name
                             if (instance.Fields.TryGet(name, out GearsValue value)) {
                                 Pop(); // instance
                                 Push(value); // property value
@@ -126,7 +126,7 @@ namespace LoxScript.VirtualMachine {
                         break;
                     case OP_SET_PROPERTY: {
                             GearsObjClassInstance instance = GetObjectFromPtr<GearsObjClassInstance>(Peek(1));
-                            string name = ReadConstantString(); // property name.
+                            ulong name = (ulong)ReadConstant(); // property name
                             GearsValue value = Pop(); // value
                             instance.Fields.Set(name, value);
                             Pop(); // ptr
@@ -134,10 +134,10 @@ namespace LoxScript.VirtualMachine {
                         }
                         break;
                     case OP_GET_SUPER: {
-                            string name = ReadConstantString(); // property name.
+                            ulong name = (ulong)ReadConstant(); // method/property name
                             GearsObjClass superclass = GetObjectFromPtr<GearsObjClass>(Pop());
                             if (!BindMethod(superclass, name)) {
-                                throw new GearsRuntimeException(0, $"Could not get method {name} in superclass {superclass}");
+                                throw new GearsRuntimeException(0, $"Could not get {name} in superclass {superclass}");
                             }
                         }
                         break;
@@ -273,7 +273,7 @@ namespace LoxScript.VirtualMachine {
                             }
                             GearsObjClass super = GetObjectFromPtr<GearsObjClass>(Peek(1));
                             GearsObjClass sub = GetObjectFromPtr<GearsObjClass>(Peek(0));
-                            foreach (string key in super.Methods.AllKeys) {
+                            foreach (ulong key in super.Methods.AllKeys) {
                                 if (!super.Methods.TryGet(key, out GearsValue methodPtr)) {
                                     throw new GearsRuntimeException(0, "Could not copy superclass method table.");
                                 }
@@ -327,7 +327,7 @@ namespace LoxScript.VirtualMachine {
         // ===========================================================================================================
 
         private void DefineNative(string name, int arity, GearsFunctionNativeDelegate onInvoke) {
-            Globals.Set(name, GearsValue.CreateObjPtr(HeapAddObject(new GearsObjFunctionNative(name, arity, onInvoke))));
+            Globals.Set(Compiling.CompilerBitStr.GetBitStr(name), GearsValue.CreateObjPtr(HeapAddObject(new GearsObjFunctionNative(name, arity, onInvoke))));
         }
 
         private void DefineMethod() {
@@ -338,7 +338,7 @@ namespace LoxScript.VirtualMachine {
             Pop();
         }
 
-        private bool BindMethod(GearsObjClass classObj, string name) {
+        private bool BindMethod(GearsObjClass classObj, ulong name) {
             if (!classObj.Methods.TryGet(name, out GearsValue method)) {
                 return false;
             }
@@ -352,7 +352,7 @@ namespace LoxScript.VirtualMachine {
 
         private void CallInvoke() {
             int argCount = ReadByte();
-            string methodName = ReadConstantString();
+            ulong methodName = (ulong)ReadConstant();
             GearsValue receiverPtr = Peek(argCount);
             if (!(receiverPtr.IsObjPtr) || !(receiverPtr.AsObject(this) is GearsObjClassInstance instance)) {
                 throw new GearsRuntimeException(0, "Attempted invoke to non-pointer or non-method.");
@@ -374,7 +374,7 @@ namespace LoxScript.VirtualMachine {
             }
         }
 
-        private void InvokeFromClass(int argCount, string methodName, GearsValue receiverPtr, GearsObjClass objClass) {
+        private void InvokeFromClass(int argCount, ulong methodName, GearsValue receiverPtr, GearsObjClass objClass) {
             if (!objClass.Methods.TryGet(methodName, out GearsValue methodPtr)) {
                 throw new GearsRuntimeException(0, $"{objClass} has no method with name {methodName}.");
             }
@@ -401,7 +401,7 @@ namespace LoxScript.VirtualMachine {
             int slot = ReadShort();
             GearsObjUpvalue upvalue = (_OpenFrame as GearsCallFrame).Function.Upvalues[slot];
             GearsObjClass superclass = GetObjectFromPtr<GearsObjClass>(upvalue.IsClosed ? upvalue.Value : StackGet(upvalue.OriginalSP));
-            string methodName = ReadConstantString();
+            ulong methodName = (ulong)ReadConstant();
             InvokeFromClass(argCount, methodName, GearsValue.NilValue, superclass);
         }
 
