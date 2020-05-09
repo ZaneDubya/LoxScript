@@ -1,22 +1,23 @@
 // === Starting line: PASS ===================================================
 // ===========================================================================
 // Tests print, operator precedence, number and string constants.
-/*print test + 1;
+/*
+print "test" + "1";
 print "hello world";
-print (-1 + 2) * 3 - -4;*/
+print (-1 + 2) * 3 - -4;
 
 
 
 // === Assignment: PASS ======================================================
 // ===========================================================================
-/*var a = 1;
+// var a = 1;
 // Note: Invalid assignment should fail. PASS
-var a = 1; var b = 2; var c = 3; var d = 4; a * b = c + d;*/
+// var a = 1; var b = 2; var c = 3; var d = 4; a * b = c + d;
 
 
 // === Globals: PASS =========================================================
 // ===========================================================================
-/* testing local variables. PASS
+// testing local variables. PASS
 var a = "global";
 {
     var a = "outer";
@@ -26,24 +27,23 @@ var a = "global";
     }
     print a;
 }
-print a;*/
-
+print a;
 
 
 // === If: PASS ==============================================================
 // ===========================================================================
-/*if (true) {
+if (true) {
     print 1;
 }
 else {
     print 2;
-}*/
+}
 
 
 
 // === And/Or: PASS ==========================================================
 // ===========================================================================
-/* if (true and true) { print "correct"; }
+if (true and true) { print "correct"; }
 else { print "true and true incorrect"; }
 if (false and false) { print "false and false incorrect"; }
 else { print "correct"; }
@@ -54,33 +54,33 @@ else { print "false or true incorrect"; }
 if (true and false) { print "true and false incorrect"; }
 else { print "correct"; }
 if (true or false) { print "correct"; }
-else { print "true or false incorrect"; }*/
+else { print "true or false incorrect"; }
 
 
 
 // === Loop Statement: PASS ==================================================
 // ===========================================================================
-/*print "Loop Test: Should count from 0-9";
+print "Loop Test: Should count from 0-9";
 var i = 0;
 while (i < 100) {
     print i;
     i = i + 1;
-}*/
+}
 
 
 
 // === For Statement: PASS ===================================================
 // ===========================================================================
-/*print "For Test: Should count from 0-9";
+print "For Test: Should count from 0-9";
 for (var i = 0; i < 10; i = i + 1) { print i; }
 print "For Test: Should count from 0-9";
-for (var i = 0; i < 10; i = i + 1) { print i; }*/
+for (var i = 0; i < 10; i = i + 1) { print i; }
 
 
 
 // === Functions: PASS =======================================================
 // ===========================================================================
-/*fun sum(a, b, c) {
+fun sum(a, b, c) {
     return a + b + c;
 }
 print 4 + sum(50, 60, 70);
@@ -90,14 +90,14 @@ fun areWeHavingItYet(n) {
     print "Yes we are!";
 }
 areWeHavingItYet("Are we having fun yet?");
-print areWeHavingItYet;*/
-
+print areWeHavingItYet;
+*/
 
 
 // === Closures - Part 1. PASS ===============================================
 // ===========================================================================
 
-/*fun outer() {
+fun outer() {
   var a = 100;
   var b = 200;
   fun middle() {
@@ -150,7 +150,7 @@ fun outer3() {
   }
   inner();
 }
-outer3(); // should print 'outer', not 'global'*/
+outer3(); // should print 'outer', not 'global'
 
 // === Closures - Part 2. TEST ===============================================
 // ===========================================================================
@@ -173,6 +173,8 @@ fun f() {
   g();
 }
 f(); // expect: close_over_later_variable a
+
+
 // nested_closure.lox: 
 var f;
 fun f1() {
@@ -412,6 +414,7 @@ f();
 
 
 
+
 // reuse_closure_slot.lox:
 {
   var f;
@@ -475,12 +478,13 @@ var closure;
 
 // === Class Properties. PASS ================================================
 // ===========================================================================
-/*
 class Pastry {
     taste() {
+      print "would you like some...";
     }
 }
 var eclair = Pastry();
+eclair.taste();
 eclair.filling = "pastry creme";
 print eclair.filling;
 
@@ -489,7 +493,6 @@ var pair = Pair();
 pair.first = 1;
 pair.second = 2;
 print pair.first + pair.second; // 3.
-*/
 
 
 
@@ -596,6 +599,4 @@ class Cruller < Doughnut {
 
 var c = Cruller();
 c.cook();
-
-
 

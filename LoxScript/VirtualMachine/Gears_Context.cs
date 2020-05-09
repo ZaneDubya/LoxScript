@@ -1,8 +1,8 @@
-﻿#define DEBUG_STRESS_GC
-#define DEBUG_LOG_GC
+﻿// #define DEBUG_LOG_GC
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace LoxScript.VirtualMachine {
     /// <summary>
@@ -20,7 +20,7 @@ namespace LoxScript.VirtualMachine {
             Globals = new GearsHashTable();
         }
 
-        internal void Reset(GearsObjFunction fn) {
+        internal void Reset(GearsChunk chunk) {
             _FrameCount = 0;
             _SP = 0;
             for (int i = 0; i < _Heap.Length; i++) {
@@ -28,8 +28,9 @@ namespace LoxScript.VirtualMachine {
             }
             Globals.Reset();
             _GrayList.Clear();
-            PushFrame(new GearsCallFrame(fn));
-            Push(GearsValue.CreateObjPtr(HeapAddObject(fn)));
+            GearsObjFunction closure = new GearsObjFunction(chunk, 0, 0, 0);
+            PushFrame(new GearsCallFrame(closure));
+            Push(GearsValue.CreateObjPtr(HeapAddObject(closure)));
         }
 
         public override string ToString() => $"{_OpenFrame.Function}@{_IP}";
@@ -92,22 +93,26 @@ namespace LoxScript.VirtualMachine {
             _IP += value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal int ReadByte() {
             return _Code[_IP++];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal int ReadShort() {
             return (_Code[_IP++] << 8) | _Code[_IP++];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal GearsValue ReadConstant() {
             int index = ReadShort();
-            return Chunk.ReadConstantValue(ref index);
+            return Chunk.ReadConstantValue(index);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal string ReadConstantString() {
             int index = ReadShort();
-            return Chunk.ReadConstantString(ref index);
+            return Chunk.ReadStringConstant(index);
         }
 
         // === Stack ================================================================================================
@@ -117,6 +122,7 @@ namespace LoxScript.VirtualMachine {
         private readonly GearsValue[] _Stack;
         protected int _SP;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal GearsValue StackGet(int index) {
             if (index < 0 || index >= _SP) {
                 throw new GearsRuntimeException(0, "Stack exception");
@@ -124,6 +130,7 @@ namespace LoxScript.VirtualMachine {
             return _Stack[index];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void StackSet(int index, GearsValue value) {
             if (index < 0 || index >= _SP) {
                 throw new GearsRuntimeException(0, "Stack exception");
@@ -131,6 +138,7 @@ namespace LoxScript.VirtualMachine {
             _Stack[index] = value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void Push(GearsValue value) {
             if (_SP >= STACK_MAX) {
                 throw new GearsRuntimeException(0, "Stack exception");
@@ -138,6 +146,7 @@ namespace LoxScript.VirtualMachine {
             _Stack[_SP++] = value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal GearsValue Pop() {
             if (_SP == 0) {
                 throw new GearsRuntimeException(0, "Stack exception");
@@ -145,17 +154,19 @@ namespace LoxScript.VirtualMachine {
             return _Stack[--_SP];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal GearsValue Peek(int offset = 0) {
-            if (_SP - 1 - offset < 0) {
+            int index = _SP - 1 - offset;
+            if (index < 0 || index >= _SP) {
                 throw new GearsRuntimeException(0, "Stack exception");
             }
-            return _Stack[_SP - 1 - offset];
+            return _Stack[index];
         }
 
         // === Heap ==================================================================================================
         // ===========================================================================================================
 
-        private const int HEAP_MAX = 32;
+        private const int HEAP_MAX = 64;
         private GearsObj[] _Heap;
 
         internal int HeapAddObject(GearsObj obj, bool allowGC = true) {
@@ -217,7 +228,7 @@ namespace LoxScript.VirtualMachine {
             }
             MarkTable(Globals);
             for (int i = 0; i < _FrameCount; i++) {
-                MarkObject((_Frames[i] as GearsCallFrameClosure)?.Closure);
+                MarkObject((_Frames[i] as GearsCallFrame)?.Function);
             }
             GearsObjUpvalue upvalue = _OpenUpvalues;
             while (upvalue != null) {
@@ -270,8 +281,8 @@ namespace LoxScript.VirtualMachine {
                     MarkTable((obj as GearsObjClass).Methods);
                     break;
                 case GearsObj.ObjType.ObjClosure:
-                    MarkObject((obj as GearsObjClosure).Function);
-                    foreach (GearsObjUpvalue upvalue in (obj as GearsObjClosure).Upvalues) {
+                    // MarkObject((obj as GearsObjClosure).Function);
+                    foreach (GearsObjUpvalue upvalue in (obj as GearsObjFunction).Upvalues) {
                         MarkObject(upvalue);
                     }
                     break;
@@ -279,8 +290,8 @@ namespace LoxScript.VirtualMachine {
                     MarkValue((obj as GearsObjUpvalue).Value);
                     break;
                 case GearsObj.ObjType.ObjInstance:
-                    MarkObject((obj as GearsObjInstance).Class);
-                    MarkTable((obj as GearsObjInstance).Fields);
+                    MarkObject((obj as GearsObjClassInstance).Class);
+                    MarkTable((obj as GearsObjClassInstance).Fields);
                     break;
                 case GearsObj.ObjType.ObjFunction:
                 case GearsObj.ObjType.ObjNative:
@@ -296,7 +307,9 @@ namespace LoxScript.VirtualMachine {
         private void Sweep() {
             for (int i = 0; i < _Heap.Length; i++) {
                 if (!_Heap[i].IsMarked) {
+#if DEBUG_LOG_GC
                     Console.WriteLine($"Collect {i}");
+#endif
                     _Heap[i] = null;
                 }
             }

@@ -55,12 +55,12 @@ namespace LoxScript {
 
         private static void Run(string source) {
             TokenList tokens = new Tokenizer(source).ScanTokens();
-            if (Compiler.TryCompile(tokens, out GearsObjFunction fn, out string status)) {
+            if (Compiler.TryCompile(tokens, out GearsChunk chunk, out string status)) {
                 Gears gears = new Gears();
-                gears.Disassemble(fn.Chunk);
+                gears.Disassemble(chunk);
                 Console.WriteLine("Press enter to run.");
                 Console.ReadKey();
-                gears.Run(fn);
+                gears.Run(chunk);
             }
             Console.ReadLine();
             // Exit(1);

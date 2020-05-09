@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace LoxScript.VirtualMachine {
@@ -10,8 +11,6 @@ namespace LoxScript.VirtualMachine {
         private const int InitialChunkCapcity = 8;
         private const int GrowCapacityFactor = 2;
 
-        internal readonly string Name;
-
         /// <summary>
         /// How much of the chunk code array is in use.
         /// </summary>
@@ -22,22 +21,21 @@ namespace LoxScript.VirtualMachine {
         /// </summary>
         internal int ConstantSize { get; private set; } = 0;
 
+        /// <summary>
+        /// How much of the constant string table is in use.
+        /// </summary>
+        internal int StringTableSize { get; private set; } = 0;
+
         internal byte[] _Code = null;
 
-        internal byte[] _Constants = null;
+        internal ulong[] _Constants = null;
+
+        internal byte[] _StringTable = null;
 
         private int[] _Lines = null; // todo: optimize with RLE.
 
-        internal GearsChunk(string name, byte[] code = null, byte[] constants = null) {
-            Name = name;
-            if (code != null) {
-                _Code = code;
-                CodeSize = code.Length;
-            }
-            if (constants != null) {
-                _Constants = constants;
-                ConstantSize = constants.Length;
-            }
+        internal GearsChunk() {
+
         }
 
         internal void Compress() {
@@ -47,9 +45,14 @@ namespace LoxScript.VirtualMachine {
                 _Code = newCode;
             }
             if (ConstantSize > 0) {
-                byte[] newConstants = new byte[ConstantSize];
+                ulong[] newConstants = new ulong[ConstantSize];
                 Array.Copy(_Constants, newConstants, ConstantSize);
                 _Constants = newConstants;
+            }
+            if (StringTableSize > 0) {
+                byte[] newStringTable = new byte[StringTableSize];
+                Array.Copy(_StringTable, newStringTable, StringTableSize);
+                _StringTable = newStringTable;
             }
         }
 
@@ -59,26 +62,32 @@ namespace LoxScript.VirtualMachine {
         /// <summary>
         /// Returns the next value, and advances index by the number of bytes read.
         /// </summary>
-        internal int Read(ref int index) {
+        internal int ReadCode(ref int index) {
             if (index < 0 || index >= CodeSize) {
                 throw new GearsRuntimeException(0, "Attempted to read outside of a chunk.");
             }
             return _Code[index++];
         }
 
-        internal void Write(EGearsOpCode value) {
-            Write((byte)value);
+        internal void WriteCode(EGearsOpCode value) {
+            WriteCode((byte)value);
         }
 
-        internal void Write(byte value) {
+        internal void WriteCode(byte value) {
             int capacity = _Code?.Length ?? 0;
             if (capacity < CodeSize + 1) {
-                GrowChunkCapacity();
+                GrowCodeCapacity();
             }
             _Code[CodeSize++] = value;
         }
 
-        internal void WriteAt(int offset, byte value) {
+        internal void WriteCode(byte[] value) {
+            foreach (byte b in value) {
+                WriteCode(b);
+            }
+        }
+
+        internal void WriteCodeAt(int offset, byte value) {
             _Code[offset] = value;
         }
 
@@ -89,7 +98,7 @@ namespace LoxScript.VirtualMachine {
             return _Lines[index];
         }
 
-        private void GrowChunkCapacity() {
+        private void GrowCodeCapacity() {
             if (_Code == null) {
                 _Code = new byte[InitialChunkCapcity];
                 _Lines = new int[InitialChunkCapcity];
@@ -108,102 +117,29 @@ namespace LoxScript.VirtualMachine {
         // === Constants =============================================================================================
         // ===========================================================================================================
 
-        internal GearsValue ReadConstantValue(ref int offset) {
-            if (offset < 0 || offset + 8 > ConstantSize) {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal GearsValue ReadConstantValue(int offset) {
+            if (offset < 0 || offset > ConstantSize) {
                 return -1; // todo: runtime error
             }
-            GearsValue value = new GearsValue(BitConverter.ToUInt64(_Constants, offset));
-            offset += 8;
+            GearsValue value = _Constants[offset];
             return value;
         }
 
-        internal string ReadConstantString(ref int offset) {
-            if (offset < 0) {
-                return null; // todo: runtime error
-            }
-            for (int i = offset; i < ConstantSize; i++) {
-                if (_Constants[i] == 0) {
-                    string value = Encoding.ASCII.GetString(_Constants, offset, i - offset);
-                    offset = i + 1;
-                    return value;
-                }
-            }
-            return null; // todo: runtime error
-        }
-
-        internal byte ReadConstantByte(ref int offset) {
-            if (offset < 0 || offset + 1 > ConstantSize) {
-                return byte.MaxValue; // todo: runtime error
-            }
-            byte value = _Constants[offset];
-            offset += 1;
-            return value;
-        }
-
-        internal byte[] ReadConstantBytes(ref int offset) {
-            if (offset < 0 || offset + 2 > ConstantSize) {
-                return null; // todo: runtime error
-            }
-            int size = ReadConstantShort(ref offset);
-            if (size == 0 || offset + size > ConstantSize) {
-                return null;
-            }
-            byte[] value = new byte[size];
-            Array.Copy(_Constants, offset, value, 0, size);
-            offset += size;
-            return value;
-        }
-
-        internal int ReadConstantShort(ref int offset) {
-            return (ReadConstantByte(ref offset) << 8) | ReadConstantByte(ref offset);
+        internal string ReadConstantValueAsBitStr(int offset) {
+            GearsValue value = ReadConstantValue(offset);
+            return Compiling.CompilerBitStr.GetBitStr((ulong)value);
         }
 
         internal int WriteConstantValue(GearsValue value) {
-            CheckGrowConstantCapcity(8);
+            CheckGrowConstantCapacity(1);
             int index = ConstantSize;
-            Array.Copy(value.AsBytes, 0, _Constants, index, 8);
-            ConstantSize += 8;
-            return index;
-        }
-
-        internal int WriteConstantString(string value) {
-            byte[] ascii = Encoding.ASCII.GetBytes(value);
-            int size = ascii.Length + 1;
-            CheckGrowConstantCapcity(size);
-            int index = ConstantSize;
-            Array.Copy(ascii, 0, _Constants, index, ascii.Length);
-            ConstantSize += size;
-            return index;
-        }
-
-        internal int WriteConstantByte(byte value) {
-            CheckGrowConstantCapcity(1);
-            int index = ConstantSize;
-            _Constants[ConstantSize] = value;
+            _Constants[index] = (ulong)value;
             ConstantSize += 1;
             return index;
         }
 
-        internal int WriteConstantShort(int value) {
-            int index = ConstantSize;
-            WriteConstantByte((byte)((value >> 8) & 0xff));
-            WriteConstantByte((byte)(value & 0xff));
-            return index;
-        }
-
-        internal int WriteConstantBytes(byte[] value) {
-            int size = value.Length;
-            int capacity = _Constants?.Length ?? 0;
-            if (capacity < ConstantSize + size) {
-                CheckGrowConstantCapcity(size);
-            }
-            int index = ConstantSize;
-            Array.Copy(value, 0, _Constants, index, size);
-            ConstantSize += size;
-            return index;
-        }
-
-        private void CheckGrowConstantCapcity(int size) {
+        private void CheckGrowConstantCapacity(int size) {
             int capacity = _Constants?.Length ?? 0;
             if (capacity < ConstantSize + size) {
                 int newCapacity = _Constants == null ? InitialConstantCapcity : _Constants.Length * GrowCapacityFactor;
@@ -211,12 +147,57 @@ namespace LoxScript.VirtualMachine {
                     newCapacity *= GrowCapacityFactor;
                 }
                 if (_Constants == null) {
-                    _Constants = new byte[newCapacity];
+                    _Constants = new ulong[newCapacity];
+                }
+                else {
+                    ulong[] newData = new ulong[newCapacity];
+                    Array.Copy(_Constants, newData, _Constants.Length);
+                    _Constants = newData;
+                }
+            }
+        }
+
+        // === Strings ===============================================================================================
+        // ===========================================================================================================
+
+        internal string ReadStringConstant(int offset) {
+            if (offset < 0) {
+                return null; // todo: runtime error
+            }
+            for (int i = offset; i < StringTableSize; i++) {
+                if (_StringTable[i] == 0) {
+                    string value = Encoding.ASCII.GetString(_StringTable, offset, i - offset);
+                    offset = i + 1;
+                    return value;
+                }
+            }
+            return null; // todo: runtime error
+        }
+
+        internal int WriteStringConstant(string value) {
+            byte[] ascii = Encoding.ASCII.GetBytes(value);
+            int size = ascii.Length + 1;
+            CheckGrowStringTable(size);
+            int index = StringTableSize;
+            Array.Copy(ascii, 0, _StringTable, index, ascii.Length);
+            StringTableSize += size;
+            return index;
+        }
+
+        private void CheckGrowStringTable(int size) {
+            int capacity = _StringTable?.Length ?? 0;
+            if (capacity < StringTableSize + size) {
+                int newCapacity = _StringTable == null ? InitialConstantCapcity : _StringTable.Length * GrowCapacityFactor;
+                while (newCapacity < StringTableSize + size) {
+                    newCapacity *= GrowCapacityFactor;
+                }
+                if (_StringTable == null) {
+                    _StringTable = new byte[newCapacity];
                 }
                 else {
                     byte[] newData = new byte[newCapacity];
-                    Array.Copy(_Constants, newData, _Constants.Length);
-                    _Constants = newData;
+                    Array.Copy(_StringTable, newData, _StringTable.Length);
+                    _StringTable = newData;
                 }
             }
         }
