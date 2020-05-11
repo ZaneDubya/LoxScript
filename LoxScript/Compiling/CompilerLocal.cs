@@ -1,4 +1,4 @@
-﻿namespace LoxScript.Compiling {
+﻿namespace XPT.Compiling {
     class CompilerLocal {
         public readonly string Name;
         public int Depth;

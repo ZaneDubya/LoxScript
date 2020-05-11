@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using static LoxScript.VirtualMachine.EGearsOpCode;
+using static XPT.VirtualMachine.EGearsOpCode;
 
-namespace LoxScript.VirtualMachine {
+namespace XPT.VirtualMachine {
     /// <summary>
     /// Gears is a bytecode virtual machine for the Lox language.
     /// </summary>

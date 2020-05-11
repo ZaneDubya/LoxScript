@@ -1,9 +1,9 @@
-﻿using LoxScript.Compiling;
+﻿using XPT.Compiling;
 using System;
 using System.Collections.Generic;
-using static LoxScript.Compiling.TokenType;
+using static XPT.Compiling.TokenType;
 
-namespace LoxScript.Interpreter {
+namespace XPT.Interpreter {
     /// <summary>
     /// Parses a TokenList into a list of statements that is executed by Engine.
     /// </summary>
@@ -99,7 +99,7 @@ namespace LoxScript.Interpreter {
             if (!Check(RIGHT_PAREN)) {
                 do {
                     if (parameters.Count >= 255) {
-                        LoxScript.Program.Error(Peek(), "Cannot have more than 255 parameters.");
+                        XPT.Program.Error(Peek(), "Cannot have more than 255 parameters.");
                     }
 
                     parameters.Add(Consume(IDENTIFIER, "Expect parameter name."));
@@ -295,7 +295,7 @@ namespace LoxScript.Interpreter {
                 else if (expr is Expr.Get getExpr) {
                     return new Expr.Set(getExpr.Obj, getExpr.Name, value);
                 }
-                LoxScript.Program.Error(equals, "Invalid assignment target.");
+                XPT.Program.Error(equals, "Invalid assignment target.");
             }
             return expr;
         }
@@ -431,7 +431,7 @@ namespace LoxScript.Interpreter {
             if (!Check(RIGHT_PAREN)) {
                 do {
                     if (arguments.Count >= 255) {
-                        LoxScript.Program.Error(Peek(), "Cannot have more than 255 arguments.");
+                        XPT.Program.Error(Peek(), "Cannot have more than 255 arguments.");
                     }
                     arguments.Add(Expression());
                 } while (Match(COMMA));
@@ -594,7 +594,7 @@ namespace LoxScript.Interpreter {
             }
 
             internal void Print() {
-                LoxScript.Program.Error(_Token, _Message);
+                XPT.Program.Error(_Token, _Message);
             }
         }
     }

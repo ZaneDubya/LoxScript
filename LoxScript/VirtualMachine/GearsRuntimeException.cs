@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace LoxScript.VirtualMachine {
+namespace XPT.VirtualMachine {
     /// <summary>
     /// Throw this when vm encounters an error
     /// </summary>

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace LoxScript.Compiling {
+namespace XPT.Compiling {
     /// <summary>
     /// A list of tokens.
     /// </summary>

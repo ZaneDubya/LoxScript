@@ -1,4 +1,4 @@
-﻿namespace LoxScript.Compiling {
+﻿namespace XPT.Compiling {
     class CompilerClass {
         public CompilerClass Enclosing;
         public Token Name;

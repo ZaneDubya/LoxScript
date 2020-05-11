@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace LoxScript.Interpreter {
+namespace XPT.Interpreter {
     interface IEngineCallable {
         object Call(Engine interpreter, List<object> arguments);
 

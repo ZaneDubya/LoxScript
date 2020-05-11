@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace LoxScript.VirtualMachine {
+namespace XPT.VirtualMachine {
     [StructLayout(LayoutKind.Explicit)]
     struct GearsValue : IEquatable<GearsValue> {
         public static readonly GearsValue NilValue = new GearsValue(TAG_NIL);

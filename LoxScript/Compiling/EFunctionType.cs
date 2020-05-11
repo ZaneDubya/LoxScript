@@ -1,4 +1,4 @@
-﻿namespace LoxScript.Compiling {
+﻿namespace XPT.Compiling {
     enum EFunctionType {
         TYPE_FUNCTION,
         TYPE_INITIALIZER,

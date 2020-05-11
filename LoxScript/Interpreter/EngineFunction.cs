@@ -1,8 +1,8 @@
-﻿using LoxScript.Compiling;
+﻿using XPT.Compiling;
 using System.Collections.Generic;
-using static LoxScript.Interpreter.Engine;
+using static XPT.Interpreter.Engine;
 
-namespace LoxScript.Interpreter {
+namespace XPT.Interpreter {
     class EngineFunction : IEngineCallable {
         private readonly Stmt.Function _Declaration;
         private readonly EngineEnvironment _Closure;

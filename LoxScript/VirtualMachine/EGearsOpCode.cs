@@ -1,4 +1,4 @@
-﻿namespace LoxScript.VirtualMachine {
+﻿namespace XPT.VirtualMachine {
     enum EGearsOpCode {
         /// <summary>
         /// Loads the indexed constant onto the stack.

@@ -1,8 +1,8 @@
-﻿using LoxScript.Compiling;
+﻿using XPT.Compiling;
 using System;
 using System.Collections.Generic;
 
-namespace LoxScript.Interpreter {
+namespace XPT.Interpreter {
     /// <summary>
     /// Engine is an abstract syntax tree interpreter for the Lox language.
     /// </summary>

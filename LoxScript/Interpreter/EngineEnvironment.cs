@@ -1,7 +1,7 @@
-﻿using LoxScript.Compiling;
+﻿using XPT.Compiling;
 using System.Collections.Generic;
 
-namespace LoxScript.Interpreter {
+namespace XPT.Interpreter {
     /// <summary>
     /// A reference to all variables, functions, classes, methods, etc. currently in scope.
     /// </summary>

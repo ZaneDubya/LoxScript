@@ -1,4 +1,4 @@
-﻿namespace LoxScript.VirtualMachine {
+﻿namespace XPT.VirtualMachine {
     class GearsCallFrame {
         public readonly GearsObjFunction Function;
 

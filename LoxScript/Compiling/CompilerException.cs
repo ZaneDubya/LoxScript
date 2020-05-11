@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace LoxScript.Compiling {
+namespace XPT.Compiling {
     /// <summary>
     /// Throw this when the parser is in a confused state and needs to panic and synchronize.
     /// </summary>

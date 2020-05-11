@@ -1,4 +1,4 @@
-﻿namespace LoxScript.Compiling {
+﻿namespace XPT.Compiling {
     class CompilerUpvalue {
         public readonly int Index;
         public readonly bool IsLocal;

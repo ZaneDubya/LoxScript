@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
-namespace LoxScript.VirtualMachine {
+namespace XPT.VirtualMachine {
     /// <summary>
     /// The state of a running gears instance.
     /// It represents the Call frame stack, the value Stack, and the Heap.

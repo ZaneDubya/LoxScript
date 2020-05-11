@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace LoxScript.Compiling {
+namespace XPT.Compiling {
     static class Keywords {
         internal const string This = "this";
         internal const string Ctor = "init";

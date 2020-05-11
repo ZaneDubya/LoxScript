@@ -1,7 +1,7 @@
-﻿using LoxScript.Compiling;
+﻿using XPT.Compiling;
 using System.Collections.Generic;
 
-namespace LoxScript.Interpreter {
+namespace XPT.Interpreter {
     /// <summary>
     /// An instance of a class. Data live here.
     /// </summary>

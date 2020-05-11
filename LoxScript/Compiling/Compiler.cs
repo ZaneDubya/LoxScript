@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using LoxScript.VirtualMachine;
-using static LoxScript.Compiling.TokenType;
-using static LoxScript.VirtualMachine.EGearsOpCode;
+using XPT.VirtualMachine;
+using static XPT.Compiling.TokenType;
+using static XPT.VirtualMachine.EGearsOpCode;
 
-namespace LoxScript.Compiling {
+namespace XPT.Compiling {
     /// <summary>
     /// Compiler parses a TokenList and compiles it into a GearsChunk: bytecode executed by Gears.
     /// </summary>
@@ -103,6 +103,7 @@ namespace LoxScript.Compiling {
                     chunk.WriteCodeAt(codeBase + fixup.Address + 1, (byte)(constantFixup & 0xff));
                 }
                 DoFixups(chunk, codeBase, makeConstant, makeConstant2, fn._FixupFns);
+                chunk.Compress();
             }
         }
 

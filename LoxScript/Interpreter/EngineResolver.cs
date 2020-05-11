@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using LoxScript.Compiling;
+using XPT.Compiling;
 
-namespace LoxScript.Interpreter {
+namespace XPT.Interpreter {
     class EngineResolver : Expr.IVisitor<object>, Stmt.IVisitor {
         private readonly Engine _Interpreter;
         private readonly Stack<Dictionary<string, bool>> _Scopes;

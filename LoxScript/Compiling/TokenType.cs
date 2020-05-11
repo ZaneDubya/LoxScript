@@ -1,4 +1,4 @@
-﻿namespace LoxScript.Compiling {
+﻿namespace XPT.Compiling {
     enum TokenType {
         // End of file.
         EOF,

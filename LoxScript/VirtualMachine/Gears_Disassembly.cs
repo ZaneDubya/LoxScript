@@ -1,7 +1,7 @@
 ﻿using System;
-using static LoxScript.VirtualMachine.EGearsOpCode;
+using static XPT.VirtualMachine.EGearsOpCode;
 
-namespace LoxScript.VirtualMachine {
+namespace XPT.VirtualMachine {
     partial class Gears {
 
         // === Disassembly ===========================================================================================

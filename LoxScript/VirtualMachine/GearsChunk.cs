@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace LoxScript.VirtualMachine {
+namespace XPT.VirtualMachine {
     /// <summary>
     /// A wrapper around an array of bytes.
     /// </summary>

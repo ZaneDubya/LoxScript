@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
-namespace LoxScript.VirtualMachine {
+namespace XPT.VirtualMachine {
     /// <summary>
     /// An implementation of the lox hash table.
     /// </summary>
