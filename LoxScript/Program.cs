@@ -1,12 +1,13 @@
-﻿using LoxScript.Compiling;
-using LoxScript.Interpreter;
-using LoxScript.VirtualMachine;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using XPT.Compiling;
+using XPT.Core.IO;
+using XPT.Interpreter;
+using XPT.VirtualMachine;
 
-namespace LoxScript {
+namespace XPT {
     class Program {
         private static Engine _Interpreter = new Engine();
         private static bool _HadError = false;
@@ -76,6 +77,10 @@ namespace LoxScript {
             TokenList tokens = new Tokenizer(source).ScanTokens();
             if (useGears) {
                 if (Compiler.TryCompile(tokens, out GearsChunk chunk, out string status)) {
+                    using (BinaryFileWriter writer = new BinaryFileWriter("compiled.lxx")) {
+                        chunk.Serialize(writer);
+                        writer.Close();
+                    }
                     Gears gears = new Gears();
                     gears.Disassemble(chunk);
                     Console.WriteLine("Press enter to run.");

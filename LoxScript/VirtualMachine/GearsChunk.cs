@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using System.Text;
+using XPT.Core.IO;
 
 namespace XPT.VirtualMachine {
     /// <summary>
@@ -34,6 +35,9 @@ namespace XPT.VirtualMachine {
 
         private int[] _Lines = null; // todo: optimize with RLE.
 
+        /// <summary>
+        /// Creates an empty chunk.
+        /// </summary>
         internal GearsChunk() {
 
         }
@@ -54,6 +58,61 @@ namespace XPT.VirtualMachine {
                 Array.Copy(_StringTable, newStringTable, StringTableSize);
                 _StringTable = newStringTable;
             }
+        }
+
+        internal void Serialize(IWriter writer) {
+            writer.WriteFourBytes("loxx");
+            writer.Write7BitInt((int)1);
+            writer.Write7BitInt((int)(_Code?.Length ?? 0));
+            writer.Write7BitInt((int)(_Constants?.Length ?? 0));
+            writer.Write7BitInt((int)(_StringTable?.Length ?? 0));
+            writer.Write7BitInt((int)(_Lines?.Length ?? 0));
+            if (_Code != null) {
+                writer.Write(_Code);
+            }
+            if (_Constants != null) {
+                for (int i = 0; i < _Constants.Length; i++) {
+                    writer.Write(_Constants[i]);
+                }
+            }
+            if (_StringTable != null) {
+                writer.Write(_StringTable);
+            }
+            if (_Lines != null) {
+                for (int i = 0; i < _Lines.Length; i++) {
+                    writer.Write7BitInt(_Lines[i]);
+                }
+            }
+        }
+
+        internal bool Deserialize(IReader reader) {
+            if (!reader.ReadFourBytes("loxx")) {
+                return false;
+            }
+            int version = reader.Read7BitInt();
+            CodeSize = reader.Read7BitInt();
+            ConstantSize = reader.Read7BitInt();
+            StringTableSize = reader.Read7BitInt();
+            int linesLength = reader.Read7BitInt();
+            if (CodeSize > 0) {
+                _Code = reader.ReadBytes(CodeSize);
+            }
+            if (ConstantSize > 0) {
+                _Constants = new ulong[ConstantSize];
+                for (int i = 0; i < ConstantSize; i++) {
+                    _Constants[i] = (ulong)reader.ReadLong();
+                }
+            }
+            if (StringTableSize > 0) {
+                _StringTable = reader.ReadBytes(StringTableSize);
+            }
+            if (linesLength > 0) {
+                _Lines = new int[linesLength];
+                for (int i = 0; i < ConstantSize; i++) {
+                    _Lines[i] = reader.Read7BitInt();
+                }
+            }
+            return true;
         }
 
         // === Code Bytes and Lines ==================================================================================
