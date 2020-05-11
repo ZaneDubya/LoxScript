@@ -10,7 +10,7 @@
 // GearsVM 5/08 agressiveInline  662 ms 60x faster than AST     79x slower than native
 // GearsVM 5/09 e/i ulong cast   636 ms 63x faster than AST     76x slower than native
 // GearsVM 5/09 undup consts     626 ms 64x faster than AST     75x slower than native
-// GearsVM 5/09 fix to gc        600 ms 67x faster than AST     71x slower than native
+// GearsVM 5/09 fix to gc        623 ms 64x faster than AST     75x slower than native
 // ===========================================================================
 
 fun fibonacci(n) {
@@ -28,6 +28,6 @@ for (var j = 0; j < 10; j = j + 1) {
     }
     var now = clock() - start;
     total = total + now;
-    print now;
+    print(now);
 }
-print total / 10;
+print(total / 10);

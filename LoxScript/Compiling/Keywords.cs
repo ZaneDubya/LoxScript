@@ -17,7 +17,6 @@ namespace XPT.Compiling {
             _Keywords["if"] = TokenType.IF;
             _Keywords["nil"] = TokenType.NIL;
             _Keywords["or"] = TokenType.OR;
-            _Keywords["print"] = TokenType.PRINT;
             _Keywords["return"] = TokenType.RETURN;
             _Keywords["super"] = TokenType.SUPER;
             _Keywords["this"] = TokenType.THIS;

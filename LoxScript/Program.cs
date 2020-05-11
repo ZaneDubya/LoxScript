@@ -74,8 +74,8 @@ namespace XPT {
         }
 
         private static void Run(string source, bool useGears) {
-            TokenList tokens = new Tokenizer(source).ScanTokens();
             if (useGears) {
+                TokenList tokens = new Tokenizer(source).ScanTokens();
                 if (Compiler.TryCompile(tokens, out GearsChunk chunk, out string status)) {
                     using (BinaryFileWriter writer = new BinaryFileWriter("compiled.lxx")) {
                         chunk.Serialize(writer);
@@ -89,6 +89,7 @@ namespace XPT {
                 }
             }
             else {
+                TokenList tokens = new Tokenizer(source, printIsKeyword: true).ScanTokens();
                 List<Stmt> statements = new Parser(tokens).Parse();
                 // Stop if there was a syntax error.
                 if (_HadError) {

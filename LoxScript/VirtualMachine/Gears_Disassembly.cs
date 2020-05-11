@@ -71,8 +71,6 @@ namespace XPT.VirtualMachine {
                     return DisassembleSimple("OP_NOT", chunk, offset);
                 case OP_NEGATE:
                     return DisassembleSimple("OP_NEGATE", chunk, offset);
-                case OP_PRINT:
-                    return DisassembleSimple("OP_PRINT", chunk, offset);
                 case OP_JUMP:
                     return DisassembleTwoParams("OP_JUMP", chunk, offset);
                 case OP_JUMP_IF_FALSE:
@@ -111,25 +109,13 @@ namespace XPT.VirtualMachine {
             return offset;
         }
 
-        /*private int DisassembleClosure(string name, GearsChunk chunk, int offset) {
-            int upvalueCount = chunk.ReadCode(ref offset);
-            Console.WriteLine($"{name} ({upvalueCount} upvalues)");
-            for (int i = 0; i < upvalueCount; i++) {
-                chunk.ReadCode(ref offset); // is local?
-                chunk.ReadCode(ref offset); // index
-            }
-            return offset;
-        }*/
-
         private int DisassembleFunction(string name, GearsChunk chunk, int offset) {
             int argCount = chunk.ReadCode(ref offset);
-            int nameIndex = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
-            string value = chunk.ReadConstantValueAsBitStr(nameIndex);
             int fnAddress = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
             int upvalueCount = chunk.ReadCode(ref offset);
-            Console.WriteLine($"{name} {value}({argCount} arguments, {upvalueCount} upvalues) @{fnAddress:D4}");
+            Console.WriteLine($"{name} ({argCount} arguments, {upvalueCount} upvalues) @{fnAddress:D4}");
             for (int i = 0; i < upvalueCount; i++) {
-                chunk.ReadCode(ref offset); // is local?
+                chunk.ReadCode(ref offset); // local?
                 chunk.ReadCode(ref offset); // index
             }
             return offset;

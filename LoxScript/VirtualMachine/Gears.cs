@@ -12,12 +12,18 @@ namespace XPT.VirtualMachine {
         private readonly static ulong InitString = Compiling.CompilerBitStr.GetBitStr("init");
 
         private GearsValue NativeFnClock(GearsValue[] args) {
-            return (double)Stopwatch.GetTimestamp() / (Stopwatch.Frequency / 1000);
+            return Stopwatch.GetTimestamp() / ((double)Stopwatch.Frequency / 1000);
+        }
+
+        private GearsValue NativeFnPrint(GearsValue[] args) {
+            Console.WriteLine(args[0].ToString(this));
+            return GearsValue.NilValue;
         }
 
         internal bool Run(GearsChunk chunk) {
             Reset(chunk);
             DefineNative("clock", 0, NativeFnClock);
+            DefineNative("print", 1, NativeFnPrint);
             try {
                 while (true) {
                     EGearsOpCode instruction = (EGearsOpCode)ReadByte();
@@ -216,9 +222,6 @@ namespace XPT.VirtualMachine {
                                 }
                                 Push(-Pop());
                             }
-                            break;
-                        case OP_PRINT:
-                            Console.WriteLine(Pop().ToString(this));
                             break;
                         case OP_JUMP: {
                                 int offset = ReadShort();
@@ -434,7 +437,7 @@ namespace XPT.VirtualMachine {
                     throw new GearsRuntimeException(0, $"{native} expects {native.Arity} arguments but was passed {argCount}.");
                 }
                 GearsValue[] args = new GearsValue[argCount];
-                for (int i = argCount - 1; i >= 0; i++) {
+                for (int i = argCount - 1; i >= 0; i--) {
                     args[i] = Pop();
                 }
                 Pop(); // pop the function signature

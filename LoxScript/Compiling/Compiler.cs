@@ -361,10 +361,6 @@ namespace XPT.Compiling {
                 IfStatement();
                 return;
             }
-            if (_Tokens.Match(PRINT)) {
-                PrintStatement();
-                return;
-            }
             if (_Tokens.Match(RETURN)) {
                 ReturnStatement();
                 return;
@@ -450,15 +446,6 @@ namespace XPT.Compiling {
                 Statement();
             }
             PatchJump(elseJump);
-        }
-
-        /// <summary>
-        /// printStmt → "print" expression ";" ;
-        /// </summary>
-        private void PrintStatement() {
-            Expression();
-            _Tokens.Consume(SEMICOLON, "Expect ';' after value.");
-            EmitOpcode(OP_PRINT);
         }
 
         /// <summary>
@@ -1033,7 +1020,6 @@ namespace XPT.Compiling {
                     case FOR:
                     case IF:
                     case WHILE:
-                    case PRINT:
                     case RETURN:
                         return;
                 }

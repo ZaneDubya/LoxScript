@@ -9,11 +9,13 @@
         private int _Current = 0;
         private int _Line = 1;
         private TokenList _Tokens = new TokenList();
+        private readonly bool _PrintIsKeyword;
 
         private bool IsAtEnd => _Current >= _Source.Length;
 
-        public Tokenizer(string source) {
+        public Tokenizer(string source, bool printIsKeyword = false) {
             _Source = source;
+            _PrintIsKeyword = printIsKeyword;
         }
 
         internal TokenList ScanTokens() {
@@ -129,7 +131,12 @@
             string text = _Source.Substring(_Start, _Current - _Start);
             TokenType? type = Keywords.Get(text);
             if (type == null) {
-                type = TokenType.IDENTIFIER;
+                if (_PrintIsKeyword && text == "print") {
+                    type = TokenType.PRINT;
+                }
+                else {
+                    type = TokenType.IDENTIFIER;
+                }
             }
             AddToken(type.Value);
         }

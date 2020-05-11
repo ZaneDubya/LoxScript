@@ -103,8 +103,6 @@
         /// </summary>
         OP_NEGATE,
 
-        OP_PRINT,
-
         OP_JUMP,
 
         OP_JUMP_IF_FALSE,
