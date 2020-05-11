@@ -10,11 +10,17 @@
             ObjBoundMethod,
             ObjClass,
             ObjFunction,
+            ObjFunctionNative,
             ObjInstance,
-            ObjNative,
+            ObjInstanceNative,
             ObjString,
             ObjUpvalue
         }
+
+        /// <summary>
+        /// Call this to blacken for garbage collection.
+        /// </summary>
+        public virtual void Blacken(Gears vm) { }
 
         public override string ToString() => "GearsObj";
     }
@@ -27,6 +33,11 @@
             Type = ObjType.ObjBoundMethod;
             Receiver = receiver;
             Method = method;
+        }
+
+        public override void Blacken(Gears vm) {
+            vm.MarkValue(Receiver);
+            vm.MarkObject(Method);
         }
 
         public override string ToString() => Method.ToString();
@@ -42,6 +53,10 @@
             Methods = new GearsHashTable();
         }
 
+        public override void Blacken(Gears vm) {
+            vm.MarkTable(Methods);
+        }
+
         public override string ToString() => $"{Name}";
     }
 
@@ -55,7 +70,16 @@
             Fields = new GearsHashTable();
         }
 
+        public override void Blacken(Gears vm) {
+            vm.MarkObject(Class);
+            vm.MarkTable(Fields);
+        }
+
         public override string ToString() => $"instance of {Class}";
+    }
+
+    class GearsObjNativeInstance : GearsObj {
+
     }
 
     /// <summary>
@@ -84,6 +108,12 @@
             Upvalues = new GearsObjUpvalue[upvalueCount];
         }
 
+        public override void Blacken(Gears vm) {
+            foreach (GearsObjUpvalue upvalue in Upvalues) {
+                vm.MarkObject(upvalue);
+            }
+        }
+
         public override string ToString() => "<fn>";
     }
 
@@ -98,7 +128,7 @@
         private readonly GearsFunctionNativeDelegate _OnInvoke;
 
         public GearsObjFunctionNative(string name, int arity, GearsFunctionNativeDelegate onInvoke) {
-            Type = ObjType.ObjNative;
+            Type = ObjType.ObjFunctionNative;
             Name = name;
             Arity = arity;
             _OnInvoke = onInvoke;
@@ -133,6 +163,10 @@
         public GearsObjUpvalue(int sp) {
             Type = ObjType.ObjUpvalue;
             OriginalSP = sp;
+        }
+
+        public override void Blacken(Gears vm) {
+            vm.MarkValue(Value);
         }
 
         public override string ToString() => $"<upvalue {Value}>";

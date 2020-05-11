@@ -1,6 +1,5 @@
 ﻿// #define DEBUG_LOG_GC
 
-using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
@@ -237,13 +236,13 @@ namespace XPT.VirtualMachine {
             }
         }
 
-        private void MarkTable(GearsHashTable table) {
+        public void MarkTable(GearsHashTable table) {
             foreach (GearsValue value in table.AllValues) {
                 MarkValue(value);
             }
         }
 
-        private void MarkValue(GearsValue value) {
+        public void MarkValue(GearsValue value) {
             // we don't need to collect value types, as they require no heap allocation.
             if (!value.IsObjPtr) {
                 return;
@@ -251,7 +250,7 @@ namespace XPT.VirtualMachine {
             MarkObject(value.AsObject(this));
         }
 
-        private void MarkObject(GearsObj obj) {
+        public void MarkObject(GearsObj obj) {
             if (obj == null || obj.IsMarked) {
                 return;
             }
@@ -265,39 +264,10 @@ namespace XPT.VirtualMachine {
         private void TraceReferences() {
             while (_GrayList.Count > 0) {
                 GearsObj obj = _GrayList.Dequeue();
-                BlackenObject(obj);
-            }
-        }
-
-        private void BlackenObject(GearsObj obj) {
 #if DEBUG_LOG_GC                 
             Console.WriteLine($"Blacken {obj}");
 #endif
-            switch (obj.Type) {
-                case GearsObj.ObjType.ObjBoundMethod:
-                    MarkValue((obj as GearsObjBoundMethod).Receiver);
-                    MarkObject((obj as GearsObjBoundMethod).Method);
-                    break;
-                case GearsObj.ObjType.ObjClass:
-                    MarkTable((obj as GearsObjClass).Methods);
-                    break;
-                case GearsObj.ObjType.ObjFunction:
-                    // MarkObject((obj as GearsObjClosure).Function);
-                    foreach (GearsObjUpvalue upvalue in (obj as GearsObjFunction).Upvalues) {
-                        MarkObject(upvalue);
-                    }
-                    break;
-                case GearsObj.ObjType.ObjUpvalue:
-                    MarkValue((obj as GearsObjUpvalue).Value);
-                    break;
-                case GearsObj.ObjType.ObjInstance:
-                    MarkObject((obj as GearsObjClassInstance).Class);
-                    MarkTable((obj as GearsObjClassInstance).Fields);
-                    break;
-                case GearsObj.ObjType.ObjNative:
-                case GearsObj.ObjType.ObjString:
-                    // these have no outgoing references, so there is nothing to traverse.
-                    break;
+                obj.Blacken(this);
             }
         }
 
