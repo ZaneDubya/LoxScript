@@ -54,6 +54,10 @@
     <Compile Include="Compiling\CompilerUpvalue.cs" />
     <Compile Include="Compiling\EFunctionType.cs" />
     <Compile Include="Compiling\TokenList.cs" />
+    <Compile Include="Core\IO\BinaryFileReader.cs" />
+    <Compile Include="Core\IO\BinaryFileWriter.cs" />
+    <Compile Include="Core\IO\IReader.cs" />
+    <Compile Include="Core\IO\IWriter.cs" />
     <Compile Include="Interpreter\IEngineCallable.cs" />
     <Compile Include="Interpreter\EngineFunction.cs" />
     <Compile Include="Interpreter\EngineClassDeclaration.cs" />
