@@ -10,8 +10,8 @@ print(TestObj.TestDouble);
 
 // === Fibonacci Benchmark ===================================================
 // This benchmarks performance of function calls. Creating a new function context is
-// one of the most expensive operations in the VM. This benchmark results in roughly
-// 4,350,000 calls.
+// one of the most expensive operations in the VM. Calculating the first fibonacci
+// numbers using this (unoptimized!) method requires roughly 4,350,000 calls.
 // Compiler flags: release mode/optimize+/prefer 64-bit
 // Native C#                     8.3 ms
 // AST:                        40090 ms                       5725x slower than native
