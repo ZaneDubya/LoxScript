@@ -46,12 +46,15 @@
         public override string ToString() => $"{Name}";
     }
 
-    abstract class GearsObjIstance : GearsObj {
+    abstract class GearsObjInstance : GearsObj {
         public abstract bool TryGetField(ulong name, out GearsValue value);
         public abstract void SetField(ulong name, GearsValue value);
     }
 
-    class GearsObjInstanceLox : GearsObjIstance {
+    /// <summary>
+    /// An instance of a lox class. Unlike InstanceNative, you can add new fields to this instance.
+    /// </summary>
+    class GearsObjInstanceLox : GearsObjInstance {
         public readonly GearsObjClass Class;
 
         private readonly GearsHashTable _Fields;
@@ -73,22 +76,26 @@
         public override string ToString() => $"instance of {Class}";
     }
 
-    class GearsObjInstanceNative : GearsObjIstance {
+    /// <summary>
+    /// A wrapper around an instance of a native class. Unlike InstanceLox, you cannot add new fields to this instance.
+    /// </summary>
+    class GearsObjInstanceNative : GearsObjInstance {
         public readonly object WrappedObject;
 
+        private readonly Gears _Context;
         private readonly GearsNativeWrapper _Wrapper;
 
-        public GearsObjInstanceNative(object wrappedObject) {
+        public GearsObjInstanceNative(Gears context, object wrappedObject) {
             WrappedObject = wrappedObject;
             _Wrapper = GearsNativeWrapper.GetWrapper(wrappedObject.GetType());
         }
 
         public override void SetField(ulong name, GearsValue value) {
-            _Wrapper.SetField(WrappedObject, name, value);
+            _Wrapper.SetField(_Context, WrappedObject, name, value);
         }
 
         public override bool TryGetField(ulong name, out GearsValue value) {
-            return _Wrapper.TryGetField(WrappedObject, name, out value);
+            return _Wrapper.TryGetField(_Context, WrappedObject, name, out value);
         }
     }
 

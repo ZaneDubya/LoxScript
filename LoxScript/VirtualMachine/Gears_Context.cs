@@ -1,7 +1,10 @@
 ﻿// #define DEBUG_LOG_GC
 
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using XPT.Compiling;
 
 namespace XPT.VirtualMachine {
     /// <summary>
@@ -30,9 +33,29 @@ namespace XPT.VirtualMachine {
             GearsObjFunction closure = new GearsObjFunction(chunk, 0, 0, 0);
             PushFrame(new GearsCallFrame(closure));
             Push(GearsValue.CreateObjPtr(HeapAddObject(closure)));
+            DefineNative("clock", 0, NativeFnClock);
+            DefineNative("print", 1, NativeFnPrint);
         }
 
         public override string ToString() => $"{_OpenFrame.Function}@{_IP}";
+
+        // === Includes ============================================================================================
+        // =========================================================================================================
+
+        private GearsValue NativeFnClock(GearsValue[] args) {
+            return Stopwatch.GetTimestamp() / ((double)Stopwatch.Frequency / 1000);
+        }
+
+        private GearsValue NativeFnPrint(GearsValue[] args) {
+            Console.WriteLine(args[0].ToString(this));
+            return GearsValue.NilValue;
+        }
+
+        internal void AddNativeObject(string name, object obj) {
+            GearsObjInstanceNative instance = new GearsObjInstanceNative(this, obj);
+            ulong bitstrName = CompilerBitStr.GetBitStr(name);
+            Globals.Set(bitstrName, GearsValue.CreateObjPtr(HeapAddObject(instance)));
+        }
 
         // === Call frames ==========================================================================================
         // === This should be part of the stack! See todo.md ========================================================

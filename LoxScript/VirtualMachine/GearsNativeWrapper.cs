@@ -6,7 +6,7 @@ using XPT.Compiling;
 
 namespace XPT.VirtualMachine {
     class GearsNativeWrapper {
-        private readonly static Dictionary<Type, GearsNativeWrapper> _Wrappers;
+        private readonly static Dictionary<Type, GearsNativeWrapper> _Wrappers= new Dictionary<Type, GearsNativeWrapper>();
 
         public static GearsNativeWrapper GetWrapper(Type type) {
             if (_Wrappers.TryGetValue(type, out GearsNativeWrapper wrapper)) {
@@ -31,11 +31,31 @@ namespace XPT.VirtualMachine {
             MethodInfo[] methods = wrappedType.GetMethods(binding).Where(d => !d.IsSpecialName).ToArray();
         }
 
-        public void SetField(object obj, ulong name, GearsValue value) {
+        public void SetField(Gears context, object receiver, ulong name, GearsValue value) {
+            if (_Fields.TryGetValue(name, out FieldInfo fieldInfo)) {
+                if (value.IsNumber) {
+                    double number = (double)value;
+                    if (fieldInfo.FieldType == typeof(double)) {
+                        fieldInfo.SetValue(receiver, number);
+                        return;
+                    }
+                    else if (fieldInfo.FieldType == typeof(int)) {
+                        fieldInfo.SetValue(receiver, Convert.ToInt32(number));
+                        return;
+                    }
+                }
+            }
             throw new NotImplementedException();
         }
 
-        public bool TryGetField(object obj, ulong name, out GearsValue value) {
+        public bool TryGetField(Gears context, object receiver, ulong name, out GearsValue value) {
+            if (_Fields.TryGetValue(name, out FieldInfo fieldInfo)) {
+                if (fieldInfo.FieldType == typeof(double) || fieldInfo.FieldType == typeof(int)) {
+                    double fieldValue =Convert.ToDouble(fieldInfo.GetValue(receiver));
+                    value = new GearsValue(fieldValue);
+                    return true;
+                }
+            }
             throw new NotImplementedException(); 
         }
     }

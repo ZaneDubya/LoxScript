@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using XPT.Compiling;
 using static XPT.VirtualMachine.EGearsOpCode;
@@ -10,27 +9,9 @@ namespace XPT.VirtualMachine {
     /// </summary>
     partial class Gears {
 
-        private readonly static ulong InitString = Compiling.CompilerBitStr.GetBitStr("init");
+        private readonly static ulong InitString = CompilerBitStr.GetBitStr("init");
 
-        private GearsValue NativeFnClock(GearsValue[] args) {
-            return Stopwatch.GetTimestamp() / ((double)Stopwatch.Frequency / 1000);
-        }
-
-        private GearsValue NativeFnPrint(GearsValue[] args) {
-            Console.WriteLine(args[0].ToString(this));
-            return GearsValue.NilValue;
-        }
-
-        internal void AddNativeObject(string name, object obj) {
-            GearsObjInstanceNative instance = new GearsObjInstanceNative(obj);
-            ulong bitstrName = CompilerBitStr.GetBitStr(name);
-            Globals.Set(bitstrName, GearsValue.CreateObjPtr(HeapAddObject(instance)));
-        }
-
-        internal bool Run(GearsChunk chunk) {
-            Reset(chunk);
-            DefineNative("clock", 0, NativeFnClock);
-            DefineNative("print", 1, NativeFnPrint);
+        internal bool Run() {
             try {
                 while (true) {
                     EGearsOpCode instruction = (EGearsOpCode)ReadByte();
@@ -85,7 +66,7 @@ namespace XPT.VirtualMachine {
                         case OP_GET_GLOBAL: {
                                 ulong name = (ulong)ReadConstant();
                                 if (!Globals.TryGet(name, out GearsValue value)) {
-                                    throw new GearsRuntimeException(0, $"Undefined variable '{Compiling.CompilerBitStr.GetBitStr(name)}'.");
+                                    throw new GearsRuntimeException(0, $"Undefined variable '{CompilerBitStr.GetBitStr(name)}'.");
                                 }
                                 Push(value);
                             }
@@ -99,7 +80,7 @@ namespace XPT.VirtualMachine {
                         case OP_SET_GLOBAL: {
                                 ulong name = (ulong)ReadConstant();
                                 if (!Globals.ContainsKey(name)) {
-                                    throw new GearsRuntimeException(0, $"Undefined variable '{Compiling.CompilerBitStr.GetBitStr(name)}'.");
+                                    throw new GearsRuntimeException(0, $"Undefined variable '{CompilerBitStr.GetBitStr(name)}'.");
                                 }
                                 Globals.Set(name, Peek());
                                 break;
@@ -127,20 +108,20 @@ namespace XPT.VirtualMachine {
                             }
                             break;
                         case OP_GET_PROPERTY: {
-                                GearsObjInstanceLox instance = GetObjectFromPtr<GearsObjInstanceLox>(Peek());
+                                GearsObjInstance instance = GetObjectFromPtr<GearsObjInstance>(Peek());
                                 ulong name = (ulong)ReadConstant(); // property name
                                 if (instance.TryGetField(name, out GearsValue value)) {
                                     Pop(); // instance
                                     Push(value); // property value
                                     break;
                                 }
-                                if (!BindMethod(instance.Class, name)) {
-                                    throw new GearsRuntimeException(0, $"Undefined property or method '{name}'.");
+                                if (instance is GearsObjInstanceLox loxInstance && BindLoxMethod(loxInstance.Class, name)) {
+                                    break;
                                 }
+                                throw new GearsRuntimeException(0, $"Undefined property or method '{name}'.");
                             }
-                            break;
                         case OP_SET_PROPERTY: {
-                                GearsObjInstanceLox instance = GetObjectFromPtr<GearsObjInstanceLox>(Peek(1));
+                                GearsObjInstance instance = GetObjectFromPtr<GearsObjInstance>(Peek(1));
                                 ulong name = (ulong)ReadConstant(); // property name
                                 GearsValue value = Pop(); // value
                                 instance.SetField(name, value);
@@ -151,7 +132,7 @@ namespace XPT.VirtualMachine {
                         case OP_GET_SUPER: {
                                 ulong name = (ulong)ReadConstant(); // method/property name
                                 GearsObjClass superclass = GetObjectFromPtr<GearsObjClass>(Pop());
-                                if (!BindMethod(superclass, name)) {
+                                if (!BindLoxMethod(superclass, name)) {
                                     throw new GearsRuntimeException(0, $"Could not get {name} in superclass {superclass}");
                                 }
                             }
@@ -345,7 +326,7 @@ namespace XPT.VirtualMachine {
         // ===========================================================================================================
 
         private void DefineNative(string name, int arity, GearsFunctionNativeDelegate onInvoke) {
-            Globals.Set(Compiling.CompilerBitStr.GetBitStr(name), GearsValue.CreateObjPtr(HeapAddObject(new GearsObjFunctionNative(name, arity, onInvoke))));
+            Globals.Set(CompilerBitStr.GetBitStr(name), GearsValue.CreateObjPtr(HeapAddObject(new GearsObjFunctionNative(name, arity, onInvoke))));
         }
 
         private void DefineMethod() {
@@ -357,7 +338,7 @@ namespace XPT.VirtualMachine {
             Pop();
         }
 
-        private bool BindMethod(GearsObjClass classObj, ulong name) {
+        private bool BindLoxMethod(GearsObjClass classObj, ulong name) {
             if (!classObj.Methods.TryGet(name, out GearsValue method)) {
                 return false;
             }
@@ -369,10 +350,10 @@ namespace XPT.VirtualMachine {
 
         private void InvokeFromClass(int argCount, ulong methodName, GearsValue receiverPtr, GearsObjClass objClass) {
             if (!objClass.Methods.TryGet(methodName, out GearsValue methodPtr)) {
-                throw new GearsRuntimeException(0, $"{objClass} has no method with name '{Compiling.CompilerBitStr.GetBitStr(methodName)}'.");
+                throw new GearsRuntimeException(0, $"{objClass} has no method with name '{CompilerBitStr.GetBitStr(methodName)}'.");
             }
             if ((!methodPtr.IsObjPtr) || !(HeapGetObject(methodPtr.AsObjPtr) is GearsObjFunction method)) {
-                throw new GearsRuntimeException(0, $"Could not resolve method '{Compiling.CompilerBitStr.GetBitStr(methodName)}' in class {objClass}.");
+                throw new GearsRuntimeException(0, $"Could not resolve method '{CompilerBitStr.GetBitStr(methodName)}' in class {objClass}.");
             }
             if (method.Arity != argCount) {
                 throw new GearsRuntimeException(0, $"{method} expects {method.Arity} arguments but was passed {argCount}.");

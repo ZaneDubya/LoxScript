@@ -9,13 +9,15 @@ using XPT.VirtualMachine;
 
 namespace XPT {
     class Program {
-        private static Engine _Interpreter = new Engine();
+        private static Engine _Interpreter;
         private static bool _HadError = false;
         private static bool _HadRuntimeError = false;
+        private const string StrUse = "Usage: loxscript [script]";
+        private const string StrPrompt = "LoxScript:\n  1. Lox Interpreter Prompt\n  2. Gears (bytecode vm) benchmark\n  3. Engine (interpreter) benchmark\n  4. Native benchmark\n  5. Test suite";
 
-        static void Main(string[] args) {
+        private static void Main(string[] args) {
             if (args.Length > 1) {
-                Console.WriteLine("Usage: loxscript [script]");
+                Console.WriteLine();
                 Exit(64);
             }
             else if (args.Length == 1) {
@@ -24,7 +26,7 @@ namespace XPT {
             }
             else {
                 while (true) {
-                    Console.WriteLine("LoxScript:\n  1. Lox Interpreter Prompt\n  2. Gears (bytecode vm) benchmark\n  3. Engine (interpreter) benchmark\n  4. Native benchmark\n  5. Test suite");
+                    Console.WriteLine(StrPrompt);
                     switch (Console.ReadKey(true).Key) {
                         case ConsoleKey.D1:
                             RunPrompt();
@@ -41,15 +43,13 @@ namespace XPT {
                         case ConsoleKey.D5:
                             RunFile("../../../Tests/test.pass.txt", true);
                             break;
-                        case ConsoleKey.D6:
-
-                            break;
                         default:
                             break;
                     }
                 }
             }
         }
+
         private static void Exit(int code, bool waitForKey = false) {
             if (waitForKey) {
                 Console.ReadKey();
@@ -85,10 +85,12 @@ namespace XPT {
                         writer.Close();
                     }
                     Gears gears = new Gears();
+                    gears.Reset(chunk);
+                    gears.AddNativeObject("TestObj", new TestNativeObject());
                     gears.Disassemble(chunk);
                     Console.WriteLine("Press enter to run.");
                     Console.ReadKey();
-                    gears.Run(chunk);
+                    gears.Run();
                 }
             }
             else {
@@ -97,6 +99,9 @@ namespace XPT {
                 // Stop if there was a syntax error.
                 if (_HadError) {
                     return;
+                }
+                if (_Interpreter == null) {
+                    _Interpreter = new Engine();
                 }
                 EngineResolver resolver = new EngineResolver(_Interpreter);
                 resolver.Resolve(statements);
@@ -113,14 +118,14 @@ namespace XPT {
         private static string ReadFile(string path) {
             if (!File.Exists(path)) {
                 Console.WriteLine("File does not exist.");
-                Exit(64);
+                Exit(64, true);
             }
             try {
                 return File.ReadAllText(path);
             }
             catch {
                 Console.WriteLine("Error reading file.");
-                Exit(64);
+                Exit(64, true);
                 return null;
             }
         }
