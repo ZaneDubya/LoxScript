@@ -23,8 +23,7 @@ print(TestObj.TestDouble);
 // GearsVM 5/09 e/i ulong cast   636 ms 63x faster than AST     76x slower than native
 // GearsVM 5/09 undup consts     626 ms 64x faster than AST     75x slower than native
 // GearsVM 5/09 fix to gc        623 ms 64x faster than AST     75x slower than native
-// GearsVM 5/09 fix to gc        623 ms 64x faster than AST     75x slower than native
-// GearsVM 5/11 wtf              575 ms 69x faster than AST     69x slower than native
+// GearsVM 5/11 stopping here    575 ms 69x faster than AST     69x slower than native
 // ===========================================================================
 
 fun fibonacci(n) {
