@@ -1,16 +1,21 @@
 
 // === Fibonacci Benchmark ===================================================
+// This benchmarks performance of function calls. Creating a new function context is
+// one of the most expensive operations in the VM. This benchmark results in roughly
+// 4,350,000 calls.
 // Compiler flags: release mode/optimize+/prefer 64-bit
-// Native C#                     8.4 ms
-// AST:                        40090 ms                        5725x slower than native
-// GearsVM 5/08 complete        1445 ms 28x faster than AST     172x slower than native
-// GearsVM 5/08 single chunk    1378 ms 29x faster than AST     164x slower than native    
-// GearsVM 5/08 bitstrings      1073 ms 37x faster than AST     127x slower than native
+// Native C#                     8.3 ms
+// AST:                        40090 ms                       5725x slower than native
+// GearsVM 5/08 complete        1445 ms 28x faster than AST    172x slower than native
+// GearsVM 5/08 single chunk    1378 ms 29x faster than AST    164x slower than native    
+// GearsVM 5/08 bitstrings      1073 ms 37x faster than AST    127x slower than native
 // GearsVM 5/08 prefer 64bit     712 ms 56x faster than AST     85x slower than native
 // GearsVM 5/08 agressiveInline  662 ms 60x faster than AST     79x slower than native
 // GearsVM 5/09 e/i ulong cast   636 ms 63x faster than AST     76x slower than native
 // GearsVM 5/09 undup consts     626 ms 64x faster than AST     75x slower than native
 // GearsVM 5/09 fix to gc        623 ms 64x faster than AST     75x slower than native
+// GearsVM 5/09 fix to gc        623 ms 64x faster than AST     75x slower than native
+// GearsVM 5/11 wtf              575 ms 69x faster than AST     69x slower than native
 // ===========================================================================
 
 fun fibonacci(n) {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using XPT.Compiling;
 using static XPT.VirtualMachine.EGearsOpCode;
 
 namespace XPT.VirtualMachine {
@@ -18,6 +19,12 @@ namespace XPT.VirtualMachine {
         private GearsValue NativeFnPrint(GearsValue[] args) {
             Console.WriteLine(args[0].ToString(this));
             return GearsValue.NilValue;
+        }
+
+        internal void AddNativeObject(string name, object obj) {
+            GearsObjInstanceNative instance = new GearsObjInstanceNative(obj);
+            ulong bitstrName = CompilerBitStr.GetBitStr(name);
+            Globals.Set(bitstrName, GearsValue.CreateObjPtr(HeapAddObject(instance)));
         }
 
         internal bool Run(GearsChunk chunk) {
@@ -120,9 +127,9 @@ namespace XPT.VirtualMachine {
                             }
                             break;
                         case OP_GET_PROPERTY: {
-                                GearsObjClassInstance instance = GetObjectFromPtr<GearsObjClassInstance>(Peek());
+                                GearsObjInstanceLox instance = GetObjectFromPtr<GearsObjInstanceLox>(Peek());
                                 ulong name = (ulong)ReadConstant(); // property name
-                                if (instance.Fields.TryGet(name, out GearsValue value)) {
+                                if (instance.TryGetField(name, out GearsValue value)) {
                                     Pop(); // instance
                                     Push(value); // property value
                                     break;
@@ -133,10 +140,10 @@ namespace XPT.VirtualMachine {
                             }
                             break;
                         case OP_SET_PROPERTY: {
-                                GearsObjClassInstance instance = GetObjectFromPtr<GearsObjClassInstance>(Peek(1));
+                                GearsObjInstanceLox instance = GetObjectFromPtr<GearsObjInstanceLox>(Peek(1));
                                 ulong name = (ulong)ReadConstant(); // property name
                                 GearsValue value = Pop(); // value
-                                instance.Fields.Set(name, value);
+                                instance.SetField(name, value);
                                 Pop(); // ptr
                                 Push(value); // value
                             }
@@ -171,15 +178,15 @@ namespace XPT.VirtualMachine {
                             }
                             break;
                         case OP_ADD: {
-                                if (Peek(0).IsNumber && Peek(1).IsNumber) {
-                                    GearsValue b = Pop();
-                                    GearsValue a = Pop();
+                                GearsValue b = Pop();
+                                GearsValue a = Pop();
+                                if (a.IsNumber && b.IsNumber) {
                                     Push(a + b);
                                 }
-                                else if (Peek(0).IsObjType(this, GearsObj.ObjType.ObjString) && Peek(1).IsObjType(this, GearsObj.ObjType.ObjString)) {
-                                    string b = GetObjectFromPtr<GearsObjString>(Pop()).Value;
-                                    string a = GetObjectFromPtr<GearsObjString>(Pop()).Value;
-                                    Push(GearsValue.CreateObjPtr(HeapAddObject(new GearsObjString(a + b))));
+                                else if (a.IsObjType<GearsObjString>(this) && b.IsObjType<GearsObjString>(this)) {
+                                    string sa = GetObjectFromPtr<GearsObjString>(a).Value;
+                                    string sb = GetObjectFromPtr<GearsObjString>(b).Value;
+                                    Push(GearsValue.CreateObjPtr(HeapAddObject(new GearsObjString(sa + sb))));
                                 }
                                 else {
                                     throw new GearsRuntimeException(0, "Operands must be numbers or strings.");
@@ -273,7 +280,7 @@ namespace XPT.VirtualMachine {
                             }
                             break;
                         case OP_INHERIT: {
-                                if (!Peek(0).IsObjType(this, GearsObj.ObjType.ObjClass)) {
+                                if (!Peek(0).IsObjType<GearsObjClass>(this)) {
                                     throw new GearsRuntimeException(0, "Superclass is not a class.");
                                 }
                                 GearsObjClass super = GetObjectFromPtr<GearsObjClass>(Peek(1));
@@ -360,32 +367,6 @@ namespace XPT.VirtualMachine {
             return true;
         }
 
-        // --- Can probably merge a ton of code from the three call methods ---
-
-        private void CallInvoke() {
-            int argCount = ReadByte();
-            ulong methodName = (ulong)ReadConstant();
-            GearsValue receiverPtr = Peek(argCount);
-            if (!(receiverPtr.IsObjPtr) || !(receiverPtr.AsObject(this) is GearsObjClassInstance instance)) {
-                throw new GearsRuntimeException(0, "Attempted invoke to non-pointer or non-method.");
-            }
-            if (instance.Fields.TryGet(methodName, out GearsValue value)) {
-                // check fields first 28.5.1:
-                if ((!value.IsObjPtr) || !(HeapGetObject(value.AsObjPtr) is GearsObjFunction function)) {
-                    throw new GearsRuntimeException(0, $"Could not resolve method {methodName} in class {instance.Class}.");
-                }
-                if (function.Arity != argCount) {
-                    throw new GearsRuntimeException(0, $"{function} expects {function.Arity} arguments but was passed {argCount}.");
-                }
-                int ip = function.IP;
-                int bp = _SP - (function.Arity + 1);
-                PushFrame(new GearsCallFrame(function, ip, bp));
-            }
-            else {
-                InvokeFromClass(argCount, methodName, receiverPtr, instance.Class);
-            }
-        }
-
         private void InvokeFromClass(int argCount, ulong methodName, GearsValue receiverPtr, GearsObjClass objClass) {
             if (!objClass.Methods.TryGet(methodName, out GearsValue methodPtr)) {
                 throw new GearsRuntimeException(0, $"{objClass} has no method with name '{Compiling.CompilerBitStr.GetBitStr(methodName)}'.");
@@ -402,6 +383,32 @@ namespace XPT.VirtualMachine {
                 StackSet(bp, receiverPtr); // todo: this wipes out the method object. Is this bad?
             }
             PushFrame(new GearsCallFrame(method, ip, bp));
+        }
+
+        // --- Can probably merge a ton of code from the three call methods ---
+
+        private void CallInvoke() {
+            int argCount = ReadByte();
+            ulong methodName = (ulong)ReadConstant();
+            GearsValue receiverPtr = Peek(argCount);
+            if (!(receiverPtr.IsObjPtr) || !(receiverPtr.AsObject(this) is GearsObjInstanceLox instance)) {
+                throw new GearsRuntimeException(0, "Attempted invoke to non-pointer or non-method.");
+            }
+            if (instance.TryGetField(methodName, out GearsValue value)) {
+                // check fields first 28.5.1:
+                if ((!value.IsObjPtr) || !(HeapGetObject(value.AsObjPtr) is GearsObjFunction function)) {
+                    throw new GearsRuntimeException(0, $"Could not resolve method {methodName} in class {instance.Class}.");
+                }
+                if (function.Arity != argCount) {
+                    throw new GearsRuntimeException(0, $"{function} expects {function.Arity} arguments but was passed {argCount}.");
+                }
+                int ip = function.IP;
+                int bp = _SP - (function.Arity + 1);
+                PushFrame(new GearsCallFrame(function, ip, bp));
+            }
+            else {
+                InvokeFromClass(argCount, methodName, receiverPtr, instance.Class);
+            }
         }
 
         private void CallInvokeSuper() {
@@ -453,7 +460,7 @@ namespace XPT.VirtualMachine {
                 PushFrame(new GearsCallFrame(method.Method, ip, bp));
             }
             else if (obj is GearsObjClass classObj) {
-                StackSet(_SP - argCount - 1, GearsValue.CreateObjPtr(HeapAddObject(new GearsObjClassInstance(classObj))));
+                StackSet(_SP - argCount - 1, GearsValue.CreateObjPtr(HeapAddObject(new GearsObjInstanceLox(classObj))));
                 if (classObj.Methods.TryGet(InitString, out GearsValue initPtr)) {
                     if (!initPtr.IsObjPtr) {
                         throw new GearsRuntimeException(0, "Attempted call to non-pointer.");

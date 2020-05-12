@@ -46,7 +46,7 @@ namespace XPT.VirtualMachine {
 
         public bool IsObjPtr => (_AsLong & TAG_OBJECTPTR) == TAG_OBJECTPTR;
 
-        public bool IsObjType(Gears context, GearsObj.ObjType type) => IsObjPtr && AsObject(context).Type == type;
+        public bool IsObjType<T>(Gears context) where T : GearsObj => IsObjPtr && AsObject(context) is T;
 
         // --- Return as a ... ---------------------------------------------------------------------------------------
 

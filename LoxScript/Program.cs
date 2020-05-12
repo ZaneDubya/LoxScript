@@ -41,6 +41,9 @@ namespace XPT {
                         case ConsoleKey.D5:
                             RunFile("../../../Tests/test.pass.txt", true);
                             break;
+                        case ConsoleKey.D6:
+
+                            break;
                         default:
                             break;
                     }
@@ -69,7 +72,7 @@ namespace XPT {
             while (true) {
                 Console.Write("> ");
                 Run(Console.ReadLine(), false);
-                _HadError = false;
+                _HadError = false; // reset error, if any
             }
         }
 

@@ -3,19 +3,7 @@
     /// An object is a heap-allocated object. It can represent a string, function, class, etc.
     /// </summary>
     class GearsObj {
-        public ObjType Type;
         public bool IsMarked = false;
-
-        public enum ObjType {
-            ObjBoundMethod,
-            ObjClass,
-            ObjFunction,
-            ObjFunctionNative,
-            ObjInstance,
-            ObjInstanceNative,
-            ObjString,
-            ObjUpvalue
-        }
 
         /// <summary>
         /// Call this to blacken for garbage collection.
@@ -30,7 +18,6 @@
         public readonly GearsObjFunction Method;
 
         public GearsObjBoundMethod(GearsValue receiver, GearsObjFunction method) {
-            Type = ObjType.ObjBoundMethod;
             Receiver = receiver;
             Method = method;
         }
@@ -48,7 +35,6 @@
         public readonly GearsHashTable Methods;
 
         public GearsObjClass(string name) {
-            Type = ObjType.ObjClass;
             Name = name;
             Methods = new GearsHashTable();
         }
@@ -60,26 +46,50 @@
         public override string ToString() => $"{Name}";
     }
 
-    class GearsObjClassInstance : GearsObj {
-        public readonly GearsObjClass Class;
-        public readonly GearsHashTable Fields;
+    abstract class GearsObjIstance : GearsObj {
+        public abstract bool TryGetField(ulong name, out GearsValue value);
+        public abstract void SetField(ulong name, GearsValue value);
+    }
 
-        public GearsObjClassInstance(GearsObjClass classObj) {
-            Type = ObjType.ObjInstance;
+    class GearsObjInstanceLox : GearsObjIstance {
+        public readonly GearsObjClass Class;
+
+        private readonly GearsHashTable _Fields;
+
+        public GearsObjInstanceLox(GearsObjClass classObj) {
             Class = classObj;
-            Fields = new GearsHashTable();
+            _Fields = new GearsHashTable();
         }
 
         public override void Blacken(Gears vm) {
             vm.MarkObject(Class);
-            vm.MarkTable(Fields);
+            vm.MarkTable(_Fields);
         }
+
+        public override bool TryGetField(ulong name, out GearsValue value) => _Fields.TryGet(name, out value);
+
+        public override void SetField(ulong name, GearsValue value) => _Fields.Set(name, value);
 
         public override string ToString() => $"instance of {Class}";
     }
 
-    class GearsObjNativeInstance : GearsObj {
+    class GearsObjInstanceNative : GearsObjIstance {
+        public readonly object WrappedObject;
 
+        private readonly GearsNativeWrapper _Wrapper;
+
+        public GearsObjInstanceNative(object wrappedObject) {
+            WrappedObject = wrappedObject;
+            _Wrapper = GearsNativeWrapper.GetWrapper(wrappedObject.GetType());
+        }
+
+        public override void SetField(ulong name, GearsValue value) {
+            _Wrapper.SetField(WrappedObject, name, value);
+        }
+
+        public override bool TryGetField(ulong name, out GearsValue value) {
+            return _Wrapper.TryGetField(WrappedObject, name, out value);
+        }
     }
 
     /// <summary>
@@ -101,7 +111,6 @@
         public readonly GearsObjUpvalue[] Upvalues;
 
         public GearsObjFunction(GearsChunk chunk, int arity, int upvalueCount, int ip = 0) {
-            Type = ObjType.ObjFunction;
             Chunk = chunk;
             Arity = arity;
             IP = ip;
@@ -128,7 +137,6 @@
         private readonly GearsFunctionNativeDelegate _OnInvoke;
 
         public GearsObjFunctionNative(string name, int arity, GearsFunctionNativeDelegate onInvoke) {
-            Type = ObjType.ObjFunctionNative;
             Name = name;
             Arity = arity;
             _OnInvoke = onInvoke;
@@ -147,7 +155,6 @@
         public readonly string Value;
 
         public GearsObjString(string value) {
-            Type = ObjType.ObjString;
             Value = value;
         }
 
@@ -161,7 +168,6 @@
         public int OriginalSP;
 
         public GearsObjUpvalue(int sp) {
-            Type = ObjType.ObjUpvalue;
             OriginalSP = sp;
         }
 

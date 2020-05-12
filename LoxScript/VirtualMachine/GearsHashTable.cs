@@ -28,7 +28,7 @@ namespace XPT.VirtualMachine {
         }
 
         /// <summary>
-        /// Returns true if value was added to hash table. BUT YOU SHOULDN'T USE THIS, USE CONTAINSKEY.
+        /// Returns true if value replaced an existing value.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Set(ulong key, GearsValue value) {

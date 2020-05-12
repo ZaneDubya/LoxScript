@@ -83,8 +83,6 @@ namespace XPT.VirtualMachine {
                     return DisassembleInvoke("OP_INVOKE", chunk, offset);
                 case OP_SUPER_INVOKE:
                     return DisassembleInvoke("OP_SUPER_INVOKE", chunk, offset);
-                // case OP_CLOSURE:
-                //     return DisassembleClosure("OP_CLOSURE", chunk, offset);
                 case OP_CLOSE_UPVALUE:
                     return DisassembleSimple("OP_CLOSE_UPVALUE", chunk, offset);
                 case OP_RETURN:
