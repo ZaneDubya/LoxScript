@@ -378,16 +378,32 @@ namespace XPT.VirtualMachine {
             GearsObj obj = receiverPtr.AsObject(this);
             if (obj is GearsObjInstance instance) {
                 if (instance.TryGetField(methodName, out GearsValue value)) {
-                    // check fields first 28.5.1:
-                    if ((!value.IsObjPtr) || !(HeapGetObject(value.AsObjPtr) is GearsObjFunction function)) {
+                    if (!value.IsObjPtr) {
+                        throw new GearsRuntimeException(0, "Attempted call to non-pointer.");
+                    }
+                    GearsObj objFn = HeapGetObject(value.AsObjPtr);
+                    if (objFn is GearsObjFunction function) {
+                        if (function.Arity != argCount) {
+                            throw new GearsRuntimeException(0, $"{function} expects {function.Arity} arguments but was passed {argCount}.");
+                        }
+                        int ip = function.IP;
+                        int bp = _SP - (function.Arity + 1);
+                        PushFrame(new GearsCallFrame(function, ip, bp));
+                    }
+                    else if (objFn is GearsObjFunctionNative native) {
+                        if (native.Arity != argCount) {
+                            throw new GearsRuntimeException(0, $"{native} expects {native.Arity} arguments but was passed {argCount}.");
+                        }
+                        GearsValue[] args = new GearsValue[argCount];
+                        for (int i = argCount - 1; i >= 0; i--) {
+                            args[i] = Pop();
+                        }
+                        Pop(); // pop the function signature
+                        Push(native.Invoke(args));
+                    }
+                    else {
                         throw new GearsRuntimeException(0, $"Could not resolve method {methodName} in {instance}.");
                     }
-                    if (function.Arity != argCount) {
-                        throw new GearsRuntimeException(0, $"{function} expects {function.Arity} arguments but was passed {argCount}.");
-                    }
-                    int ip = function.IP;
-                    int bp = _SP - (function.Arity + 1);
-                    PushFrame(new GearsCallFrame(function, ip, bp));
                 }
                 else if (instance is GearsObjInstanceLox instanceLox) {
                     InvokeFromClass(argCount, methodName, receiverPtr, instanceLox.Class);

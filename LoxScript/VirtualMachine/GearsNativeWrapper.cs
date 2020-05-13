@@ -91,9 +91,9 @@ namespace XPT.VirtualMachine {
                 }
             }
             else if (_Methods.TryGetValue(name, out MethodInfo methodInfo)) {
-                value = GearsValue.CreateObjPtr(context.HeapAddObject(new GearsObjFunctionNative(methodInfo.Name, methodInfo.GetParameters().Length, (GearsValue[] args) => {
-                    return GearsValue.NilValue;
-                })));
+                value = GearsValue.CreateObjPtr(context.HeapAddObject(
+                    new GearsObjFunctionNative(
+                        methodInfo.Name, methodInfo.GetParameters().Length, (GearsValue[] args) => CreateNativeClosure(context, receiver, methodInfo, args))));
                 return true;
             }
             throw new GearsRuntimeException($"Unsupported reference: Native class {WrappedType.Name} does not have a public field named '{CompilerBitStr.GetBitStr(name)}'.");
