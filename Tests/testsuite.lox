@@ -1,23 +1,33 @@
-print("Testing strings. Expected output is doughnut, then bagel.");
+/*print("> Testing strings. Expected output is doughnut, then bagel.");
 print(TestObj.TestStr);
 TestObj.TestStr = "bagel";
 print(TestObj.TestStr);
+print("> Testing strings. Expected output is nil.");
+print(TestObj.TestStrNull);
 
-print("GearsValue(4)->Native int32. Expected output is 4");
+print("> GearsValue(4)->Native int32. Expected output is 4");
 TestObj.TestInt = 4;
 print(TestObj.TestInt);
-print("GearsValue(4.5)->Native int32. Expected output is 4");
+print("> GearsValue(4.5)->Native int32. Expected output is 4");
 TestObj.TestInt = 4.5;
 print(TestObj.TestInt);
-print("GearsValue(4.5)->Native double. Expected output is 4.5");
+print("> GearsValue(4.5)->Native double. Expected output is 4.5");
 TestObj.TestDouble = 4.5;
 print(TestObj.TestDouble);
-print("GearsValue(128)->Native byte. Expected output is 128");
+print("> GearsValue(128)->Native byte. Expected output is 128");
 TestObj.TestByte = 128;
-print(TestObj.TestByte);
+print(TestObj.TestByte);*/
 // print("GearsValue(256)->Native byte. Expected failure.");
 // TestObj.TestByte = 256;
 // print(TestObj.TestByte);
+// will fail: can't set functions on native objects.
+/*fun f() {
+    return 0;
+}
+TestObj.TestStrNull = f;*/
+print("> Call native object function 1: expect nil, then 1234567.");
+print(TestObj.TestFn());
+print(TestObj.TestOut());
 
 // The following tests all pass but need to be rewritten so print is a function not a keyword...
 

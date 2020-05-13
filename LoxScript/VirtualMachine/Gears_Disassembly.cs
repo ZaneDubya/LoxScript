@@ -102,7 +102,7 @@ namespace XPT.VirtualMachine {
         private int DisassembleInvoke(string name, GearsChunk chunk, int offset) {
             int args = chunk.ReadCode(ref offset);
             int nameIndex = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
-            string value = chunk.ReadStringConstant(nameIndex);
+            string value = chunk.ReadConstantValueAsBitStr(nameIndex);
             Console.WriteLine($"{name} const[{nameIndex}] ({value})");
             return offset;
         }

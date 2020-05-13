@@ -19,6 +19,7 @@ namespace XPT.VirtualMachine {
 
         public readonly Type WrappedType;
         private readonly Dictionary<ulong, FieldInfo> _Fields = new Dictionary<ulong, FieldInfo>();
+        private readonly Dictionary<ulong, MethodInfo> _Methods = new Dictionary<ulong, MethodInfo>();
 
         private GearsNativeWrapper(Type wrappedType) {
             WrappedType = wrappedType;
@@ -29,6 +30,9 @@ namespace XPT.VirtualMachine {
             }
             PropertyInfo[] props = wrappedType.GetProperties(binding);
             MethodInfo[] methods = wrappedType.GetMethods(binding).Where(d => !d.IsSpecialName).ToArray();
+            foreach (MethodInfo info in methods) {
+                _Methods.Add(CompilerBitStr.GetBitStr(info.Name), info);
+            }
         }
 
         public void SetField(Gears context, object receiver, ulong name, GearsValue value) {
@@ -44,6 +48,10 @@ namespace XPT.VirtualMachine {
                     catch (Exception e) {
                         throw new GearsRuntimeException($"Error setting {WrappedType.Name}.{fieldInfo.Name} to {(double)value}: {e.Message}");
                     }
+                }
+                else if (value.IsNil && fieldInfo.FieldType == typeof(string)) {
+                    fieldInfo.SetValue(receiver, null);
+                    return;
                 }
                 else if (fieldInfo.FieldType == typeof(bool) && value.IsBool) {
                     fieldInfo.SetValue(receiver, value.IsTrue ? true : false);
@@ -73,12 +81,26 @@ namespace XPT.VirtualMachine {
                     return true;
                 }
                 else if (fieldInfo.FieldType == typeof(string)) {
-                    string fieldValue = fieldInfo.GetValue(receiver) as string;
-                    value = GearsValue.CreateObjPtr(context.HeapAddObject(new GearsObjString(fieldValue)));
+                    if (!(fieldInfo.GetValue(receiver) is string fieldValue)) {
+                        value = GearsValue.NilValue;
+                    }
+                    else {
+                        value = GearsValue.CreateObjPtr(context.HeapAddObject(new GearsObjString(fieldValue)));
+                    }
                     return true;
                 }
             }
-            throw new NotImplementedException();
+            else if (_Methods.TryGetValue(name, out MethodInfo methodInfo)) {
+                value = GearsValue.CreateObjPtr(context.HeapAddObject(new GearsObjFunctionNative(methodInfo.Name, methodInfo.GetParameters().Length, (GearsValue[] args) => {
+                    return GearsValue.NilValue;
+                })));
+                return true;
+            }
+            throw new GearsRuntimeException($"Unsupported reference: Native class {WrappedType.Name} does not have a public field named '{CompilerBitStr.GetBitStr(name)}'.");
+        }
+
+        private static GearsValue CreateNativeClosure(Gears context, object receiver, MethodInfo methodInfo, GearsValue[] args) {
+            return GearsValue.NilValue;
         }
 
         private static bool IsNumeric(Type type) {

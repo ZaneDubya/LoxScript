@@ -372,24 +372,32 @@ namespace XPT.VirtualMachine {
             int argCount = ReadByte();
             ulong methodName = (ulong)ReadConstant();
             GearsValue receiverPtr = Peek(argCount);
-            if (!(receiverPtr.IsObjPtr) || !(receiverPtr.AsObject(this) is GearsObjInstanceLox instance)) {
-                throw new GearsRuntimeException(0, "Attempted invoke to non-pointer or non-method.");
+            if (!receiverPtr.IsObjPtr) {
+                throw new GearsRuntimeException(0, "Attempted invoke to non-pointer.");
             }
-            if (instance.TryGetField(methodName, out GearsValue value)) {
-                // check fields first 28.5.1:
-                if ((!value.IsObjPtr) || !(HeapGetObject(value.AsObjPtr) is GearsObjFunction function)) {
-                    throw new GearsRuntimeException(0, $"Could not resolve method {methodName} in class {instance.Class}.");
+            GearsObj obj = receiverPtr.AsObject(this);
+            if (obj is GearsObjInstance instance) {
+                if (instance.TryGetField(methodName, out GearsValue value)) {
+                    // check fields first 28.5.1:
+                    if ((!value.IsObjPtr) || !(HeapGetObject(value.AsObjPtr) is GearsObjFunction function)) {
+                        throw new GearsRuntimeException(0, $"Could not resolve method {methodName} in {instance}.");
+                    }
+                    if (function.Arity != argCount) {
+                        throw new GearsRuntimeException(0, $"{function} expects {function.Arity} arguments but was passed {argCount}.");
+                    }
+                    int ip = function.IP;
+                    int bp = _SP - (function.Arity + 1);
+                    PushFrame(new GearsCallFrame(function, ip, bp));
                 }
-                if (function.Arity != argCount) {
-                    throw new GearsRuntimeException(0, $"{function} expects {function.Arity} arguments but was passed {argCount}.");
+                else if (instance is GearsObjInstanceLox instanceLox) {
+                    InvokeFromClass(argCount, methodName, receiverPtr, instanceLox.Class);
                 }
-                int ip = function.IP;
-                int bp = _SP - (function.Arity + 1);
-                PushFrame(new GearsCallFrame(function, ip, bp));
+                else {
+                    throw new GearsRuntimeException(0, $"{instance} does not have a public method named '{CompilerBitStr.GetBitStr(methodName)}'.");
+                }
+                return;
             }
-            else {
-                InvokeFromClass(argCount, methodName, receiverPtr, instance.Class);
-            }
+            throw new GearsRuntimeException(0, "Attempted invoke to non-instance.");
         }
 
         private void CallInvokeSuper() {

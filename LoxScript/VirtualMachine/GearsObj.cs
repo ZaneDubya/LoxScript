@@ -98,6 +98,8 @@
         public override bool TryGetField(ulong name, out GearsValue value) {
             return _Wrapper.TryGetField(_Context, WrappedObject, name, out value);
         }
+
+        public override string ToString() => $"instance of {WrappedObject.GetType().Name}";
     }
 
     /// <summary>

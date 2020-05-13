@@ -76,7 +76,7 @@ namespace XPT.VirtualMachine {
                 if (context != null) {
                     return AsObject(context).ToString();
                 }
-                return $"obj@{AsObjPtr.ToString()}";
+                return $"objPtr(@{AsObjPtr.ToString()})";
             }
             else if (IsBool) {
                 return AsBool ? "true" : "false";
