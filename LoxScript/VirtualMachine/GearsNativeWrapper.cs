@@ -34,29 +34,70 @@ namespace XPT.VirtualMachine {
         public void SetField(Gears context, object receiver, ulong name, GearsValue value) {
             if (_Fields.TryGetValue(name, out FieldInfo fieldInfo)) {
                 if (value.IsNumber) {
-                    double number = (double)value;
-                    if (fieldInfo.FieldType == typeof(double)) {
-                        fieldInfo.SetValue(receiver, number);
+                    if (!IsNumeric(fieldInfo.FieldType)) {
+                        throw new GearsRuntimeException($"Attempted to set {WrappedType.Name}.{fieldInfo.Name} to numeric value.");
+                    }
+                    try {
+                        fieldInfo.SetValue(receiver, Convert.ChangeType((double)value, fieldInfo.FieldType));
                         return;
                     }
-                    else if (fieldInfo.FieldType == typeof(int)) {
-                        fieldInfo.SetValue(receiver, Convert.ToInt32(number));
+                    catch (Exception e) {
+                        throw new GearsRuntimeException($"Error setting {WrappedType.Name}.{fieldInfo.Name} to {(double)value}: {e.Message}");
+                    }
+                }
+                else if (fieldInfo.FieldType == typeof(bool) && value.IsBool) {
+                    fieldInfo.SetValue(receiver, value.IsTrue ? true : false);
+                    return;
+                }
+                else if (value.IsObjPtr) {
+                    GearsObj obj = value.AsObject(context);
+                    if (fieldInfo.FieldType == typeof(string) && obj is GearsObjString objString) {
+                        fieldInfo.SetValue(receiver, objString.Value);
                         return;
                     }
+                }
+            }
+            throw new GearsRuntimeException($"Unsupported native conversion: Error setting {WrappedType.Name}.{fieldInfo.Name} to {value}.");
+        }
+
+        public bool TryGetField(Gears context, object receiver, ulong name, out GearsValue value) {
+            if (_Fields.TryGetValue(name, out FieldInfo fieldInfo)) {
+                if (IsNumeric(fieldInfo.FieldType)) {
+                    double fieldValue = Convert.ToDouble(fieldInfo.GetValue(receiver));
+                    value = new GearsValue(fieldValue);
+                    return true;
+                }
+                else if (fieldInfo.FieldType == typeof(bool)) {
+                    bool fieldValue = Convert.ToBoolean(fieldInfo.GetValue(receiver));
+                    value = fieldValue ? GearsValue.TrueValue : GearsValue.FalseValue;
+                    return true;
+                }
+                else if (fieldInfo.FieldType == typeof(string)) {
+                    string fieldValue = fieldInfo.GetValue(receiver) as string;
+                    value = GearsValue.CreateObjPtr(context.HeapAddObject(new GearsObjString(fieldValue)));
+                    return true;
                 }
             }
             throw new NotImplementedException();
         }
 
-        public bool TryGetField(Gears context, object receiver, ulong name, out GearsValue value) {
-            if (_Fields.TryGetValue(name, out FieldInfo fieldInfo)) {
-                if (fieldInfo.FieldType == typeof(double) || fieldInfo.FieldType == typeof(int)) {
-                    double fieldValue =Convert.ToDouble(fieldInfo.GetValue(receiver));
-                    value = new GearsValue(fieldValue);
+        private static bool IsNumeric(Type type) {
+            switch (Type.GetTypeCode(type)) {
+                case TypeCode.Byte:
+                case TypeCode.SByte:
+                case TypeCode.UInt16:
+                case TypeCode.UInt32:
+                case TypeCode.UInt64:
+                case TypeCode.Int16:
+                case TypeCode.Int32:
+                case TypeCode.Int64:
+                case TypeCode.Decimal:
+                case TypeCode.Double:
+                case TypeCode.Single:
                     return true;
-                }
+                default:
+                    return false;
             }
-            throw new NotImplementedException(); 
         }
     }
 }

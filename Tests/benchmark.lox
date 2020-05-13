@@ -1,13 +1,3 @@
-print("GearsValue(4)->Native int32. Expected output is 4");
-TestObj.TestInt = 4;
-print(TestObj.TestInt);
-print("GearsValue(4.5)->Native int32. Expected output is 4");
-TestObj.TestInt = 4.5;
-print(TestObj.TestInt);
-print("GearsValue(4.5)->Native double. Expected output is 4.5");
-TestObj.TestDouble = 4.5;
-print(TestObj.TestDouble);
-
 // === Fibonacci Benchmark ===================================================
 // This benchmarks performance of function calls. Creating a new function context is
 // one of the most expensive operations in the VM. Calculating the first fibonacci

@@ -1,3 +1,27 @@
+print("Testing strings. Expected output is doughnut, then bagel.");
+print(TestObj.TestStr);
+TestObj.TestStr = "bagel";
+print(TestObj.TestStr);
+
+print("GearsValue(4)->Native int32. Expected output is 4");
+TestObj.TestInt = 4;
+print(TestObj.TestInt);
+print("GearsValue(4.5)->Native int32. Expected output is 4");
+TestObj.TestInt = 4.5;
+print(TestObj.TestInt);
+print("GearsValue(4.5)->Native double. Expected output is 4.5");
+TestObj.TestDouble = 4.5;
+print(TestObj.TestDouble);
+print("GearsValue(128)->Native byte. Expected output is 128");
+TestObj.TestByte = 128;
+print(TestObj.TestByte);
+// print("GearsValue(256)->Native byte. Expected failure.");
+// TestObj.TestByte = 256;
+// print(TestObj.TestByte);
+
+// The following tests all pass but need to be rewritten so print is a function not a keyword...
+
+
 // === Starting line: PASS ===================================================
 // ===========================================================================
 // Tests print, operator precedence, number and string constants.
@@ -91,7 +115,6 @@ fun areWeHavingItYet(n) {
 }
 areWeHavingItYet("Are we having fun yet?");
 print areWeHavingItYet;
-*/
 
 
 // === Closures - Part 1. PASS ===============================================
@@ -555,7 +578,6 @@ class CoffeeMaker {
 
 var maker = CoffeeMaker("coffee and chicory");
 maker.brew();
-*/
 
 // === Ch 29 Superclasses. PASS ==============================================
 // ===========================================================================
@@ -600,3 +622,5 @@ class Cruller < Doughnut {
 var c = Cruller();
 c.cook();
 
+
+*/

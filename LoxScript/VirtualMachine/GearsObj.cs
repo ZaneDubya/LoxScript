@@ -86,6 +86,7 @@
         private readonly GearsNativeWrapper _Wrapper;
 
         public GearsObjInstanceNative(Gears context, object wrappedObject) {
+            _Context = context;
             WrappedObject = wrappedObject;
             _Wrapper = GearsNativeWrapper.GetWrapper(wrappedObject.GetType());
         }

@@ -41,7 +41,7 @@ namespace XPT {
                             RunNativeBenchmark();
                             break;
                         case ConsoleKey.D5:
-                            RunFile("../../../Tests/test.pass.txt", true);
+                            RunFile("../../../Tests/testsuite.lox", true);
                             break;
                         default:
                             break;
