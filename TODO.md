@@ -11,7 +11,8 @@ It is an open question as to whether and when I should change the name. If I do,
 ## Language changes
 
 Add native interfaces:
-- [ ] The most important addition! Pass an 'interface' object to a lox script that can be accessed and modified by the script.
+- [x] The most important addition! Pass a native objects to a lox script that can be accessed and modified by the script.
+- [ ] Document limitations of native object interface.
 
 Compile, Load, and Execute
 - [x] Add 'compile' functionality that saves complete byte code to a file/array that can then be run from scratch.
