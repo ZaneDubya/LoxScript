@@ -100,7 +100,64 @@ namespace XPT.VirtualMachine {
         }
 
         private static GearsValue CreateNativeClosure(Gears context, object receiver, MethodInfo methodInfo, GearsValue[] args) {
-            return GearsValue.NilValue;
+            object[] parameters = new object[args.Length];
+            ParameterInfo[] paramInfo = methodInfo.GetParameters();
+            if (paramInfo.Length != parameters.Length) {
+                throw new GearsRuntimeException($"NativeWrapper error: {receiver.GetType().Name}.{methodInfo.Name} param info count did not match passed param count.");
+            }
+            for (int i = 0; i < args.Length; i++) {
+                GearsValue value = args[i];
+                ParameterInfo info = paramInfo[i];
+                if (value.IsNumber) {
+                    if (!IsNumeric(info.ParameterType)) {
+                        throw new GearsRuntimeException($"Attempted to set {receiver.GetType().Name}.{info.Name} to numeric value.");
+                    }
+                    try {
+                        parameters[i] = Convert.ChangeType((double)value, info.ParameterType);
+                        break;
+                    }
+                    catch (Exception e) {
+                        throw new GearsRuntimeException($"Error setting {receiver.GetType().Name}.{info.Name} to {(double)value}: {e.Message}");
+                    }
+                }
+                else if (value.IsNil && info.ParameterType == typeof(string)) {
+                    parameters[i] = null;
+                    break;
+                }
+                else if (value.IsBool && info.ParameterType == typeof(bool)) {
+                    parameters[i] = value.IsTrue ? true : false;
+                    break;
+                }
+                else if (value.IsObjPtr) {
+                    GearsObj obj = value.AsObject(context);
+                    if (info.ParameterType == typeof(string) && obj is GearsObjString objString) {
+                        parameters[i] = objString.Value;
+                        break;
+                    }
+                }
+                throw new GearsRuntimeException($"Unsupported native conversion: Error setting parameter {i} for {receiver.GetType().Name}.{info.Name} to {value}.");
+            }
+            object returnValue = methodInfo.Invoke(receiver, parameters);
+            if (methodInfo.ReturnType == typeof(void)) {
+                return GearsValue.NilValue;
+            }
+            else if (IsNumeric(methodInfo.ReturnType)) {
+                return new GearsValue(Convert.ToDouble(returnValue));
+            }
+            else if (methodInfo.ReturnType == typeof(bool)) {
+                return Convert.ToBoolean(returnValue) ? GearsValue.TrueValue : GearsValue.FalseValue;
+            }
+            else if (methodInfo.ReturnType == typeof(string)) {
+                if (returnValue == null) {
+                    return GearsValue.NilValue;
+                }
+                else {
+                    return GearsValue.CreateObjPtr(context.HeapAddObject(new GearsObjString(Convert.ToString(returnValue))));
+                }
+            }
+            else {
+                throw new GearsRuntimeException($"Unsupported native return type: {receiver.GetType().Name}.{methodInfo.Name} cannot return type of {methodInfo.ReturnType.Name}.");
+            }
         }
 
         private static bool IsNumeric(Type type) {
