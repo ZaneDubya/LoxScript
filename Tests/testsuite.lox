@@ -25,9 +25,14 @@ print(TestObj.TestByte);*/
     return 0;
 }
 TestObj.TestStrNull = f;*/
-print("> Call native object function 1: expect nil, then 1234567.");
+/*print("> Call native object function: expect nil, then 1234567.");
 print(TestObj.TestFn());
-print(TestObj.TestOut());
+print(TestObj.TestOut());*/
+print("> Get/set property on object: expect 0, then 1.");
+print(TestObj.TestProperty);
+TestObj.TestProperty = 1;
+print(TestObj.TestProperty);
+
 
 // The following tests all pass but need to be rewritten so print is a function not a keyword...
 

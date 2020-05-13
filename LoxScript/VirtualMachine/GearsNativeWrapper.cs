@@ -6,7 +6,7 @@ using XPT.Compiling;
 
 namespace XPT.VirtualMachine {
     class GearsNativeWrapper {
-        private readonly static Dictionary<Type, GearsNativeWrapper> _Wrappers= new Dictionary<Type, GearsNativeWrapper>();
+        private readonly static Dictionary<Type, GearsNativeWrapper> _Wrappers = new Dictionary<Type, GearsNativeWrapper>();
 
         public static GearsNativeWrapper GetWrapper(Type type) {
             if (_Wrappers.TryGetValue(type, out GearsNativeWrapper wrapper)) {
@@ -20,6 +20,7 @@ namespace XPT.VirtualMachine {
         public readonly Type WrappedType;
         private readonly Dictionary<ulong, FieldInfo> _Fields = new Dictionary<ulong, FieldInfo>();
         private readonly Dictionary<ulong, MethodInfo> _Methods = new Dictionary<ulong, MethodInfo>();
+        private readonly Dictionary<ulong, PropertyInfo> _Properties = new Dictionary<ulong, PropertyInfo>();
 
         private GearsNativeWrapper(Type wrappedType) {
             WrappedType = wrappedType;
@@ -28,10 +29,13 @@ namespace XPT.VirtualMachine {
             foreach (FieldInfo info in fields) {
                 _Fields.Add(CompilerBitStr.GetBitStr(info.Name), info);
             }
-            PropertyInfo[] props = wrappedType.GetProperties(binding);
             MethodInfo[] methods = wrappedType.GetMethods(binding).Where(d => !d.IsSpecialName).ToArray();
             foreach (MethodInfo info in methods) {
                 _Methods.Add(CompilerBitStr.GetBitStr(info.Name), info);
+            }
+            PropertyInfo[] properties = wrappedType.GetProperties(binding);
+            foreach (PropertyInfo info in properties) {
+                _Properties.Add(CompilerBitStr.GetBitStr(info.Name), info);
             }
         }
 
@@ -65,7 +69,39 @@ namespace XPT.VirtualMachine {
                     }
                 }
             }
-            throw new GearsRuntimeException($"Unsupported native conversion: Error setting {WrappedType.Name}.{fieldInfo.Name} to {value}.");
+            else if (_Properties.TryGetValue(name, out PropertyInfo propertyInfo)) {
+                if (!propertyInfo.SetMethod.IsPublic) {
+                    throw new GearsRuntimeException($"Unsupported reference: Native class {WrappedType.Name} does not have a public set method for '{CompilerBitStr.GetBitStr(name)}'.");
+                }
+                if (value.IsNumber) {
+                    if (!IsNumeric(propertyInfo.PropertyType)) {
+                        throw new GearsRuntimeException($"Attempted to set {WrappedType.Name}.{propertyInfo.Name} to numeric value.");
+                    }
+                    try {
+                        propertyInfo.SetValue(receiver, Convert.ChangeType((double)value, propertyInfo.PropertyType));
+                        return;
+                    }
+                    catch (Exception e) {
+                        throw new GearsRuntimeException($"Error setting {WrappedType.Name}.{propertyInfo.Name} to {(double)value}: {e.Message}");
+                    }
+                }
+                else if (value.IsNil && propertyInfo.PropertyType == typeof(string)) {
+                    propertyInfo.SetValue(receiver, null);
+                    return;
+                }
+                else if (propertyInfo.PropertyType == typeof(bool) && value.IsBool) {
+                    propertyInfo.SetValue(receiver, value.IsTrue ? true : false);
+                    return;
+                }
+                else if (value.IsObjPtr) {
+                    GearsObj obj = value.AsObject(context);
+                    if (propertyInfo.PropertyType == typeof(string) && obj is GearsObjString objString) {
+                        propertyInfo.SetValue(receiver, objString.Value);
+                        return;
+                    }
+                }
+            }
+            throw new GearsRuntimeException($"Unsupported native conversion: Error setting {WrappedType.Name}.{CompilerBitStr.GetBitStr(name)} to {value}.");
         }
 
         public bool TryGetField(Gears context, object receiver, ulong name, out GearsValue value) {
@@ -96,7 +132,31 @@ namespace XPT.VirtualMachine {
                         methodInfo.Name, methodInfo.GetParameters().Length, (GearsValue[] args) => CreateNativeClosure(context, receiver, methodInfo, args))));
                 return true;
             }
-            throw new GearsRuntimeException($"Unsupported reference: Native class {WrappedType.Name} does not have a public field named '{CompilerBitStr.GetBitStr(name)}'.");
+            else if (_Properties.TryGetValue(name, out PropertyInfo propertyInfo)) {
+                if (!propertyInfo.GetMethod.IsPublic) {
+                    throw new GearsRuntimeException($"Unsupported reference: Native class {WrappedType.Name} does not have a public get method for '{CompilerBitStr.GetBitStr(name)}'.");
+                }
+                if (IsNumeric(propertyInfo.PropertyType)) {
+                    double fieldValue = Convert.ToDouble(propertyInfo.GetValue(receiver));
+                    value = new GearsValue(fieldValue);
+                    return true;
+                }
+                else if (propertyInfo.PropertyType == typeof(bool)) {
+                    bool fieldValue = Convert.ToBoolean(propertyInfo.GetValue(receiver));
+                    value = fieldValue ? GearsValue.TrueValue : GearsValue.FalseValue;
+                    return true;
+                }
+                else if (propertyInfo.PropertyType == typeof(string)) {
+                    if (!(propertyInfo.GetValue(receiver) is string fieldValue)) {
+                        value = GearsValue.NilValue;
+                    }
+                    else {
+                        value = GearsValue.CreateObjPtr(context.HeapAddObject(new GearsObjString(fieldValue)));
+                    }
+                    return true;
+                }
+            }
+            throw new GearsRuntimeException($"Unsupported reference: Native class {WrappedType.GetType().Name} does not have a public field named '{CompilerBitStr.GetBitStr(name)}'.");
         }
 
         private static GearsValue CreateNativeClosure(Gears context, object receiver, MethodInfo methodInfo, GearsValue[] args) {
