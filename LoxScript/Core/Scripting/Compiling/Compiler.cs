@@ -946,7 +946,7 @@ namespace XPT.Core.Scripting.Compiling {
         }
 
         private int MakeBitStrConstant(string value) {
-            ulong bitstr = CompilerBitStr.GetBitStr(value);
+            ulong bitstr = BitString.GetBitStr(value);
             if (_OptimizedStrings.TryGetValue(bitstr, out string optimized)) {
                 if (optimized != value) {
                     throw new CompilerException(_Tokens.Previous(), $"String collision: '{value}' != '{optimized}'. First 10 characters of all identifiers must be distinct.");

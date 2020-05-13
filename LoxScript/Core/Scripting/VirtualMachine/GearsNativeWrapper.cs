@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using XPT.Core.Scripting.Compiling;
 
 namespace XPT.Core.Scripting.VirtualMachine {
     class GearsNativeWrapper {
@@ -27,15 +26,15 @@ namespace XPT.Core.Scripting.VirtualMachine {
             BindingFlags binding = BindingFlags.Public | BindingFlags.Instance;
             FieldInfo[] fields = wrappedType.GetFields(binding);
             foreach (FieldInfo info in fields) {
-                _Fields.Add(CompilerBitStr.GetBitStr(info.Name), info);
+                _Fields.Add(BitString.GetBitStr(info.Name), info);
             }
             MethodInfo[] methods = wrappedType.GetMethods(binding).Where(d => !d.IsSpecialName).ToArray();
             foreach (MethodInfo info in methods) {
-                _Methods.Add(CompilerBitStr.GetBitStr(info.Name), info);
+                _Methods.Add(BitString.GetBitStr(info.Name), info);
             }
             PropertyInfo[] properties = wrappedType.GetProperties(binding);
             foreach (PropertyInfo info in properties) {
-                _Properties.Add(CompilerBitStr.GetBitStr(info.Name), info);
+                _Properties.Add(BitString.GetBitStr(info.Name), info);
             }
         }
 
@@ -71,7 +70,7 @@ namespace XPT.Core.Scripting.VirtualMachine {
             }
             else if (_Properties.TryGetValue(name, out PropertyInfo propertyInfo)) {
                 if (!propertyInfo.SetMethod.IsPublic) {
-                    throw new GearsRuntimeException($"Unsupported reference: Native class {WrappedType.Name} does not have a public set method for '{CompilerBitStr.GetBitStr(name)}'.");
+                    throw new GearsRuntimeException($"Unsupported reference: Native class {WrappedType.Name} does not have a public set method for '{BitString.GetBitStr(name)}'.");
                 }
                 if (value.IsNumber) {
                     if (!IsNumeric(propertyInfo.PropertyType)) {
@@ -101,7 +100,7 @@ namespace XPT.Core.Scripting.VirtualMachine {
                     }
                 }
             }
-            throw new GearsRuntimeException($"Unsupported native conversion: Error setting {WrappedType.Name}.{CompilerBitStr.GetBitStr(name)} to {value}.");
+            throw new GearsRuntimeException($"Unsupported native conversion: Error setting {WrappedType.Name}.{BitString.GetBitStr(name)} to {value}.");
         }
 
         public bool TryGetField(Gears context, object receiver, ulong name, out GearsValue value) {
@@ -134,7 +133,7 @@ namespace XPT.Core.Scripting.VirtualMachine {
             }
             else if (_Properties.TryGetValue(name, out PropertyInfo propertyInfo)) {
                 if (!propertyInfo.GetMethod.IsPublic) {
-                    throw new GearsRuntimeException($"Unsupported reference: Native class {WrappedType.Name} does not have a public get method for '{CompilerBitStr.GetBitStr(name)}'.");
+                    throw new GearsRuntimeException($"Unsupported reference: Native class {WrappedType.Name} does not have a public get method for '{BitString.GetBitStr(name)}'.");
                 }
                 if (IsNumeric(propertyInfo.PropertyType)) {
                     double fieldValue = Convert.ToDouble(propertyInfo.GetValue(receiver));
@@ -156,7 +155,7 @@ namespace XPT.Core.Scripting.VirtualMachine {
                     return true;
                 }
             }
-            throw new GearsRuntimeException($"Unsupported reference: Native class {WrappedType.GetType().Name} does not have a public field named '{CompilerBitStr.GetBitStr(name)}'.");
+            throw new GearsRuntimeException($"Unsupported reference: Native class {WrappedType.GetType().Name} does not have a public field named '{BitString.GetBitStr(name)}'.");
         }
 
         private static GearsValue CreateNativeClosure(Gears context, object receiver, MethodInfo methodInfo, GearsValue[] args) {

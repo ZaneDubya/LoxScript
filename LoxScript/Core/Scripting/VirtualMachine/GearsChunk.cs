@@ -187,7 +187,7 @@ namespace XPT.Core.Scripting.VirtualMachine {
 
         internal string ReadConstantValueAsBitStr(int offset) {
             GearsValue value = ReadConstantValue(offset);
-            return Compiling.CompilerBitStr.GetBitStr((ulong)value);
+            return BitString.GetBitStr((ulong)value);
         }
 
         internal int WriteConstantValue(GearsValue value) {

@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using XPT.Core.Scripting.Compiling;
 
 namespace XPT.Core.Scripting.VirtualMachine {
     /// <summary>
@@ -53,7 +52,7 @@ namespace XPT.Core.Scripting.VirtualMachine {
 
         internal void AddNativeObject(string name, object obj) {
             GearsObjInstanceNative instance = new GearsObjInstanceNative(this, obj);
-            ulong bitstrName = CompilerBitStr.GetBitStr(name);
+            ulong bitstrName = BitString.GetBitStr(name);
             Globals.Set(bitstrName, GearsValue.CreateObjPtr(HeapAddObject(instance)));
         }
 

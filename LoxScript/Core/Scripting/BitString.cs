@@ -1,7 +1,7 @@
 ﻿using System;
 
-namespace XPT.Core.Scripting.Compiling {
-    class CompilerBitStr {
+namespace XPT.Core.Scripting {
+    class BitString {
         // === String speedup ========================================================================================
         // ===========================================================================================================
 

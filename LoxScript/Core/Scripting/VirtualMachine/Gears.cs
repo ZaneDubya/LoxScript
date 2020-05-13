@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-using XPT.Core.Scripting.Compiling;
 using static XPT.Core.Scripting.VirtualMachine.EGearsOpCode;
 
 namespace XPT.Core.Scripting.VirtualMachine {
@@ -9,7 +8,7 @@ namespace XPT.Core.Scripting.VirtualMachine {
     /// </summary>
     partial class Gears {
 
-        private readonly static ulong InitString = CompilerBitStr.GetBitStr("init");
+        private readonly static ulong InitString = BitString.GetBitStr("init");
 
         internal bool Run() {
             try {
@@ -66,7 +65,7 @@ namespace XPT.Core.Scripting.VirtualMachine {
                         case OP_GET_GLOBAL: {
                                 ulong name = (ulong)ReadConstant();
                                 if (!Globals.TryGet(name, out GearsValue value)) {
-                                    throw new GearsRuntimeException(0, $"Undefined variable '{CompilerBitStr.GetBitStr(name)}'.");
+                                    throw new GearsRuntimeException(0, $"Undefined variable '{BitString.GetBitStr(name)}'.");
                                 }
                                 Push(value);
                             }
@@ -80,7 +79,7 @@ namespace XPT.Core.Scripting.VirtualMachine {
                         case OP_SET_GLOBAL: {
                                 ulong name = (ulong)ReadConstant();
                                 if (!Globals.ContainsKey(name)) {
-                                    throw new GearsRuntimeException(0, $"Undefined variable '{CompilerBitStr.GetBitStr(name)}'.");
+                                    throw new GearsRuntimeException(0, $"Undefined variable '{BitString.GetBitStr(name)}'.");
                                 }
                                 Globals.Set(name, Peek());
                                 break;
@@ -326,7 +325,7 @@ namespace XPT.Core.Scripting.VirtualMachine {
         // ===========================================================================================================
 
         private void DefineNative(string name, int arity, GearsFunctionNativeDelegate onInvoke) {
-            Globals.Set(CompilerBitStr.GetBitStr(name), GearsValue.CreateObjPtr(HeapAddObject(new GearsObjFunctionNative(name, arity, onInvoke))));
+            Globals.Set(BitString.GetBitStr(name), GearsValue.CreateObjPtr(HeapAddObject(new GearsObjFunctionNative(name, arity, onInvoke))));
         }
 
         private void DefineMethod() {
@@ -350,10 +349,10 @@ namespace XPT.Core.Scripting.VirtualMachine {
 
         private void InvokeFromClass(int argCount, ulong methodName, GearsValue receiverPtr, GearsObjClass objClass) {
             if (!objClass.Methods.TryGet(methodName, out GearsValue methodPtr)) {
-                throw new GearsRuntimeException(0, $"{objClass} has no method with name '{CompilerBitStr.GetBitStr(methodName)}'.");
+                throw new GearsRuntimeException(0, $"{objClass} has no method with name '{BitString.GetBitStr(methodName)}'.");
             }
             if ((!methodPtr.IsObjPtr) || !(HeapGetObject(methodPtr.AsObjPtr) is GearsObjFunction method)) {
-                throw new GearsRuntimeException(0, $"Could not resolve method '{CompilerBitStr.GetBitStr(methodName)}' in class {objClass}.");
+                throw new GearsRuntimeException(0, $"Could not resolve method '{BitString.GetBitStr(methodName)}' in class {objClass}.");
             }
             if (method.Arity != argCount) {
                 throw new GearsRuntimeException(0, $"{method} expects {method.Arity} arguments but was passed {argCount}.");
@@ -409,7 +408,7 @@ namespace XPT.Core.Scripting.VirtualMachine {
                     InvokeFromClass(argCount, methodName, receiverPtr, instanceLox.Class);
                 }
                 else {
-                    throw new GearsRuntimeException(0, $"{instance} does not have a public method named '{CompilerBitStr.GetBitStr(methodName)}'.");
+                    throw new GearsRuntimeException(0, $"{instance} does not have a public method named '{BitString.GetBitStr(methodName)}'.");
                 }
                 return;
             }

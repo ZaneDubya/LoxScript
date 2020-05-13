@@ -53,7 +53,7 @@
     <Compile Include="Core\Scripting\Compiling\CompilerClass.cs" />
     <Compile Include="Core\Scripting\Compiling\CompilerFixup.cs" />
     <Compile Include="Core\Scripting\Compiling\CompilerLocal.cs" />
-    <Compile Include="Core\Scripting\Compiling\CompilerBitStr.cs" />
+    <Compile Include="Core\Scripting\BitString.cs" />
     <Compile Include="Core\Scripting\Compiling\CompilerUpvalue.cs" />
     <Compile Include="Core\Scripting\Compiling\EFunctionType.cs" />
     <Compile Include="Core\Scripting\Compiling\TokenList.cs" />
