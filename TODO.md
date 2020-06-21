@@ -35,6 +35,11 @@ Control Flow:
 - [ ] Add break within loops.
 - [ ] Add continue within loops.
 
+## Missing functionality:
+- [ ] Add line information to compiled lox code.
+
+## Interesting ideas, but probably won't do:
+
 Resolving and Binding:
 - [ ] Don't allow redefinition of a local within an enclosed scope (possibly, I'm of two minds here).
 
@@ -46,8 +51,5 @@ Classes:
 - [ ] Replace "init" with "new" and C# ctor syntax (classname()).
 
 Inheritance:
-- [ ] Replace inherits extender '<' with ':'
+- [ ] Replace inherits syntax '<' with ':'
 - [ ] Replace "super" with "base"
-
-## Missing functionality:
-- [ ] Add line information to compiled lox code.
