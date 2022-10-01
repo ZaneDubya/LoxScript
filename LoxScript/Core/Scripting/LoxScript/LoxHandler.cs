@@ -1,11 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using XPT.Core.IO;
 using XPT.Core.Scripting.LoxScript.Compiling;
 using XPT.Core.Scripting.LoxScript.VirtualMachine;
+using XPT.Core.Scripting.Rules;
 
 namespace XPT.Core.Scripting.LoxScript {
     static class LoxHandler {
+
+        // === Loading ============================================================================================
+        // ========================================================================================================
 
         internal static bool DebugTestSerialization = false;
 
@@ -55,12 +60,24 @@ namespace XPT.Core.Scripting.LoxScript {
             string filename = $"{Path.GetFileNameWithoutExtension(path)}.lxx";
             using (BinaryFileWriter writer = new BinaryFileWriter(filename)) {
                 chunk.Serialize(writer);
-                writer.Close();
+                writer.Dispose();
             }
             using (BinaryFileReader reader = new BinaryFileReader(filename)) {
                 bool success = GearsChunk.TryDeserialize(filename, reader, out chunk);
-                reader.Close();
+                reader.Dispose();
                 return success;
+            }
+        }
+
+        // === Invocation ============================================================================================
+        // ===========================================================================================================
+
+        internal static void InvokeByTrigger(IEnumerable<Gears> vms, string triggerName, RuleInvocationContext context, Action<RuleInvocationResult> resultHandler, params object[] args) {
+            foreach (Gears vm in vms) {
+                foreach (string fnName in vm.Chunk.GetRuleMatches(triggerName, context)) {
+                    bool success = vm.CallGearsFunction(fnName, out object returned, args);
+                    resultHandler?.Invoke(new RuleInvocationResult(fnName, success, returned));
+                }
             }
         }
     }

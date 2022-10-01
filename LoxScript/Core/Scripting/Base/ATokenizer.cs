@@ -46,7 +46,7 @@ namespace XPT.Core.Scripting.Base {
         }
 
         internal TokenList ScanTokens() {
-            int lastLine = 0;
+            int lastLine;
             while (true) {
                 while (!IsAtEnd) {
                     // we are at the beginning of the next lexeme

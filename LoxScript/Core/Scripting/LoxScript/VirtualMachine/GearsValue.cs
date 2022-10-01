@@ -1,7 +1,7 @@
-﻿using System;
-#if NET_4_5
+﻿#if NET_4_5
 using System.Runtime.CompilerServices;
 #endif
+using System;
 using System.Runtime.InteropServices;
 
 namespace XPT.Core.Scripting.LoxScript.VirtualMachine {

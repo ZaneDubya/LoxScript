@@ -13,10 +13,10 @@ namespace XPT.Core.Scripting.Base {
 
         public override string ToString() {
             if (_Token.IsEOF) {
-                return $"[line {_Token.Line}] Error at EOF: {base.Message}";
+                return $"Compiler error at line {_Token.Line} at EOF: {base.Message}";
             }
             else {
-                return $"[line {_Token.Line}] Error at '{_Token.Lexeme}': {base.Message}";
+                return $"Compiler error at line {_Token.Line} at '{_Token.Lexeme}': {base.Message}";
             }
         }
     }

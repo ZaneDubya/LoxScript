@@ -223,7 +223,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         /// </summary>
         private void Number() {
             if (Peek() == 'x' && IsDigit(PeekNext(), allowHex: true)) {
-                // Consume the "x"                                      
+                // Consume the "x"
                 Advance();
                 while (IsDigit(Peek(), allowHex: true)) {
                     Advance();
@@ -235,7 +235,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                 }
                 // Look for a fractional part.                            
                 if (Peek() == '.' && IsDigit(PeekNext())) {
-                    // Consume the "."                                      
+                    // Consume the "."
                     Advance();
                     while (IsDigit(Peek())) {
                         Advance();

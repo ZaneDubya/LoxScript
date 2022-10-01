@@ -1,8 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-#if NET_4_5
+﻿#if NET_4_5
 using System.Runtime.CompilerServices;
 #endif
+using System;
+using System.Collections.Generic;
 using XPT.Core.IO;
 using XPT.Core.Scripting.Base;
 using XPT.Core.Scripting.LoxScript.VirtualMachine;

@@ -1,7 +1,8 @@
-﻿using System.Collections.Generic;
-#if NET_4_5
+﻿#if NET_4_5
 using System.Runtime.CompilerServices;
 #endif
+
+using System.Collections.Generic;
 
 namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
     /// <summary>
