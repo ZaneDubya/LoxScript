@@ -13,7 +13,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                 return wrapper;
             }
             try {
-                wrapper = new GearsNativeWrapper(type);
+                wrapper = new GearsNativeWrapper(type, true);
             }
             catch (Exception e) {
                 throw new GearsRuntimeException($"GearsNativeWrapper.GetWrapper: Could not wrap object of type {type.Name}. Inner error: {e.Message}");
@@ -29,7 +29,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
 
         private GearsNativeWrapper(Type wrappedType, bool wrapAllPublicFields = false) {
             WrappedType = wrappedType;
-            BindingFlags binding = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+            BindingFlags binding = BindingFlags.Public | BindingFlags.Instance;
             FieldInfo[] fields = wrappedType.GetFields(binding);
             foreach (FieldInfo info in fields) {
                 LoxFieldAttribute attr = info.GetCustomAttribute<LoxFieldAttribute>();
