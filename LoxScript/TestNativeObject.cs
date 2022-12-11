@@ -4,7 +4,7 @@
         public long TestDouble = 2;
         public byte TestByte = 1;
         public string TestStr = "doughnut";
-        public string TestStrNull;
+        public string TestStrNull = null;
 
         public int TestProperty {
             get;

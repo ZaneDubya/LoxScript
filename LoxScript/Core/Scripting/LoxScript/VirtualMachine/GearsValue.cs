@@ -13,7 +13,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
 
         public static readonly GearsValue TrueValue = new GearsValue(TAG_TRUE);
 
-        public static GearsValue CreateObjPtr(int index) => new GearsValue(TAG_OBJECTPTR | (int)index);
+        public static GearsValue CreateObjPtr(int index) => new GearsValue(TAG_OBJECTPTR | (uint)index);
 
         /// <summary>
         /// Every value that is not a number will use a special "Not a number" representation. NaN is defined
