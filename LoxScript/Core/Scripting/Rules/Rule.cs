@@ -3,17 +3,17 @@ using XPT.Core.IO;
 
 namespace XPT.Core.Scripting.Rules {
     class Rule {
-        internal readonly ulong Trigger;
-        internal readonly ulong Result;
+        internal readonly long Trigger;
+        internal readonly long Result;
         internal readonly RuleCondition[] Conditions;
 
-        public Rule(ulong trigger, ulong pointer, RuleCondition[] ruleConditions) {
+        public Rule(long trigger, long pointer, RuleCondition[] ruleConditions) {
             Trigger = trigger;
             Result = pointer;
             Conditions = ruleConditions;
         }
 
-        internal bool IsTrue(ulong trigger, RuleInvocationContext context) {
+        internal bool IsTrue(long trigger, RuleInvocationContext context) {
             if (Trigger != trigger) {
                 return false;
             }
@@ -35,8 +35,8 @@ namespace XPT.Core.Scripting.Rules {
         }
 
         internal static Rule Deserialize(IReader reader) {
-            ulong trigger = (ulong)reader.ReadLong();
-            ulong result = (ulong)reader.ReadLong();
+            long trigger = (long)reader.ReadLong();
+            long result = (long)reader.ReadLong();
             int count = reader.Read7BitInt();
             List<RuleCondition> cs = new List<RuleCondition>(count);
             for (int i = 0; i < count; i++) {

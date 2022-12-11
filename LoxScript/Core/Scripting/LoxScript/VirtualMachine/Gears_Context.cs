@@ -13,7 +13,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
     /// </summary>
     internal partial class Gears { // frame, heap, state management
 
-        private static readonly ulong InitString = BitString.GetBitStr("init");
+        private static readonly long InitString = BitString.GetBitStr("init");
         private const int FRAMES_MAX = 32;
         private const int HEAP_MAX = 256;
         private const int STACK_MAX = 256;
@@ -54,7 +54,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
         // =========================================================================================================
 
         private GearsValue NativeFnClock(GearsValue[] args) {
-            return Stopwatch.GetTimestamp() / ((double)Stopwatch.Frequency / 1000);
+            return (long)(Stopwatch.GetTimestamp() / ((long)Stopwatch.Frequency / 1000));
         }
 
         private GearsValue NativeFnPrint(GearsValue[] args) {

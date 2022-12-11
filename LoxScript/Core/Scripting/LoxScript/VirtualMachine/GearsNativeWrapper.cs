@@ -23,9 +23,9 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
         }
 
         public readonly Type WrappedType;
-        private readonly Dictionary<ulong, FieldInfo> _Fields = new Dictionary<ulong, FieldInfo>();
-        private readonly Dictionary<ulong, MethodInfo> _Methods = new Dictionary<ulong, MethodInfo>();
-        private readonly Dictionary<ulong, PropertyInfo> _Properties = new Dictionary<ulong, PropertyInfo>();
+        private readonly Dictionary<long, FieldInfo> _Fields = new Dictionary<long, FieldInfo>();
+        private readonly Dictionary<long, MethodInfo> _Methods = new Dictionary<long, MethodInfo>();
+        private readonly Dictionary<long, PropertyInfo> _Properties = new Dictionary<long, PropertyInfo>();
 
         private GearsNativeWrapper(Type wrappedType, bool wrapAllPublicFields = false) {
             WrappedType = wrappedType;
@@ -36,7 +36,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                 if (!wrapAllPublicFields && attr == null) {
                     continue;
                 }
-                ulong name = BitString.GetBitStr(attr?.Name ?? info.Name);
+                long name = BitString.GetBitStr(attr?.Name ?? info.Name);
                 if (NameExists(name)) {
                     Tracer.Warn($"GearsNativeWrapper: {wrappedType.Name}.{info.Name} is masked by a field, method, or property named '{BitString.GetBitStr(name)}'.");
                     continue;
@@ -49,7 +49,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                 if (!wrapAllPublicFields && attr == null) {
                     continue;
                 }
-                ulong name = BitString.GetBitStr(attr?.Name ?? info.Name);
+                long name = BitString.GetBitStr(attr?.Name ?? info.Name);
                 if (NameExists(name)) {
                     Tracer.Warn($"GearsNativeWrapper: {wrappedType.Name}.{info.Name} is masked by a field, method, or property named '{BitString.GetBitStr(name)}'.");
                     continue;
@@ -62,7 +62,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                 if (!wrapAllPublicFields && attr == null) {
                     continue;
                 }
-                ulong name = BitString.GetBitStr(attr?.Name ?? info.Name);
+                long name = BitString.GetBitStr(attr?.Name ?? info.Name);
                 if (NameExists(name)) {
                     Tracer.Warn($"GearsNativeWrapper: {wrappedType.Name}.{info.Name} is masked by a field, method, or property named '{BitString.GetBitStr(name)}'.");
                     continue;
@@ -71,20 +71,20 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             }
         }
 
-        private bool NameExists(ulong name) => _Fields.ContainsKey(name) || _Methods.ContainsKey(name) || _Properties.ContainsKey(name);
+        private bool NameExists(long name) => _Fields.ContainsKey(name) || _Methods.ContainsKey(name) || _Properties.ContainsKey(name);
 
-        public void SetField(Gears context, object wrappedObject, ulong name, GearsValue value) {
+        public void SetField(Gears context, object wrappedObject, long name, GearsValue value) {
             if (_Fields.TryGetValue(name, out FieldInfo fieldInfo)) {
                 if (value.IsNumber) {
                     if (!IsNumeric(fieldInfo.FieldType)) {
                         throw new GearsRuntimeException($"Attempted to set {WrappedType.Name}.{fieldInfo.Name} to numeric value.");
                     }
                     try {
-                        fieldInfo.SetValue(wrappedObject, Convert.ChangeType((double)value, fieldInfo.FieldType));
+                        fieldInfo.SetValue(wrappedObject, Convert.ChangeType((long)value, fieldInfo.FieldType));
                         return;
                     }
                     catch (Exception e) {
-                        throw new GearsRuntimeException($"Error setting {WrappedType.Name}.{fieldInfo.Name} to {(double)value}: {e.Message}");
+                        throw new GearsRuntimeException($"Error setting {WrappedType.Name}.{fieldInfo.Name} to {(long)value}: {e.Message}");
                     }
                 }
                 else if (value.IsNil && fieldInfo.FieldType == typeof(string)) {
@@ -112,11 +112,11 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                         throw new GearsRuntimeException($"Attempted to set {WrappedType.Name}.{propertyInfo.Name} to numeric value.");
                     }
                     try {
-                        propertyInfo.SetValue(wrappedObject, Convert.ChangeType((double)value, propertyInfo.PropertyType), null);
+                        propertyInfo.SetValue(wrappedObject, Convert.ChangeType((long)value, propertyInfo.PropertyType), null);
                         return;
                     }
                     catch (Exception e) {
-                        throw new GearsRuntimeException($"Error setting {WrappedType.Name}.{propertyInfo.Name} to {(double)value}: {e.Message}");
+                        throw new GearsRuntimeException($"Error setting {WrappedType.Name}.{propertyInfo.Name} to {(long)value}: {e.Message}");
                     }
                 }
                 else if (value.IsNil && propertyInfo.PropertyType == typeof(string)) {
@@ -138,10 +138,10 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             throw new GearsRuntimeException($"Unsupported native conversion: Error setting {WrappedType.Name}.{BitString.GetBitStr(name)} to {value}.");
         }
 
-        public bool TryGetField(Gears vm, object wrappedObject, ulong name, out GearsValue value) {
+        public bool TryGetField(Gears vm, object wrappedObject, long name, out GearsValue value) {
             if (_Fields.TryGetValue(name, out FieldInfo fieldInfo)) {
                 if (IsNumeric(fieldInfo.FieldType)) {
-                    double fieldValue = Convert.ToDouble(fieldInfo.GetValue(wrappedObject));
+                    long fieldValue = Convert.ToInt64(fieldInfo.GetValue(wrappedObject));
                     value = new GearsValue(fieldValue);
                     return true;
                 }
@@ -180,7 +180,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                     throw new GearsRuntimeException($"Unsupported reference: Native class {WrappedType.Name} does not have a public get method for '{BitString.GetBitStr(name)}'.");
                 }
                 if (IsNumeric(propertyInfo.PropertyType)) {
-                    double fieldValue = Convert.ToDouble(propertyInfo.GetValue(wrappedObject, null));
+                    long fieldValue = Convert.ToInt64(propertyInfo.GetValue(wrappedObject, null));
                     value = new GearsValue(fieldValue);
                     return true;
                 }
@@ -220,12 +220,12 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                             parameters[i] = Enum.ToObject(info.ParameterType, (int)value);
                         }
                         else {
-                            parameters[i] = Convert.ChangeType((double)value, info.ParameterType);
+                            parameters[i] = Convert.ChangeType((long)value, info.ParameterType);
                         }
                         continue;
                     }
                     catch (Exception e) {
-                        throw new GearsRuntimeException($"Error setting {receiver.GetType().Name}.{info.Name} to {(double)value}: {e.Message}");
+                        throw new GearsRuntimeException($"Error setting {receiver.GetType().Name}.{info.Name} to {(long)value}: {e.Message}");
                     }
                 }
                 else if (value.IsNil && info.ParameterType == typeof(string)) {
@@ -254,7 +254,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                 return GearsValue.NilValue;
             }
             else if (IsNumeric(methodInfo.ReturnType)) {
-                return new GearsValue(Convert.ToDouble(returnValue));
+                return new GearsValue(Convert.ToInt64(returnValue));
             }
             else if (methodInfo.ReturnType == typeof(bool)) {
                 return Convert.ToBoolean(returnValue) ? GearsValue.TrueValue : GearsValue.FalseValue;

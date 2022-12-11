@@ -47,8 +47,8 @@
     }
 
     internal abstract class GearsObjInstance : GearsObj {
-        public abstract bool TryGetField(ulong name, out GearsValue value);
-        public abstract void SetField(ulong name, GearsValue value);
+        public abstract bool TryGetField(long name, out GearsValue value);
+        public abstract void SetField(long name, GearsValue value);
     }
 
     /// <summary>
@@ -69,9 +69,9 @@
             vm.MarkTable(_Fields);
         }
 
-        public override bool TryGetField(ulong name, out GearsValue value) => _Fields.TryGet(name, out value);
+        public override bool TryGetField(long name, out GearsValue value) => _Fields.TryGet(name, out value);
 
-        public override void SetField(ulong name, GearsValue value) => _Fields.Set(name, value);
+        public override void SetField(long name, GearsValue value) => _Fields.Set(name, value);
 
         public override string ToString() => $"instance of {Class}";
     }
@@ -91,11 +91,11 @@
             _Wrapper = GearsNativeWrapper.GetWrapper(wrappedObject.GetType());
         }
 
-        public override void SetField(ulong name, GearsValue value) {
+        public override void SetField(long name, GearsValue value) {
             _Wrapper.SetField(_Context, WrappedObject, name, value);
         }
 
-        public override bool TryGetField(ulong name, out GearsValue value) {
+        public override bool TryGetField(long name, out GearsValue value) {
             return _Wrapper.TryGetField(_Context, WrappedObject, name, out value);
         }
 

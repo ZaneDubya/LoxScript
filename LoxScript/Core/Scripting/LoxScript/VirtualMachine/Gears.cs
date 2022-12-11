@@ -82,7 +82,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                         }
                         break;
                     case OP_GET_GLOBAL: {
-                            ulong name = (ulong)ReadConstant();
+                            long name = (long)ReadConstant();
                             if (!Globals.TryGet(name, out GearsValue value)) {
                                 throw new GearsRuntimeException(Chunk.LineAt(_IP), $"Undefined variable '{BitString.GetBitStr(name)}'.");
                             }
@@ -90,13 +90,13 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                         }
                         break;
                     case OP_DEFINE_GLOBAL: {
-                            ulong name = (ulong)ReadConstant();
+                            long name = (long)ReadConstant();
                             Globals.Set(name, Peek());
                             Pop();
                         }
                         break;
                     case OP_SET_GLOBAL: {
-                            ulong name = (ulong)ReadConstant();
+                            long name = (long)ReadConstant();
                             if (!Globals.ContainsKey(name)) {
                                 throw new GearsRuntimeException(Chunk.LineAt(_IP), $"Undefined variable '{BitString.GetBitStr(name)}'.");
                             }
@@ -127,7 +127,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                         break;
                     case OP_GET_PROPERTY: {
                             GearsObjInstance instance = GetObjectFromPtr<GearsObjInstance>(Peek());
-                            ulong name = (ulong)ReadConstant(); // property name
+                            long name = (long)ReadConstant(); // property name
                             if (instance.TryGetField(name, out GearsValue value)) {
                                 Pop(); // instance
                                 Push(value); // property value
@@ -140,7 +140,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                         }
                     case OP_SET_PROPERTY: {
                             GearsObjInstance instance = GetObjectFromPtr<GearsObjInstance>(Peek(1));
-                            ulong name = (ulong)ReadConstant(); // property name
+                            long name = (long)ReadConstant(); // property name
                             GearsValue value = Pop(); // value
                             instance.SetField(name, value);
                             Pop(); // ptr
@@ -148,7 +148,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                         }
                         break;
                     case OP_GET_SUPER: {
-                            ulong name = (ulong)ReadConstant(); // method/property name
+                            long name = (long)ReadConstant(); // method/property name
                             GearsObjClass superclass = GetObjectFromPtr<GearsObjClass>(Pop());
                             if (!BindLoxMethod(superclass, name)) {
                                 throw new GearsRuntimeException(Chunk.LineAt(_IP), $"Could not get {name} in superclass {superclass}");
@@ -182,7 +182,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                             }
                             GearsValue b = Pop();
                             GearsValue a = Pop();
-                            Push((long)((double)a) & (long)((double)b));
+                            Push((long)((long)a) & (long)((long)b));
                         }
                         break;
                     case OP_BITWISE_OR: {
@@ -191,7 +191,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                             }
                             GearsValue b = Pop();
                             GearsValue a = Pop();
-                            Push((long)((double)a) | (long)((double)b));
+                            Push((long)((long)a) | (long)((long)b));
                         }
                         break;
                     case OP_ADD: {
@@ -304,7 +304,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                             }
                             GearsObjClass super = GetObjectFromPtr<GearsObjClass>(Peek(1));
                             GearsObjClass sub = GetObjectFromPtr<GearsObjClass>(Peek(0));
-                            foreach (ulong key in super.Methods.AllKeys) {
+                            foreach (long key in super.Methods.AllKeys) {
                                 if (!super.Methods.TryGet(key, out GearsValue methodPtr)) {
                                     throw new GearsRuntimeException(Chunk.LineAt(_IP), "Could not copy superclass method table.");
                                 }
@@ -361,7 +361,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
         // ===========================================================================================================
 
         private void DefineMethod() {
-            ulong methodName = (ulong)ReadConstant();
+            long methodName = (long)ReadConstant();
             GearsValue methodPtr = Peek();
             GearsObjFunction method = GetObjectFromPtr<GearsObjFunction>(methodPtr);
             GearsObjClass objClass = GetObjectFromPtr<GearsObjClass>(Peek(1));
@@ -369,7 +369,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             Pop();
         }
 
-        private bool BindLoxMethod(GearsObjClass classObj, ulong name) {
+        private bool BindLoxMethod(GearsObjClass classObj, long name) {
             if (!classObj.Methods.TryGet(name, out GearsValue method)) {
                 return false;
             }
@@ -379,7 +379,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             return true;
         }
 
-        private void InvokeFromClass(int argCount, ulong methodName, GearsValue receiverPtr, GearsObjClass objClass) {
+        private void InvokeFromClass(int argCount, long methodName, GearsValue receiverPtr, GearsObjClass objClass) {
             if (!objClass.Methods.TryGet(methodName, out GearsValue methodPtr)) {
                 throw new GearsRuntimeException(Chunk.LineAt(_IP), $"{objClass} has no method with name '{BitString.GetBitStr(methodName)}'.");
             }
@@ -401,7 +401,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
 
         private void CallInvoke() {
             int argCount = ReadByte();
-            ulong methodName = (ulong)ReadConstant();
+            long methodName = (long)ReadConstant();
             GearsValue receiverPtr = Peek(argCount);
             if (!receiverPtr.IsObjPtr) {
                 throw new GearsRuntimeException(Chunk.LineAt(_IP), "Attempted invoke to non-pointer.");
@@ -456,7 +456,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             int slot = ReadShort();
             GearsObjUpvalue upvalue = _OpenFrame.Function.Upvalues[slot];
             GearsObjClass superclass = GetObjectFromPtr<GearsObjClass>(upvalue.IsClosed ? upvalue.Value : StackGet(upvalue.OriginalSP));
-            ulong methodName = (ulong)ReadConstant();
+            long methodName = (long)ReadConstant();
             InvokeFromClass(argCount, methodName, GearsValue.NilValue, superclass);
         }
 

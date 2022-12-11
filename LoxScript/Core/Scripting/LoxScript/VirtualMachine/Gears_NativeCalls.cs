@@ -9,11 +9,11 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
         /// If the function call was not successful, returns false, and returnValue will be an error string.
         /// </summary>
         internal bool CallGearsFunction(string fnName, out object returned, params object[] args) {
-            ulong name = BitString.GetBitStr(fnName);
+            long name = BitString.GetBitStr(fnName);
             return CallGearsFunction(name, out returned, args);
         }
 
-        internal bool CallGearsFunction(ulong name, out object returned, params object[] args) {
+        internal bool CallGearsFunction(long name, out object returned, params object[] args) {
             if (!Globals.TryGet(name, out GearsValue fnValue) || !fnValue.IsObjPtr) {
                 // error: no function with that name.
                 returned = $"Error: no function with name '{BitString.GetBitStr(name)}'.";
@@ -35,7 +35,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                     Push(GearsValue.NilValue);
                 }
                 else if (GearsNativeWrapper.IsNumeric(argType)) {
-                    double fieldValue = Convert.ToDouble(arg);
+                    long fieldValue = Convert.ToInt64(arg);
                     Push(new GearsValue(fieldValue));
                 }
                 else if (argType == typeof(bool)) {

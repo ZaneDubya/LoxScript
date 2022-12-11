@@ -123,28 +123,28 @@ namespace XPT {
         // ===========================================================================================================
 
         private static void RunNativeBenchmark() {
-            double total = 0;
+            long total = 0;
             for (var j = 0; j < 10; j = j + 1) {
-                double start = RunNativeBenchmarkClock();
+                long start = RunNativeBenchmarkClock();
                 for (var i = 0; i < 30; i = i + 1) {
                     RunNativeBenchmarkFibonacci(i);
                 }
-                double now = RunNativeBenchmarkClock() - start;
+                long now = RunNativeBenchmarkClock() - start;
                 total = total + now;
                 Console.WriteLine(j);
             }
             Console.WriteLine($"{total / 10:F2} ms");
         }
 
-        private static double RunNativeBenchmarkFibonacci(double n) {
+        private static long RunNativeBenchmarkFibonacci(long n) {
             if (n <= 1) {
                 return n;
             }
             return RunNativeBenchmarkFibonacci(n - 2) + RunNativeBenchmarkFibonacci(n - 1);
         }
 
-        private static double RunNativeBenchmarkClock() {
-            double frequency = Stopwatch.Frequency / 1000;
+        private static long RunNativeBenchmarkClock() {
+            long frequency = Stopwatch.Frequency / 1000;
             return Stopwatch.GetTimestamp() / frequency;
         }
 

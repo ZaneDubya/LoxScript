@@ -9,7 +9,7 @@ namespace XPT.Core.Scripting.Rules {
             _Rules.Add(rule);
         }
 
-        internal IEnumerable<ulong> AttemptMatch(ulong trigger, RuleInvocationContext context) {
+        internal IEnumerable<long> AttemptMatch(long trigger, RuleInvocationContext context) {
             foreach (Rule rule in _Rules) {
                 if (rule.IsTrue(trigger, context)) {
                     yield return rule.Result;

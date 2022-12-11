@@ -72,7 +72,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         private bool _CanAssign = false;
         private int _OriginAddress = 0;
         // I use this collection to ensure that all bitstrings are distinct:
-        private readonly Dictionary<ulong, string> _TempOptimizedStrings = new Dictionary<ulong, string>();
+        private readonly Dictionary<long, string> _TempOptimizedStrings = new Dictionary<long, string>();
 
         // scope and locals (locals are references to variables in scope; these are stored on the stack at runtime):
         private readonly LoxCompiler _EnclosingCompiler;
@@ -1023,7 +1023,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         /// </summary>
         private int MakeValueConstant(GearsValue value) {
             for (int i = 0; i < _Chunk.SizeConstant; i++) {
-                if ((ulong)_Chunk.ReadConstantValue(i) == (ulong)value) {
+                if ((long)_Chunk.ReadConstantValue(i) == (long)value) {
                     return i;
                 }
             }
@@ -1047,7 +1047,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         }
 
         private int MakeBitStrConstant(string value) {
-            ulong bitstr = BitString.GetBitStr(value);
+            long bitstr = BitString.GetBitStr(value);
             if (_TempOptimizedStrings.TryGetValue(bitstr, out string optimized)) {
                 if (optimized != value) {
                     throw new CompilerException(Tokens.Previous(), $"String collision: '{value}' != '{optimized}'. First 10 characters of all identifiers must be distinct.");

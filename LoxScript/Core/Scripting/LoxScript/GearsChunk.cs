@@ -42,7 +42,7 @@ namespace XPT.Core.Scripting.LoxScript {
 
         internal byte[] _Code = null;
 
-        internal ulong[] _Constants = null;
+        internal long[] _Constants = null;
 
         internal ushort[] _Lines = null; // todo: optimize with RLE.
 
@@ -106,9 +106,9 @@ namespace XPT.Core.Scripting.LoxScript {
             }
             SizeConstant = reader.Read7BitInt();
             if (SizeConstant > 0) {
-                _Constants = new ulong[SizeConstant];
+                _Constants = new long[SizeConstant];
                 for (int i = 0; i < SizeConstant; i++) {
-                    _Constants[i] = (ulong)reader.ReadLong();
+                    _Constants[i] = (long)reader.ReadLong();
                 }
             }
             Strings.Deserialize(reader);
@@ -200,13 +200,13 @@ namespace XPT.Core.Scripting.LoxScript {
 
         internal string ReadConstantValueAsBitStr(int offset) {
             GearsValue value = ReadConstantValue(offset);
-            return BitString.GetBitStr((ulong)value);
+            return BitString.GetBitStr((long)value);
         }
 
         internal int WriteConstantValue(GearsValue value) {
             CheckGrowConstantCapacity(1);
             int index = SizeConstant;
-            _Constants[index] = (ulong)value;
+            _Constants[index] = (long)value;
             SizeConstant += 1;
             return index;
         }
@@ -219,10 +219,10 @@ namespace XPT.Core.Scripting.LoxScript {
                     newCapacity *= GrowCapacityFactor;
                 }
                 if (_Constants == null) {
-                    _Constants = new ulong[newCapacity];
+                    _Constants = new long[newCapacity];
                 }
                 else {
-                    ulong[] newData = new ulong[newCapacity];
+                    long[] newData = new long[newCapacity];
                     Array.Copy(_Constants, newData, _Constants.Length);
                     _Constants = newData;
                 }
@@ -233,7 +233,7 @@ namespace XPT.Core.Scripting.LoxScript {
         // ===========================================================================================================
 
         internal IEnumerable<string> GetRuleMatches(string triggerName, RuleInvocationContext context) {
-            ulong triggerBitString = BitString.GetBitStr(triggerName);
+            long triggerBitString = BitString.GetBitStr(triggerName);
             for (int i = 0; i < Rules.Length; i++) {
                 if (Rules[i].IsTrue(triggerBitString, context)) {
                     yield return BitString.GetBitStr(Rules[i].Result);

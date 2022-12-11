@@ -9,14 +9,14 @@
 
         internal string Lexeme => _Source?.Substring(_SrcStart, _SrcLength) ?? null;
 
-        internal double LiteralAsNumber {
+        internal long LiteralAsNumber {
             get {
                 if (Lexeme.Length > 2 && Lexeme.StartsWith("0x")) {
                     long value = long.Parse(_Source.Substring(_SrcStart + 2, _SrcLength - 2), System.Globalization.NumberStyles.HexNumber);
                     return value;
                 }
                 else {
-                    return double.Parse(_Source.Substring(_SrcStart, _SrcLength));
+                    return long.Parse(_Source.Substring(_SrcStart, _SrcLength));
                 }
             }
     }

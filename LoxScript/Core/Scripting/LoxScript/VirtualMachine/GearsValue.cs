@@ -13,26 +13,21 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
 
         public static readonly GearsValue TrueValue = new GearsValue(TAG_TRUE);
 
-        public static GearsValue CreateObjPtr(int index) => new GearsValue(TAG_OBJECTPTR | (uint)index);
+        public static GearsValue CreateObjPtr(int index) => new GearsValue(TAG_OBJECTPTR | (int)index);
 
         /// <summary>
         /// Every value that is not a number will use a special "Not a number" representation. NaN is defined
-        /// by having 13 bits (defined by IEE 754) set. No valid double will have these bits set. The bits are:
-        /// All 11 exponent bits (NaN) + bit 51 (quiet NaN) + bit 50 (QNan FP Indefinite).
+        /// by having the 63rd bit set. No valid numberic GearsValue will have this bit set.
         /// </summary>
-        private const ulong QNAN = 0x7FFC000000000000;
-        private const ulong SIGN_BIT = 0x8000000000000000;
-        private const ulong TAG_NIL = 0x0000000000000001 | QNAN;
-        private const ulong TAG_FALSE = 0x0000000000000002 | QNAN;
-        private const ulong TAG_TRUE = 0x0000000000000003 | QNAN;
-        private const ulong TAG_OBJECTPTR = QNAN | SIGN_BIT;
+        private const long QNAN = 0x4000000000000000;
+        private const long SIGN_BIT = unchecked((long)0x8000000000000000);
+        private const long TAG_NIL = 0x0000000000000001 | QNAN;
+        private const long TAG_FALSE = 0x0000000000000002 | QNAN;
+        private const long TAG_TRUE = 0x0000000000000003 | QNAN;
+        private const long TAG_OBJECTPTR = QNAN | 0x2000000000000000;
 
-        // 64-bit double-precision IEEE floating-point number.
-        // 52 mantissa bits, 11 exponent bits, 1 sign bit.
         [FieldOffset(0)]
-        private readonly double _Value;
-        [FieldOffset(0)]
-        private readonly ulong _AsLong;
+        private readonly long _AsLong;
 
         // --- Is this a ... -----------------------------------------------------------------------------------------
 
@@ -63,12 +58,8 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
         
         // --- Ctor and ToString -------------------------------------------------------------------------------------
 
-        public GearsValue(ulong value) : this() {
+        public GearsValue(long value) : this() {
             _AsLong = value;
-        }
-
-        public GearsValue(double value) : this() {
-            _Value = value;
         }
 
         public override string ToString() => ToString(null);
@@ -78,7 +69,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                 if (context != null) {
                     return AsObject(context).ToString();
                 }
-                return $"objPtr(@{AsObjPtr.ToString()})";
+                return $"objPtr(@{AsObjPtr})";
             }
             else if (IsBool) {
                 return AsBool ? "true" : "false";
@@ -87,7 +78,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                 return "nil";
             }
             else if (IsNumber) {
-                return _Value.ToString();
+                return _AsLong.ToString();
             }
             else {
                 throw new Exception("Unknown GearsValue type!");
@@ -98,7 +89,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
 
         public bool Equals(GearsValue other) {
             if (IsNumber && other.IsNumber) {
-                return _Value == other._Value;
+                return _AsLong == other._AsLong;
             }
             return false;
         }
@@ -112,28 +103,12 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
         public static implicit operator GearsValue(bool value) => new GearsValue(value ? TAG_TRUE : TAG_FALSE);
 
         /// <summary>
-        /// Implicit conversion from double to GearsValue (no cast operator required).
+        /// Implicit conversion from long to GearsValue (no cast operator required).
         /// </summary>
 #if NET_4_5
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static implicit operator GearsValue(double value) => new GearsValue(value);
-
-        /// <summary>
-        /// Implicit conversion from ulong to GearsValue (no cast operator required).
-        /// </summary>
-#if NET_4_5
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public static implicit operator GearsValue(ulong value) => new GearsValue(value);
-
-        /// <summary>
-        /// Explicit conversion from GearsValue to double (requires cast operator).
-        /// </summary>
-#if NET_4_5
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
-        public static explicit operator double(GearsValue value) => value._Value;
+        public static implicit operator GearsValue(long value) => new GearsValue(value);
 
         /// <summary>
         /// Explicit conversion from GearsValue to long (requires cast operator).
@@ -141,22 +116,22 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
 #if NET_4_5
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public static explicit operator ulong(GearsValue value) => value._AsLong;
+        public static explicit operator long(GearsValue value) => value._AsLong;
 
         // public static GearsValue operator +(GearsValue value) => value;
 
-        public static GearsValue operator -(GearsValue value) => -value._Value;
+        public static GearsValue operator -(GearsValue value) => -value._AsLong;
 
-        public static GearsValue operator +(GearsValue a, GearsValue b) => a._Value + b._Value;
+        public static GearsValue operator +(GearsValue a, GearsValue b) => a._AsLong + b._AsLong;
 
-        public static GearsValue operator -(GearsValue a, GearsValue b) =>  a._Value - b._Value;
+        public static GearsValue operator -(GearsValue a, GearsValue b) =>  a._AsLong - b._AsLong;
 
-        public static GearsValue operator *(GearsValue a, GearsValue b) => a._Value * b._Value;
+        public static GearsValue operator *(GearsValue a, GearsValue b) => a._AsLong * b._AsLong;
 
-        public static GearsValue operator /(GearsValue a, GearsValue b) => a._Value / b._Value;
+        public static GearsValue operator /(GearsValue a, GearsValue b) => a._AsLong / b._AsLong;
 
-        public static GearsValue operator <(GearsValue a, GearsValue b) => a._Value < b._Value;
+        public static GearsValue operator <(GearsValue a, GearsValue b) => a._AsLong < b._AsLong;
 
-        public static GearsValue operator >(GearsValue a, GearsValue b) => a._Value > b._Value;
+        public static GearsValue operator >(GearsValue a, GearsValue b) => a._AsLong > b._AsLong;
     }
 }
