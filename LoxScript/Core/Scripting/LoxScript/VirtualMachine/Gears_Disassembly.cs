@@ -102,7 +102,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
         private int DisassembleInvoke(string name, GearsChunk chunk, int offset, Action<string> writeLine) {
             int args = chunk.ReadCode(ref offset);
             int nameIndex = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
-            string value = chunk.ReadConstantValueAsBitStr(nameIndex);
+            string value = chunk.VarNameStrings.ReadStringConstant(nameIndex);
             writeLine($"{name} const[{nameIndex}] ({value})");
             return offset;
         }
@@ -150,8 +150,8 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                     }
                     break;
                 case OP_LOAD_FUNCTION: {
-                        string value = chunk.ReadConstantValueAsBitStr(constantIndex);
-                        writeLine($"{name} bitstr[{constantIndex}] ({value})");
+                        string value = chunk.VarNameStrings.ReadStringConstant(constantIndex);
+                        writeLine($"{name} varname[{constantIndex}] ({value})");
                     }
                     break;
             }

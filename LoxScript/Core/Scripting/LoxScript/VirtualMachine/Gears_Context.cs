@@ -13,7 +13,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
     /// </summary>
     internal partial class Gears { // frame, heap, state management
 
-        private static readonly long InitString = BitString.GetBitStr("init");
+        private static readonly string InitString = "init";
         private const int FRAMES_MAX = 32;
         private const int HEAP_MAX = 256;
         private const int STACK_MAX = 256;
@@ -54,7 +54,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
         // =========================================================================================================
 
         private GearsValue NativeFnClock(GearsValue[] args) {
-            return (long)(Stopwatch.GetTimestamp() / ((long)Stopwatch.Frequency / 1000));
+            return (int)(Stopwatch.GetTimestamp() / (int)(Stopwatch.Frequency / 1000));
         }
 
         private GearsValue NativeFnPrint(GearsValue[] args) {
@@ -67,11 +67,11 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
         /// Arity is the number of arguments expected.
         /// </summary>
         internal void AddNativeFunctionToGlobals(string name, int arity, GearsFunctionNativeDelegate onInvoke) {
-            Globals.Set(BitString.GetBitStr(name), GearsValue.CreateObjPtr(HeapAddObject(new GearsObjFunctionNative(name, arity, onInvoke))));
+            Globals.Set(name, GearsValue.CreateObjPtr(HeapAddObject(new GearsObjFunctionNative(name, arity, onInvoke))));
         }
 
         internal void AddNativeObjectToGlobals(string name, object obj) {
-            Globals.Set(BitString.GetBitStr(name), GearsValue.CreateObjPtr(HeapAddObject(new GearsObjInstanceNative(this, obj))));
+            Globals.Set(name, GearsValue.CreateObjPtr(HeapAddObject(new GearsObjInstanceNative(this, obj))));
         }
 
         // === Call frames ==========================================================================================
@@ -150,6 +150,14 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
         internal string ReadConstantString() {
             int index = ReadShort();
             return Chunk.Strings.ReadStringConstant(index);
+        }
+
+#if NET_4_5
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
+        internal string ReadConstantVarName() {
+            int index = ReadShort();
+            return Chunk.VarNameStrings.ReadStringConstant(index);
         }
 
         // === Stack ================================================================================================

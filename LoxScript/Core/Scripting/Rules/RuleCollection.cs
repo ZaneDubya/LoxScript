@@ -9,10 +9,13 @@ namespace XPT.Core.Scripting.Rules {
             _Rules.Add(rule);
         }
 
-        internal IEnumerable<long> AttemptMatch(long trigger, RuleInvocationContext context) {
+        /// <summary>
+        /// Returns the "ResultFnName" value of all rules that match the passed trigger and context.
+        /// </summary>
+        internal IEnumerable<string> AttemptMatch(string trigger, RuleInvocationContext context) {
             foreach (Rule rule in _Rules) {
                 if (rule.IsTrue(trigger, context)) {
-                    yield return rule.Result;
+                    yield return rule.ResultFnName;
                 }
             }
         }

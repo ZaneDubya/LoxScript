@@ -53,7 +53,6 @@ namespace XPT.Core.Scripting.Base {
             for (int i = offset; i < SizeStringTable; i++) {
                 if (_StringTable[i] == 0) {
                     string value = Encoding.ASCII.GetString(_StringTable, offset, i - offset);
-                    offset = i + 1;
                     return value;
                 }
             }
@@ -63,6 +62,20 @@ namespace XPT.Core.Scripting.Base {
         internal int WriteStringConstant(string value) {
             byte[] ascii = Encoding.ASCII.GetBytes(value);
             int size = ascii.Length + 1;
+            if (_StringTable != null) {
+                for (int i = 0; i < _StringTable.Length - size; i++) {
+                    bool found = true;
+                    for (int j = 0; j < ascii.Length; j++) {
+                        if (ascii[j] != _StringTable[i + j]) {
+                            found = false;
+                            break;
+                        }
+                    }
+                    if (found) {
+                        return i;
+                    }
+                }
+            }
             CheckGrowStringTable(size);
             int index = SizeStringTable;
             Array.Copy(ascii, 0, _StringTable, index, ascii.Length);

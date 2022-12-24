@@ -4,26 +4,21 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
     internal partial class Gears { // support for native c# calling lox script functions.
 
         /// <summary>
-        /// Calls a LoxScript function from native code, passing arguments.
+        /// Calls a LoxScript function from code, passing arguments.
         /// If the function call was successful, returns true, and returnValue will be the returned value from the function, if any. 
         /// If the function call was not successful, returns false, and returnValue will be an error string.
         /// </summary>
-        internal bool CallGearsFunction(string fnName, out object returned, params object[] args) {
-            long name = BitString.GetBitStr(fnName);
-            return CallGearsFunction(name, out returned, args);
-        }
-
-        internal bool CallGearsFunction(long name, out object returned, params object[] args) {
+        internal bool CallGearsFunction(string name, out object returned, params object[] args) {
             if (!Globals.TryGet(name, out GearsValue fnValue) || !fnValue.IsObjPtr) {
                 // error: no function with that name.
-                returned = $"Error: no function with name '{BitString.GetBitStr(name)}'.";
+                returned = $"Error: no function with name '{name}'.";
                 return false;
             }
             GearsObj fnObject = fnValue.AsObject(this);
             if (fnObject is GearsObjFunction fnFunction) {
                 if (fnFunction.Arity != args.Length) {
                     // error: wrong arity.
-                    returned = $"Error: called '{BitString.GetBitStr(name)}' with wrong arity (passed arity is '{args?.Length ?? 0}').";
+                    returned = $"Error: called '{name}' with wrong arity (passed arity is '{args?.Length ?? 0}').";
                     return false;
                 }
             }
@@ -35,7 +30,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                     Push(GearsValue.NilValue);
                 }
                 else if (GearsNativeWrapper.IsNumeric(argType)) {
-                    long fieldValue = Convert.ToInt64(arg);
+                    int fieldValue = Convert.ToInt32(arg);
                     Push(new GearsValue(fieldValue));
                 }
                 else if (argType == typeof(bool)) {
@@ -61,7 +56,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                 }
                 else {
                     // error: could not pass arg of this type
-                    returned = $"Error: called '{BitString.GetBitStr(name)}' with argument of type '{argType.Name}' as parameter {i}. Gears could not interpret this argument.";
+                    returned = $"Error: called '{name}' with argument of type '{argType.Name}' as parameter {i}. Gears could not interpret this argument.";
                     return false;
                 }
             }

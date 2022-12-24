@@ -1,4 +1,6 @@
-﻿namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
+﻿using System.Xml.Linq;
+
+namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
     /// <summary>
     /// An object is a heap-allocated object. It can represent a string, function, class, etc.
     /// </summary>
@@ -47,8 +49,8 @@
     }
 
     internal abstract class GearsObjInstance : GearsObj {
-        public abstract bool TryGetField(long name, out GearsValue value);
-        public abstract void SetField(long name, GearsValue value);
+        public abstract bool TryGetField(string name, out GearsValue value);
+        public abstract void SetField(string name, GearsValue value);
     }
 
     /// <summary>
@@ -69,9 +71,9 @@
             vm.MarkTable(_Fields);
         }
 
-        public override bool TryGetField(long name, out GearsValue value) => _Fields.TryGet(name, out value);
+        public override bool TryGetField(string name, out GearsValue value) => _Fields.TryGet(name, out value);
 
-        public override void SetField(long name, GearsValue value) => _Fields.Set(name, value);
+        public override void SetField(string name, GearsValue value) => _Fields.Set(name, value);
 
         public override string ToString() => $"instance of {Class}";
     }
@@ -91,11 +93,11 @@
             _Wrapper = GearsNativeWrapper.GetWrapper(wrappedObject.GetType());
         }
 
-        public override void SetField(long name, GearsValue value) {
+        public override void SetField(string name, GearsValue value) {
             _Wrapper.SetField(_Context, WrappedObject, name, value);
         }
 
-        public override bool TryGetField(long name, out GearsValue value) {
+        public override bool TryGetField(string name, out GearsValue value) {
             return _Wrapper.TryGetField(_Context, WrappedObject, name, out value);
         }
 

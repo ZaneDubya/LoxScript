@@ -43,7 +43,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         public static bool TryCompileFromSource(string path, string source, out GearsChunk chunk, out string status) {
             try {
                 TokenList tokens = new LoxTokenizer(path, source).ScanTokens();
-                LoxCompiler compiler = new LoxCompiler(tokens, ELoxFunctionType.TYPE_SCRIPT, path, null, null);
+                LoxCompiler compiler = new LoxCompiler(tokens, ELoxFunctionType.TYPE_SCRIPT, path, null, null, null);
                 if (compiler.Compile()) {
                     chunk = compiler._Chunk;
                     status = null;
@@ -71,8 +71,6 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         private LoxCompilerClass _CurrentClass;
         private bool _CanAssign = false;
         private int _OriginAddress = 0;
-        // I use this collection to ensure that all bitstrings are distinct:
-        private readonly Dictionary<long, string> _TempOptimizedStrings = new Dictionary<long, string>();
 
         // scope and locals (locals are references to variables in scope; these are stored on the stack at runtime):
         private readonly LoxCompiler _EnclosingCompiler;
@@ -87,11 +85,11 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         private readonly LoxCompilerLocal[] _LocalVarData = new LoxCompilerLocal[MAX_LOCALS];
         private readonly LoxCompilerUpvalue[] _UpvalueData = new LoxCompilerUpvalue[MAX_UPVALUES];
 
-        private LoxCompiler(TokenList tokens, ELoxFunctionType type, string name, LoxCompiler enclosing, LoxCompilerClass enclosingClass)
+        private LoxCompiler(TokenList tokens, ELoxFunctionType type, string name, LoxCompiler enclosing, LoxCompilerClass enclosingClass, GearsChunk containerChunk)
             : base(tokens, name) {
             _FunctionType = type;
             Arity = 0;
-            _Chunk = new GearsChunk(name);
+            _Chunk = new GearsChunk(name, containerChunk);
             _Rules = new List<Rule>();
             _EnclosingCompiler = enclosing;
             _CurrentClass = enclosingClass;
@@ -119,7 +117,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         private readonly List<LoxCompilerFixup> _FixupConstants = new List<LoxCompilerFixup>();
         private readonly List<LoxCompilerFixup> _FixupStrings = new List<LoxCompilerFixup>();
 
-        private static void DoFixups(GearsChunk chunk, int origin, Func<GearsValue, int> makeConstant, Func<string, int> makeConstant2, List<LoxCompiler> fns) {
+        private static void DoFixups(GearsChunk chunk, int origin, Func<GearsValue, int> makeConstant, Func<string, int> makeConstantString, List<LoxCompiler> fns) {
             foreach (LoxCompiler fn in fns) {
                 int codeBase = chunk.SizeCode;
                 chunk.WriteCode(fn._Chunk._Code, fn._Chunk._Lines, fn._Chunk.SizeCode);
@@ -133,11 +131,11 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                 }
                 foreach (LoxCompilerFixup fixup in fn._FixupStrings) {
                     string value = fn._Chunk.Strings.ReadStringConstant(fixup.Value);
-                    int constantFixup = makeConstant2(value); // as fixup
+                    int constantFixup = makeConstantString(value); // as fixup
                     chunk.WriteCodeAt(codeBase + fixup.Address, (byte)(constantFixup >> 8));
                     chunk.WriteCodeAt(codeBase + fixup.Address + 1, (byte)(constantFixup & 0xff));
                 }
-                DoFixups(chunk, codeBase, makeConstant, makeConstant2, fn._FixupFns);
+                DoFixups(chunk, codeBase, makeConstant, makeConstantString, fn._FixupFns);
                 chunk.Compress();
             }
         }
@@ -222,7 +220,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             // todo? make the class declaration an expression, require explicit binding of class to variable (like var Pie = new Pie()); 27.2
             EmitOpcode(className.Line, OP_CLASS);
             EmitConstantIndex(className.Line, nameConstant, _FixupStrings);
-            DefineVariable(className.Line, MakeBitStrConstant(className.Lexeme));
+            DefineVariable(className.Line, MakeVariableConstant(className.Lexeme));
             _CurrentClass = new LoxCompilerClass(className, _CurrentClass);
             // superclass:
             if (Tokens.Match(LESS)) { 
@@ -264,7 +262,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             MarkInitialized();
             string fnName = Tokens.Previous().Lexeme;
             int fnLine = LineOfLastToken;
-            LoxCompiler fnCompiler = new LoxCompiler(Tokens, fnType2, fnName, this, _CurrentClass);
+            LoxCompiler fnCompiler = new LoxCompiler(Tokens, fnType2, fnName, this, _CurrentClass, _Chunk);
             fnCompiler.FunctionBody();
             fnCompiler.EndCompiler();
             EmitOpcode(fnLine, OP_LOAD_FUNCTION);
@@ -291,7 +289,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             }
             string fnName = Tokens.Previous().Lexeme;
             int fnLine = LineOfLastToken;
-            LoxCompiler fnCompiler = new LoxCompiler(Tokens, fnType2, fnName, this, _CurrentClass);
+            LoxCompiler fnCompiler = new LoxCompiler(Tokens, fnType2, fnName, this, _CurrentClass, _Chunk);
             fnCompiler.FunctionBody();
             fnCompiler.EndCompiler();
             EmitOpcode(fnLine, OP_LOAD_FUNCTION);
@@ -304,7 +302,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                 EmitData(fnLine, (byte)(fnCompiler._UpvalueData[i].Index));
             }
             EmitOpcode(fnLine, OP_METHOD);
-            EmitConstantIndex(fnLine, MakeBitStrConstant(fnName), _FixupConstants); // has fixup
+            EmitConstantIndex(fnLine, MakeVariableConstant(fnName), _FixupConstants); // has fixup
         }
 
         private void FunctionBody() {
@@ -343,10 +341,11 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         private int ParseVariable(string errorMsg) {
             Token name = Tokens.Consume(IDENTIFIER, errorMsg);
             DeclareVariable(name);
+            // only global variables have their names stored in the constant table.
             if (_ScopeDepth > SCOPE_GLOBAL) {
                 return 0;
             }
-            return MakeBitStrConstant(name.Lexeme);
+            return MakeVariableConstant(name.Lexeme);
         }
 
         private void DeclareVariable(Token name) {
@@ -416,7 +415,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             }
             if (Tokens.Peek().Type == FUNCTION && Tokens.Peek(1).Type == IDENTIFIER) {
                 string functionName = Tokens.Peek(1).Lexeme;
-                _Rules.Add(new Rule(BitString.GetBitStr(triggerName.Lexeme), BitString.GetBitStr(functionName), conditions.ToArray()));
+                _Rules.Add(new Rule(triggerName.Lexeme, functionName, conditions.ToArray()));
             }
             else {
                 throw new CompilerException(Tokens.Peek(), "Rule declaration must be followed by function.");
@@ -768,7 +767,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                 }
                 else if (Tokens.Match(DOT)) {
                     Token name = Tokens.Consume(IDENTIFIER, "Expect a property name after '.'.");
-                    int nameConstant = MakeBitStrConstant(name.Lexeme); // needs fixup
+                    int nameConstant = MakeVariableConstant(name.Lexeme); // needs fixup
                     if (_CanAssign && Tokens.Match(EQUAL)) {
                         Expression();
                         EmitOpcode(LineOfLastToken, OP_SET_PROPERTY);
@@ -849,7 +848,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                 Token keyword = Tokens.Previous();
                 Tokens.Consume(DOT, "Expect '.' after 'super'.");
                 Token methodName = Tokens.Consume(IDENTIFIER, "Expect superclass method name.");
-                int nameIndex = MakeBitStrConstant(methodName.Lexeme);
+                int nameIndex = MakeVariableConstant(methodName.Lexeme);
                 NamedVariable(MakeSyntheticToken(THIS, "this", 0), false); // look up this - load instance onto stack
                 if (Tokens.Match(LEFT_PAREN)) {
                     FinishCall(OP_SUPER_INVOKE);
@@ -901,10 +900,10 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                 setOp = OP_SET_UPVALUE;
             }
             else {
-                index = MakeBitStrConstant(name.Lexeme); // has fixup
+                index = MakeVariableConstant(name.Lexeme); // no longer needs a fixup
                 getOp = OP_GET_GLOBAL;
                 setOp = OP_SET_GLOBAL;
-                needsFixup = true;
+                needsFixup = false;
             }
             if (Tokens.Match(EQUAL)) {
                 if (!(_CanAssign & overrideCanAssign)) {
@@ -1023,7 +1022,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         /// </summary>
         private int MakeValueConstant(GearsValue value) {
             for (int i = 0; i < _Chunk.SizeConstant; i++) {
-                if ((long)_Chunk.ReadConstantValue(i) == (long)value) {
+                if ((int)_Chunk.ReadConstantValue(i) == (int)value) {
                     return i;
                 }
             }
@@ -1046,15 +1045,12 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             return index;
         }
 
-        private int MakeBitStrConstant(string value) {
-            long bitstr = BitString.GetBitStr(value);
-            if (_TempOptimizedStrings.TryGetValue(bitstr, out string optimized)) {
-                if (optimized != value) {
-                    throw new CompilerException(Tokens.Previous(), $"String collision: '{value}' != '{optimized}'. First 10 characters of all identifiers must be distinct.");
-                }
+        private int MakeVariableConstant(string value) {
+            int index = _Chunk.VarNameStrings.WriteStringConstant(value);
+            if (index > short.MaxValue) {
+                throw new CompilerException(Tokens.Previous(), "Too many late-resolved variable names in one chunk.");
             }
-            _TempOptimizedStrings[bitstr] = value;
-            return MakeValueConstant(bitstr);
+            return index;
         }
 
         private Token MakeSyntheticToken(int type, string name, int line) {

@@ -9,7 +9,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
     /// An implementation of the lox hash table.
     /// </summary>
     internal class GearsHashTable {
-        private Dictionary<long, GearsValue> _Table = new Dictionary<long, GearsValue>();
+        private Dictionary<string, GearsValue> _Table = new Dictionary<string, GearsValue>();
 
         public void Reset() {
             _Table.Clear();
@@ -17,7 +17,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
 
         public IEnumerable<GearsValue> AllValues => _Table.Values;
 
-        public IEnumerable<long> AllKeys => _Table.Keys;
+        public IEnumerable<string> AllKeys => _Table.Keys;
 
         /// <summary>
         /// Returns true if value exists in hash table.
@@ -25,7 +25,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
 #if NET_4_5
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public bool TryGet(long key, out GearsValue value) {
+        public bool TryGet(string key, out GearsValue value) {
             if (_Table.TryGetValue(key, out value)) {
                 return true;
             }
@@ -38,19 +38,19 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
 #if NET_4_5
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public bool Set(long key, GearsValue value) {
+        public bool Set(string key, GearsValue value) {
             bool exists = _Table.ContainsKey(key);
             _Table[key] = value;
             return !exists;
         }
 
-        public void Delete(long key) {
+        public void Delete(string key) {
             _Table.Remove(key);
         }
 
 #if NET_4_5
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
-        public bool ContainsKey(long key) => _Table.ContainsKey(key);
+        public bool ContainsKey(string key) => _Table.ContainsKey(key);
     }
 }

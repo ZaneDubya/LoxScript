@@ -14,7 +14,7 @@ namespace XPT.Core.Scripting.LoxScript {
     /// </summary>
     internal class GearsChunk {
         internal static bool TryDeserialize(string name, IReader reader, out GearsChunk chunk) {
-            chunk = new GearsChunk(name);
+            chunk = new GearsChunk(name, null);
             if (!chunk.Deserialize(reader)) {
                 chunk = null;
                 return false;
@@ -26,7 +26,7 @@ namespace XPT.Core.Scripting.LoxScript {
         private const int InitialChunkCapcity = 8;
         private const int GrowCapacityFactor = 2;
 
-        internal int SizeTotal => SizeCode + SizeConstant + Strings.SizeStringTable;
+        internal int SizeTotal => SizeCode + SizeConstant + Strings.SizeStringTable + VarNameStrings.SizeStringTable;
 
         /// <summary>
         /// How much of the chunk code array is in use.
@@ -38,11 +38,13 @@ namespace XPT.Core.Scripting.LoxScript {
         /// </summary>
         internal int SizeConstant { get; private set; } = 0;
 
-        internal StringTable Strings = new StringTable();
+        internal readonly StringTable Strings;
+
+        internal readonly StringTable VarNameStrings;
 
         internal byte[] _Code = null;
 
-        internal long[] _Constants = null;
+        internal int[] _Constants = null;
 
         internal ushort[] _Lines = null; // todo: optimize with RLE.
 
@@ -50,8 +52,16 @@ namespace XPT.Core.Scripting.LoxScript {
 
         internal readonly string Name;
 
-        internal GearsChunk(string name) {
+        internal GearsChunk(string name, GearsChunk containerChunk) {
             Name = name;
+            if (containerChunk == null) {
+                Strings = new StringTable();
+                VarNameStrings = new StringTable();
+            }
+            else {
+                Strings = containerChunk.Strings;
+                VarNameStrings = containerChunk.VarNameStrings;
+            }
         }
 
         internal void Compress() {
@@ -63,6 +73,7 @@ namespace XPT.Core.Scripting.LoxScript {
                 Array.Resize(ref _Constants, SizeConstant);
             }
             Strings.Compress();
+            VarNameStrings.Compress();
         }
 
         internal void Serialize(IWriter writer) {
@@ -80,6 +91,7 @@ namespace XPT.Core.Scripting.LoxScript {
                 }
             }
             Strings.Serialize(writer);
+            VarNameStrings.Serialize(writer);
             writer.Write7BitInt(_Lines?.Length ?? 0);
             if (_Lines != null) {
                 for (int i = 0; i < _Lines.Length; i++) {
@@ -106,12 +118,13 @@ namespace XPT.Core.Scripting.LoxScript {
             }
             SizeConstant = reader.Read7BitInt();
             if (SizeConstant > 0) {
-                _Constants = new long[SizeConstant];
+                _Constants = new int[SizeConstant];
                 for (int i = 0; i < SizeConstant; i++) {
-                    _Constants[i] = (long)reader.ReadLong();
+                    _Constants[i] = reader.ReadInt();
                 }
             }
             Strings.Deserialize(reader);
+            VarNameStrings.Deserialize(reader);
             int linesLength = reader.Read7BitInt();
             if (linesLength > 0) {
                 _Lines = new ushort[linesLength];
@@ -198,15 +211,10 @@ namespace XPT.Core.Scripting.LoxScript {
             return value;
         }
 
-        internal string ReadConstantValueAsBitStr(int offset) {
-            GearsValue value = ReadConstantValue(offset);
-            return BitString.GetBitStr((long)value);
-        }
-
         internal int WriteConstantValue(GearsValue value) {
             CheckGrowConstantCapacity(1);
             int index = SizeConstant;
-            _Constants[index] = (long)value;
+            _Constants[index] = (int)value;
             SizeConstant += 1;
             return index;
         }
@@ -219,10 +227,10 @@ namespace XPT.Core.Scripting.LoxScript {
                     newCapacity *= GrowCapacityFactor;
                 }
                 if (_Constants == null) {
-                    _Constants = new long[newCapacity];
+                    _Constants = new int[newCapacity];
                 }
                 else {
-                    long[] newData = new long[newCapacity];
+                    int[] newData = new int[newCapacity];
                     Array.Copy(_Constants, newData, _Constants.Length);
                     _Constants = newData;
                 }
@@ -233,10 +241,9 @@ namespace XPT.Core.Scripting.LoxScript {
         // ===========================================================================================================
 
         internal IEnumerable<string> GetRuleMatches(string triggerName, RuleInvocationContext context) {
-            long triggerBitString = BitString.GetBitStr(triggerName);
             for (int i = 0; i < Rules.Length; i++) {
-                if (Rules[i].IsTrue(triggerBitString, context)) {
-                    yield return BitString.GetBitStr(Rules[i].Result);
+                if (Rules[i].IsTrue(triggerName, context)) {
+                    yield return Rules[i].ResultFnName;
                 }
             }
         }

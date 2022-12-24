@@ -77,12 +77,12 @@
         OP_LESS,
 
         /// <summary>
-        /// Pops two values from the stack, performs bitwise and as if they were long ints, and pushes the result to the stack.
+        /// Pops two values from the stack, performs bitwise and as if they were ints, and pushes the result to the stack.
         /// </summary>
         OP_BITWISE_AND,
 
         /// <summary>
-        /// Pops two values from the stack, performs bitwise or as if they were long ints, and pushes the result to the stack.
+        /// Pops two values from the stack, performs bitwise or as if they were ints, and pushes the result to the stack.
         /// </summary>
         OP_BITWISE_OR,
 

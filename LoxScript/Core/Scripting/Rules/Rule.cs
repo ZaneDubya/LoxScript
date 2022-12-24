@@ -3,17 +3,17 @@ using XPT.Core.IO;
 
 namespace XPT.Core.Scripting.Rules {
     class Rule {
-        internal readonly long Trigger;
-        internal readonly long Result;
+        internal readonly string Trigger;
+        internal readonly string ResultFnName;
         internal readonly RuleCondition[] Conditions;
 
-        public Rule(long trigger, long pointer, RuleCondition[] ruleConditions) {
+        public Rule(string trigger, string resultFnName, RuleCondition[] ruleConditions) {
             Trigger = trigger;
-            Result = pointer;
+            ResultFnName = resultFnName;
             Conditions = ruleConditions;
         }
 
-        internal bool IsTrue(long trigger, RuleInvocationContext context) {
+        internal bool IsTrue(string trigger, RuleInvocationContext context) {
             if (Trigger != trigger) {
                 return false;
             }
@@ -26,8 +26,8 @@ namespace XPT.Core.Scripting.Rules {
         }
 
         internal void Serialize(IWriter writer) {
-            writer.Write(Trigger);
-            writer.Write(Result);
+            writer.WriteAsciiPrefix(Trigger);
+            writer.WriteAsciiPrefix(ResultFnName);
             writer.Write7BitInt(Conditions.Length);
             for (int i = 0; i < Conditions.Length; i++) {
                 Conditions[i].Serialize(writer);
@@ -35,8 +35,8 @@ namespace XPT.Core.Scripting.Rules {
         }
 
         internal static Rule Deserialize(IReader reader) {
-            long trigger = (long)reader.ReadLong();
-            long result = (long)reader.ReadLong();
+            string trigger = reader.ReadAsciiPrefix();
+            string result = reader.ReadAsciiPrefix();
             int count = reader.Read7BitInt();
             List<RuleCondition> cs = new List<RuleCondition>(count);
             for (int i = 0; i < count; i++) {
@@ -45,6 +45,6 @@ namespace XPT.Core.Scripting.Rules {
             return new Rule(trigger, result, cs.ToArray());
         }
 
-        public override string ToString() => $"[{BitString.GetBitStr(Trigger)} ...] => {Result}()";
+        public override string ToString() => $"[{Trigger} ...] => {ResultFnName}()";
     }
 }
