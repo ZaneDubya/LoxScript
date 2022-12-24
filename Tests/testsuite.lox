@@ -546,7 +546,7 @@ class Scone {
 var scone = Scone();
 scone.topping("berries", "cream");
 
-*/
+
 
 // === Class Methods and Method References. PASS =============================
 // ===========================================================================
@@ -561,14 +561,14 @@ class Oops {
 }
 var oops = Oops();
 oops.field();
-/*
+
 
 class Person {
   init(n) {
     this.name = n;
   }
   sayName() {
-    print this.name;
+    print(this.name);
   }
 }
 
@@ -584,7 +584,7 @@ class CoffeeMaker {
   }
 
   brew() {
-    print "Enjoy your cup of " + this.coffee;
+    print("Enjoy your cup of " + this.coffee);
 
     // No reusing the grounds!
     this.coffee = nil;
@@ -593,19 +593,19 @@ class CoffeeMaker {
 
 var maker = CoffeeMaker("coffee and chicory");
 maker.brew();
-
+*/
 // === Ch 29 Superclasses. PASS ==============================================
 // ===========================================================================
-
+/*
 class Doughnut {
   cook() {
-    print "Dunk in the fryer.";
+    print("Dunk in the fryer.");
   }
 }
 
 class Cruller < Doughnut {
   finish() {
-    print "Glaze with icing";
+    print("Glaze with icing");
   }
 }
 
@@ -616,7 +616,7 @@ c.finish();
 
 // === Ch 29 Referencing Superclass with 'super'. PASS =======================
 // ===========================================================================
-/*
+
 class Doughnut {
   cook() {
     print("Dunk in the fryer.");
@@ -637,4 +637,4 @@ class Cruller < Doughnut {
 var c = Cruller();
 c.cook();
 
-*/
+

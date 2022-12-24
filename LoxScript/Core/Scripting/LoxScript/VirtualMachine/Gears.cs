@@ -205,6 +205,16 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                                 string sb = GetObjectFromPtr<GearsObjString>(b).Value;
                                 Push(GearsValue.CreateObjPtr(HeapAddObject(new GearsObjString(sa + sb))));
                             }
+                            else if (a.IsNumber && b.IsObjType<GearsObjString>(this)) {
+                                string sa = ((int)a).ToString();
+                                string sb = GetObjectFromPtr<GearsObjString>(b).Value;
+                                Push(GearsValue.CreateObjPtr(HeapAddObject(new GearsObjString(sa + sb))));
+                            }
+                            else if (a.IsObjType<GearsObjString>(this) && b.IsNumber) {
+                                string sa = GetObjectFromPtr<GearsObjString>(a).Value;
+                                string sb = ((int)b).ToString();
+                                Push(GearsValue.CreateObjPtr(HeapAddObject(new GearsObjString(sa + sb))));
+                            }
                             else {
                                 throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operands of add must be numbers or strings.");
                             }

@@ -7,6 +7,13 @@ using System.Runtime.InteropServices;
 namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
     [StructLayout(LayoutKind.Explicit)]
     internal struct GearsValue : IEquatable<GearsValue> {
+
+        // A GearsValue is a 32-bit signed integer with special value assigned to certain bits.
+        // bit 31 (0x8... ....) is negative (as normal).
+        // bit 30 (0x4... ....) represents "not a number" values.
+        // bit 29 (0x2... ....) represents pointers to objects.
+        // The range of a GearsValue as a number is -2,147,483,648 to +536,870,911
+
         public static readonly GearsValue NilValue = new GearsValue(TAG_NIL);
 
         public static readonly GearsValue FalseValue = new GearsValue(TAG_FALSE);
@@ -19,7 +26,8 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
         /// Every value that is not a number will have a special value: the 31st bit will not be set, and the 30th bit
         /// will be set. No value numeric GearsValue will have this bit combination. This mask is these two bits.
         /// </summary>
-        private const uint QNAN_MASK = 0xE0000000;
+        private const uint QNAN_MASK = 0xC0000000;
+        private const uint QNAN_MASK_INC_PTR = 0xE0000000;
 
         /// <summary>
         /// Every value that is not a number will use a special "Not a number" representation. NaN is the 30th bit set
@@ -47,7 +55,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
 
         public bool IsBool => IsTrue || IsFalse;
 
-        public bool IsObjPtr => ((uint)_Value & QNAN_MASK) == TAG_OBJECTPTR;
+        public bool IsObjPtr => ((uint)_Value & QNAN_MASK_INC_PTR) == TAG_OBJECTPTR;
 
         public bool IsObjType<T>(Gears context) where T : GearsObj => IsObjPtr && AsObject(context) is T;
 

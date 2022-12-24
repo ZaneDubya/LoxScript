@@ -92,7 +92,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                 case OP_INHERIT:
                     return DisassembleSimple("OP_INHERIT", chunk, offset, writeLine);
                 case OP_METHOD:
-                    return DisassembleSimple("OP_METHOD", chunk, offset, writeLine);
+                    return DisassembleConstant("OP_METHOD", chunk, offset, OP_LOAD_FUNCTION, writeLine);
                 default:
                     writeLine($"Unknown opcode {instruction}");
                     return offset;
