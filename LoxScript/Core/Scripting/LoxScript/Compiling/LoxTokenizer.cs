@@ -16,6 +16,8 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         // === These must be implemented for each language. ==========================================================
         // ===========================================================================================================
 
+        protected bool IsFloatingPointPermitted => false;
+
         /// <summary>
         /// Grabs the text of the current lexeme and creates a new token for it.
         /// </summary>
@@ -233,8 +235,8 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                 while (IsDigit(Peek())) {
                     Advance();
                 }
-                // Look for a fractional part.                            
-                if (Peek() == '.' && IsDigit(PeekNext())) {
+                // Look for a fractional part, if this language supports floating pt numbers.
+                if (IsFloatingPointPermitted && Peek() == '.' && IsDigit(PeekNext())) {
                     // Consume the "."
                     Advance();
                     while (IsDigit(Peek())) {

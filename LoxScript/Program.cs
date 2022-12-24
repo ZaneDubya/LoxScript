@@ -75,6 +75,9 @@ namespace XPT {
                 Console.ReadKey();
                 gears.Run();
             }
+            else {
+                Console.WriteLine(status);
+            }
         }
 
         // === Helpers ===============================================================================================

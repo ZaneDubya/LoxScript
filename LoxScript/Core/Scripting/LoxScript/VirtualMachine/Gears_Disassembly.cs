@@ -146,7 +146,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                     break;
                 case OP_LOAD_STRING: {
                         string value = chunk.Strings.ReadStringConstant(constantIndex);
-                        writeLine($"{name} string[{constantIndex}] ({value})");
+                        writeLine($"{name} string[{constantIndex}] (\"{value}\")");
                     }
                     break;
                 case OP_LOAD_FUNCTION: {

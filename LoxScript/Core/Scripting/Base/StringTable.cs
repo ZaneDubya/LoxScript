@@ -32,20 +32,6 @@ namespace XPT.Core.Scripting.Base {
             _StringTable = reader.ReadBytes(SizeStringTable);
         }
 
-        /// <summary>
-        /// Adds the given string to the chunk's string table.
-        /// Returns the index of that string in the string table.
-        /// </summary>
-        private int MakeStringConstant(string value) {
-            for (int i = 0; i < SizeStringTable; i++) {
-                if (ReadStringConstant(i) == value) {
-                    return i;
-                }
-            }
-            int index = WriteStringConstant(value);
-            return index;
-        }
-
         internal string ReadStringConstant(int offset) {
             if (offset < 0) {
                 return null; // todo: runtime error
@@ -59,21 +45,16 @@ namespace XPT.Core.Scripting.Base {
             return null; // todo: runtime error
         }
 
+        /// <summary>
+        /// Adds the given string to the chunk's string table.
+        /// Returns the index of that string in the string table.
+        /// </summary>
         internal int WriteStringConstant(string value) {
             byte[] ascii = Encoding.ASCII.GetBytes(value);
             int size = ascii.Length + 1;
-            if (_StringTable != null) {
-                for (int i = 0; i < _StringTable.Length - size; i++) {
-                    bool found = true;
-                    for (int j = 0; j < ascii.Length; j++) {
-                        if (ascii[j] != _StringTable[i + j]) {
-                            found = false;
-                            break;
-                        }
-                    }
-                    if (found) {
-                        return i;
-                    }
+            for (int i = 0; i < SizeStringTable; i++) {
+                if (ReadStringConstant(i) == value) {
+                    return i;
                 }
             }
             CheckGrowStringTable(size);

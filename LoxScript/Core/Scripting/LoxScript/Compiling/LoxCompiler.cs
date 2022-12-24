@@ -120,7 +120,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         private static void DoFixups(GearsChunk chunk, int origin, Func<GearsValue, int> makeConstant, Func<string, int> makeConstantString, List<LoxCompiler> fns) {
             foreach (LoxCompiler fn in fns) {
                 int codeBase = chunk.SizeCode;
-                chunk.WriteCode(fn._Chunk._Code, fn._Chunk._Lines, fn._Chunk.SizeCode);
+                // todo: fix this? chunk.WriteCode(fn._Chunk._Code, fn._Chunk._Lines, fn._Chunk.SizeCode);
                 chunk.WriteCodeAt(origin + fn._OriginAddress, (byte)(codeBase >> 8));
                 chunk.WriteCodeAt(origin + fn._OriginAddress + 1, (byte)(codeBase & 0xff));
                 foreach (LoxCompilerFixup fixup in fn._FixupConstants) {
