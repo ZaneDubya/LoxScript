@@ -120,7 +120,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         private static void DoFixups(GearsChunk chunk, int origin, Func<GearsValue, int> makeConstant, Func<string, int> makeConstantString, List<LoxCompiler> fns) {
             foreach (LoxCompiler fn in fns) {
                 int codeBase = chunk.SizeCode;
-                // todo: fix this? chunk.WriteCode(fn._Chunk._Code, fn._Chunk._Lines, fn._Chunk.SizeCode);
+                chunk.WriteCode(fn._Chunk._Code, fn._Chunk._Lines, fn._Chunk.SizeCode);
                 chunk.WriteCodeAt(origin + fn._OriginAddress, (byte)(codeBase >> 8));
                 chunk.WriteCodeAt(origin + fn._OriginAddress + 1, (byte)(codeBase & 0xff));
                 foreach (LoxCompilerFixup fixup in fn._FixupConstants) {
@@ -302,7 +302,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                 EmitData(fnLine, (byte)(fnCompiler._UpvalueData[i].Index));
             }
             EmitOpcode(fnLine, OP_METHOD);
-            EmitConstantIndex(fnLine, MakeVariableConstant(fnName), _FixupConstants); // has fixup
+            EmitConstantIndex(fnLine, MakeVariableConstant(fnName), _FixupStrings); // has fixup
         }
 
         private void FunctionBody() {
@@ -771,15 +771,15 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                     if (_CanAssign && Tokens.Match(EQUAL)) {
                         Expression();
                         EmitOpcode(LineOfLastToken, OP_SET_PROPERTY);
-                        EmitConstantIndex(LineOfLastToken, nameConstant, _FixupConstants);
+                        EmitConstantIndex(LineOfLastToken, nameConstant, _FixupStrings);
                     }
                     else if (Tokens.Match(LEFT_PAREN)) {
                         FinishCall(OP_INVOKE);
-                        EmitConstantIndex(LineOfLastToken, nameConstant, _FixupConstants);
+                        EmitConstantIndex(LineOfLastToken, nameConstant, _FixupStrings);
                     }
                     else {
                         EmitOpcode(LineOfLastToken, OP_GET_PROPERTY);
-                        EmitConstantIndex(LineOfLastToken, nameConstant, _FixupConstants);
+                        EmitConstantIndex(LineOfLastToken, nameConstant, _FixupStrings);
                     }
                 }
                 else {

@@ -19,7 +19,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
         /// Every value that is not a number will have a special value: the 31st bit will not be set, and the 30th bit
         /// will be set. No value numeric GearsValue will have this bit combination. This mask is these two bits.
         /// </summary>
-        private const uint QNAN_MASK = 0xC0000000;
+        private const uint QNAN_MASK = 0xE0000000;
 
         /// <summary>
         /// Every value that is not a number will use a special "Not a number" representation. NaN is the 30th bit set
@@ -45,9 +45,9 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
 
         public bool IsTrue => _Value == TAG_TRUE;
 
-        public bool IsBool => (_Value & TAG_FALSE) == TAG_FALSE;
+        public bool IsBool => IsTrue || IsFalse;
 
-        public bool IsObjPtr => (_Value & TAG_OBJECTPTR) == TAG_OBJECTPTR;
+        public bool IsObjPtr => ((uint)_Value & QNAN_MASK) == TAG_OBJECTPTR;
 
         public bool IsObjType<T>(Gears context) where T : GearsObj => IsObjPtr && AsObject(context) is T;
 
