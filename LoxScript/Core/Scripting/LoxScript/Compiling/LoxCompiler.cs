@@ -853,12 +853,12 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                 if (Tokens.Match(LEFT_PAREN)) {
                     FinishCall(OP_SUPER_INVOKE);
                     NamedVariable(MakeSyntheticToken(SUPER, "super", 0), false); // look up this.super - load superclass of instance
-                    EmitConstantIndex(LineOfLastToken, nameIndex, _FixupConstants);
+                    EmitConstantIndex(LineOfLastToken, nameIndex, _FixupStrings);
                 }
                 else {
                     NamedVariable(MakeSyntheticToken(SUPER, "super", 0), false); // look up this.super - load superclass of instance
                     EmitOpcode(LineOfLastToken, OP_GET_SUPER); // look up super.name - encode name of method to access as operand
-                    EmitConstantIndex(LineOfLastToken, nameIndex, _FixupConstants);
+                    EmitConstantIndex(LineOfLastToken, nameIndex, _FixupStrings);
                 }
                 return;
             }

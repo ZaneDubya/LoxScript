@@ -82,7 +82,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                 case OP_INVOKE:
                     return DisassembleInvoke("OP_INVOKE", chunk, offset, writeLine);
                 case OP_SUPER_INVOKE:
-                    return DisassembleInvoke("OP_SUPER_INVOKE", chunk, offset, writeLine);
+                    return DisassembleInvokeSuper("OP_SUPER_INVOKE", chunk, offset, writeLine);
                 case OP_CLOSE_UPVALUE:
                     return DisassembleSimple("OP_CLOSE_UPVALUE", chunk, offset, writeLine);
                 case OP_RETURN:
@@ -99,11 +99,21 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             }
         }
 
-        private int DisassembleInvoke(string name, GearsChunk chunk, int offset, Action<string> writeLine) {
-            int args = chunk.ReadCode(ref offset);
+        private int DisassembleInvoke(string opcode, GearsChunk chunk, int offset, Action<string> writeLine) {
+            int argCount = chunk.ReadCode(ref offset);
             int nameIndex = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
-            string value = chunk.VarNameStrings.ReadStringConstant(nameIndex);
-            writeLine($"{name} const[{nameIndex}] ({value})");
+            string name = chunk.VarNameStrings.ReadStringConstant(nameIndex);
+            writeLine($"{opcode} const[{nameIndex}] ({name})");
+            return offset;
+        }
+
+        private int DisassembleInvokeSuper(string opcode, GearsChunk chunk, int offset, Action<string> writeLine) {
+            int argCount = chunk.ReadCode(ref offset);
+            chunk.ReadCode(ref offset); // OP GET UPVALUE
+            int slot = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
+            int nameIndex = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
+            string name = chunk.VarNameStrings.ReadStringConstant(nameIndex);
+            writeLine($"{opcode} const[{nameIndex}] ({name})");
             return offset;
         }
 
