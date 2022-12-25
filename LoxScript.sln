@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.902
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32825.248
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoxScript", "LoxScript\LoxScript.csproj", "{BAACB847-DD68-4037-9D94-FB987397E01C}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "XptScriptLib", "XptScriptLib\XptScriptLib.shproj", "{821F5BAD-D32C-4E09-BED2-2C39069F9E9C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -20,6 +22,9 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {E2611F0A-2A01-4999-9CFD-D47690301944}
+		SolutionGuid = {C53A079C-C1C3-45D9-9DAF-694C42BB48B2}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		XptScriptLib\XptScriptLib.projitems*{821f5bad-d32c-4e09-bed2-2c39069f9e9c}*SharedItemsImports = 13
 	EndGlobalSection
 EndGlobal

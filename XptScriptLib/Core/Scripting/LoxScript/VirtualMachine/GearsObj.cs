@@ -1,6 +1,4 @@
-﻿using System.Xml.Linq;
-
-namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
+﻿namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
     /// <summary>
     /// An object is a heap-allocated object. It can represent a string, function, class, etc.
     /// </summary>
