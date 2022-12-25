@@ -102,6 +102,20 @@ namespace XPT.Core.Scripting.Base {
         }
 
         /// <summary>
+        /// a conditional advance(), only consumes the current string if it’s what we’re looking for.
+        /// </summary>
+        protected bool Match(string expected) {
+            for (int i = 0; i < expected.Length; i++) {
+                if (IsAtEnd) return false;
+                if (Source[Current + i] != expected[i]) {
+                    return false;
+                }
+            }
+            Current += expected.Length;
+            return true;
+        }
+
+        /// <summary>
         /// only looks at the current unconsumed character.
         /// </summary>
         protected char Peek() {
