@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using XPT.Core.Scripting.Compiling;
 using XPT.Core.IO;
-using XPT.Core.Scripting.VirtualMachine;
+using XPT.Core.Scripting.Base;
+using XPT.Core.Scripting.LoxScript;
+using XPT.Core.Scripting.LoxScript.Compiling;
+using XPT.Core.Scripting.LoxScript.VirtualMachine;
 
 namespace XPT {
     class Program {
@@ -49,8 +51,7 @@ namespace XPT {
         }
 
         private static void RunFile(string path) {
-            string source = ReadFile(path);
-            Run(source);
+            Run(path);
             if (_HadError) {
                 Exit(65, true);
             }
@@ -59,20 +60,23 @@ namespace XPT {
             }
         }
 
-        private static void Run(string source) {
-            TokenList tokens = new Tokenizer(source).ScanTokens();
-            if (Compiler.TryCompile(tokens, out GearsChunk chunk, out string status)) {
+        private static void Run(string path) {
+            string source = ReadFile(path);
+            if (LoxCompiler.TryCompileFromSource(path, source, out GearsChunk chunk, out string status)) {
                 using (BinaryFileWriter writer = new BinaryFileWriter("compiled.lxx")) {
                     chunk.Serialize(writer);
                     writer.Close();
                 }
                 Gears gears = new Gears();
-                gears.Reset(chunk);
-                gears.AddNativeObject("TestObj", new TestNativeObject());
-                gears.Disassemble(chunk);
+                gears.Reset(chunk, false);
+                gears.AddNativeObjectToGlobals("TestObj", new TestNativeObject());
+                gears.Disassemble(chunk, Console.Write, Console.WriteLine);
                 Console.WriteLine("Press enter to run.");
                 Console.ReadKey();
                 gears.Run();
+            }
+            else {
+                Console.WriteLine(status);
             }
         }
 
@@ -105,7 +109,7 @@ namespace XPT {
         /// This reports an error, but does not by itself interupt the interpreter/parser flow.
         /// </summary>
         public static void Error(Token token, string message) {
-            if (token.Type == TokenType.EOF) {
+            if (token.Type == TokenTypes.EOF) {
                 Report(token.Line, " at end", message);
             }
             else {
@@ -122,29 +126,28 @@ namespace XPT {
         // ===========================================================================================================
 
         private static void RunNativeBenchmark() {
-            double total = 0;
+            int total = 0;
             for (var j = 0; j < 10; j = j + 1) {
-                double start = RunNativeBenchmarkClock();
+                int start = RunNativeBenchmarkClock();
                 for (var i = 0; i < 30; i = i + 1) {
                     RunNativeBenchmarkFibonacci(i);
                 }
-                double now = RunNativeBenchmarkClock() - start;
+                int now = RunNativeBenchmarkClock() - start;
                 total = total + now;
                 Console.WriteLine(j);
             }
             Console.WriteLine($"{total / 10:F2} ms");
         }
 
-        private static double RunNativeBenchmarkFibonacci(double n) {
+        private static int RunNativeBenchmarkFibonacci(int n) {
             if (n <= 1) {
                 return n;
             }
             return RunNativeBenchmarkFibonacci(n - 2) + RunNativeBenchmarkFibonacci(n - 1);
         }
 
-        private static double RunNativeBenchmarkClock() {
-            double frequency = Stopwatch.Frequency / 1000;
-            return Stopwatch.GetTimestamp() / frequency;
+        private static int RunNativeBenchmarkClock() {
+            return (int)(Stopwatch.GetTimestamp() / (Stopwatch.Frequency / 1000L));
         }
 
     }

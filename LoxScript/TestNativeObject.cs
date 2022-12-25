@@ -1,10 +1,9 @@
 ﻿namespace XPT {
     class TestNativeObject {
         public int TestInt = 1;
-        public double TestDouble = 2.3;
         public byte TestByte = 1;
         public string TestStr = "doughnut";
-        public string TestStrNull;
+        public string TestStrNull = null;
 
         public int TestProperty {
             get;

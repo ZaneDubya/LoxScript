@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>821f5bad-d32c-4e09-bed2-2c39069f9e9c</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>XPT</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Base\ACompiler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Base\ATokenizer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Base\CompilerException.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Base\StringTable.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Base\Token.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Base\TokenizerContext.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Base\TokenList.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Base\TokenTypes.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\Compiling\ELoxFunctionType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\Compiling\LoxCompiler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\Compiling\LoxCompilerClass.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\Compiling\LoxCompilerFixup.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\Compiling\LoxCompilerLocal.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\Compiling\LoxCompilerUpvalue.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\Compiling\LoxTokenizer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\Compiling\LoxTokenTypes.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\GearsChunk.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\LoxFieldAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\LoxHandler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\EGearsOpCode.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\Gears.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\GearsCallFrame.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\GearsHashTable.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\GearsNativeList.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\GearsNativeWrapper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\GearsObj.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\GearsRuntimeException.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\GearsValue.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\Gears_Context.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\Gears_Disassembly.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\Gears_NativeCalls.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\Gears_State.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\Compiling\SingleRuleCompiler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\Rule.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleCollection.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleCondition.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleInvocationContext.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleInvocationResult.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="$(MSBuildThisFileDirectory)Core\" />
+  </ItemGroup>
+</Project>

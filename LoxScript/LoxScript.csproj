@@ -50,37 +50,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Core\Scripting\Compiling\CompilerClass.cs" />
-    <Compile Include="Core\Scripting\Compiling\CompilerFixup.cs" />
-    <Compile Include="Core\Scripting\Compiling\CompilerLocal.cs" />
-    <Compile Include="Core\Scripting\BitString.cs" />
-    <Compile Include="Core\Scripting\Compiling\CompilerUpvalue.cs" />
-    <Compile Include="Core\Scripting\Compiling\EFunctionType.cs" />
-    <Compile Include="Core\Scripting\Compiling\TokenList.cs" />
+    <Compile Include="Core\Extensions\DoubleEx.cs" />
     <Compile Include="Core\IO\BinaryFileReader.cs" />
     <Compile Include="Core\IO\BinaryFileWriter.cs" />
     <Compile Include="Core\IO\IReader.cs" />
     <Compile Include="Core\IO\IWriter.cs" />
-    <Compile Include="Core\Scripting\Compiling\Keywords.cs" />
+    <Compile Include="Core\Utilities\Tracer.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Core\Scripting\Compiling\Tokenizer.cs" />
-    <Compile Include="Core\Scripting\Compiling\Token.cs" />
-    <Compile Include="Core\Scripting\Compiling\TokenType.cs" />
-    <Compile Include="Core\Scripting\Compiling\Compiler.cs" />
-    <Compile Include="Core\Scripting\Compiling\CompilerException.cs" />
     <Compile Include="TestNativeObject.cs" />
-    <Compile Include="Core\Scripting\VirtualMachine\Gears.cs" />
-    <Compile Include="Core\Scripting\VirtualMachine\GearsCallFrame.cs" />
-    <Compile Include="Core\Scripting\VirtualMachine\GearsChunk.cs" />
-    <Compile Include="Core\Scripting\VirtualMachine\EGearsOpCode.cs" />
-    <Compile Include="Core\Scripting\VirtualMachine\GearsNativeWrapper.cs" />
-    <Compile Include="Core\Scripting\VirtualMachine\GearsRuntimeException.cs" />
-    <Compile Include="Core\Scripting\VirtualMachine\Gears_Context.cs" />
-    <Compile Include="Core\Scripting\VirtualMachine\GearsHashTable.cs" />
-    <Compile Include="Core\Scripting\VirtualMachine\GearsObj.cs" />
-    <Compile Include="Core\Scripting\VirtualMachine\GearsValue.cs" />
-    <Compile Include="Core\Scripting\VirtualMachine\Gears_Disassembly.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

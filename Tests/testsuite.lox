@@ -1,4 +1,6 @@
-/*print("> Testing strings. Expected output is doughnut, then bagel.");
+/*
+
+print("> Testing strings. Expected output is doughnut, then bagel.");
 print(TestObj.TestStr);
 TestObj.TestStr = "bagel";
 print(TestObj.TestStr);
@@ -8,26 +10,23 @@ print(TestObj.TestStrNull);
 print("> GearsValue(4)->Native int32. Expected output is 4");
 TestObj.TestInt = 4;
 print(TestObj.TestInt);
-print("> GearsValue(4.5)->Native int32. Expected output is 4");
-TestObj.TestInt = 4.5;
-print(TestObj.TestInt);
-print("> GearsValue(4.5)->Native double. Expected output is 4.5");
-TestObj.TestDouble = 4.5;
-print(TestObj.TestDouble);
+// print("> GearsValue(4.5)->Native int32. Expected output is 4");
+// TestObj.TestInt = 4.5;
+// print(TestObj.TestInt);
+// print("> GearsValue(4.5)->Native double. Expected output is 4.5");
+// TestObj.TestDouble = 4.5;
+// print(TestObj.TestDouble);
 print("> GearsValue(128)->Native byte. Expected output is 128");
 TestObj.TestByte = 128;
-print(TestObj.TestByte);*/
+print(TestObj.TestByte);
 // print("GearsValue(256)->Native byte. Expected failure.");
 // TestObj.TestByte = 256;
 // print(TestObj.TestByte);
 // will fail: can't set functions on native objects.
-/*fun f() {
-    return 0;
-}
-TestObj.TestStrNull = f;*/
-/*print("> Call native object function: expect nil, then 1234567.");
+// TestObj.TestStrNull = f;
+print("> Call native object function: expect nil, then 1234567.");
 print(TestObj.TestFn());
-print(TestObj.TestOut());*/
+print(TestObj.TestOut());
 print("> Get/set property on object: expect 0, then 1.");
 print(TestObj.TestProperty);
 TestObj.TestProperty = 1;
@@ -39,11 +38,11 @@ print(TestObj.TestProperty);
 
 // === Starting line: PASS ===================================================
 // ===========================================================================
-// Tests print, operator precedence, number and string constants.
-/*
-print "test" + "1";
-print "hello world";
-print (-1 + 2) * 3 - -4;
+print("> Tests print, operator precedence, number and string constants:");
+print("> Expect test1, then hello world, then 7");
+print("test" + "1");
+print("hello world");
+print((-1 + 2) * 3 - -4);
 
 
 
@@ -62,47 +61,47 @@ var a = "global";
     var a = "outer";
     {
         var a = "inner";
-        print a;
+        print(a);
     }
-    print a;
+    print(a);
 }
-print a;
+print(a);
 
 
 // === If: PASS ==============================================================
 // ===========================================================================
 if (true) {
-    print 1;
+    print(1);
 }
 else {
-    print 2;
+    print("failed");
 }
 
 
 
 // === And/Or: PASS ==========================================================
 // ===========================================================================
-if (true and true) { print "correct"; }
-else { print "true and true incorrect"; }
-if (false and false) { print "false and false incorrect"; }
-else { print "correct"; }
-if (false and true) { print "false and true incorrect"; }
-else { print "correct"; }
-if (false or true) { print "correct"; }
-else { print "false or true incorrect"; }
-if (true and false) { print "true and false incorrect"; }
-else { print "correct"; }
-if (true or false) { print "correct"; }
-else { print "true or false incorrect"; }
+if (true and true) { print("correct"); }
+else { print("true and true incorrect"); }
+if (false and false) { print("false and false incorrect"); }
+else { print("correct"); }
+if (false and true) { print("false and true incorrect"); }
+else { print("correct"); }
+if (false or true) { print("correct"); }
+else { print("false or true incorrect"); }
+if (true and false) { print("true and false incorrect"); }
+else { print("correct"); }
+if (true or false) { print("correct"); }
+else { print("true or false incorrect"); }
 
 
 
 // === Loop Statement: PASS ==================================================
 // ===========================================================================
-print "Loop Test: Should count from 0-9";
+print("Loop Test: Should count from 0-9");
 var i = 0;
-while (i < 100) {
-    print i;
+while (i < 10) {
+    print(i);
     i = i + 1;
 }
 
@@ -110,10 +109,10 @@ while (i < 100) {
 
 // === For Statement: PASS ===================================================
 // ===========================================================================
-print "For Test: Should count from 0-9";
-for (var i = 0; i < 10; i = i + 1) { print i; }
-print "For Test: Should count from 0-9";
-for (var i = 0; i < 10; i = i + 1) { print i; }
+print("For Test: Should count from 0-9");
+for (var i = 0; i < 10; i = i + 1) { print(i); }
+print("For Test: Should count from 0-9");
+for (var i = 0; i < 10; i = i + 1) { print(i); }
 
 
 
@@ -122,14 +121,14 @@ for (var i = 0; i < 10; i = i + 1) { print i; }
 fun sum(a, b, c) {
     return a + b + c;
 }
-print 4 + sum(50, 60, 70);
+print(4 + sum(50, 60, 70));
 
 fun areWeHavingItYet(n) {
-    print n;
-    print "Yes we are!";
+    print(n);
+    print("Yes we are!");
 }
 areWeHavingItYet("Are we having fun yet?");
-print areWeHavingItYet;
+print(areWeHavingItYet);
 
 
 // === Closures - Part 1. PASS ===============================================
@@ -142,7 +141,7 @@ fun outer() {
     var c = 300;
     var d = 400;
     fun inner() {
-      print a + c + b + d;
+      print(a + c + b + d);
     }
     inner();
   }
@@ -153,7 +152,7 @@ outer(); // prints '1000'
 fun outer2() {
   var x = "outside";
   fun inner() {
-    print x;
+    print(x);
   }
   inner();
 }
@@ -161,7 +160,7 @@ outer2(); // should print 'outside'
 
 fun makeBreakfastClosure(value) {
   fun closure() {
-    print value;
+    print(value);
   }
   return closure;
 }
@@ -174,7 +173,7 @@ bagelFn();
 fun makeClosure() {
   var local = "local";
   fun closure() {
-    print local;
+    print(local);
   }
   return closure;
 }
@@ -184,7 +183,7 @@ var x = "global";
 fun outer3() {
   var x = "outer";
   fun inner() {
-    print x;
+    print(x);
   }
   inner();
 }
@@ -198,7 +197,7 @@ fun outer() {
     x = "assigned";
   }
   inner();
-  print x;
+  print(x);
 }
 outer(); // expect assigned
 
@@ -206,7 +205,7 @@ outer(); // expect assigned
 fun f() {
   var a = "close_over_later_variable a";
   fun g() {
-    print a;
+    print(a);
   }
   g();
 }
@@ -218,7 +217,7 @@ var f;
 fun f1() {
   var a = "nested_closure a";
   fun f2() {
-    print a;
+    print(a);
   }
   f = f2;
 }
@@ -232,7 +231,7 @@ fun outer() {
   var x = 1;    // (1)
   x = 2;        // (2)
   fun inner() { // (3)
-    print x;
+    print(x);
   }
   inner();
 }
@@ -244,12 +243,12 @@ fun outer() {
   var x = "value";
   fun middle() {
     fun inner() {
-      print x;
+      print(x);
     }
-    print "create inner closure";
+    print("create inner closure");
     return inner;
   }
-  print "return from outer";
+  print("return from outer");
   return middle;
 }
 var mid = outer();
@@ -265,7 +264,7 @@ fun outer() {
     var c = 3;
     var d = 4;
     fun inner() {
-      print a + c + b + d;
+      print(a + c + b + d);
     }
     return inner;
   }
@@ -279,7 +278,7 @@ f();
 fun outer() {
   var x = "outside";
   fun inner() {
-    print x;
+    print(x);
   }
   inner();
 }
@@ -293,7 +292,7 @@ fun main() {
   var a = "initial";
 
   fun set() { a = "updated"; }
-  fun get() { print a; }
+  fun get() { print(a); }
 
   globalSet = set;
   globalGet = get;
@@ -309,15 +308,15 @@ globalGet();
 {
   var a = 1;
   fun f() {
-    print a;
+    print(a);
   }
   var b = 2;
   fun g() {
-    print b;
+    print(b);
   }
   var c = 3;
   fun h() {
-    print c;
+    print(c);
   }
   f();
   g();
@@ -330,15 +329,15 @@ var g;
 {
   var local = "assign_to_closure local";
   fun f_() {
-    print local;
+    print(local);
     local = "assign_to_closure after f";
-    print local;
+    print(local);
   }
   f = f_;
   fun g_() {
-    print local;
+    print(local);
     local = "assign_to_closure after g";
-    print local;
+    print(local);
   }
   g = g_;
 }
@@ -358,16 +357,16 @@ var a = "assign_to_shadowed_later global";
   }
   var a = "assign_to_shadowed_later inner";
   assign();
-  print a; // expect: inner
+  print(a); // expect: inner
 }
-print a; // expect: assigned
+print(a); // expect: assigned
 
 
 // close_over_function_parameter.lox: passed
 var f;
 fun foo(param) {
   fun f_() {
-    print param;
+    print(param);
   }
   f = f_;
 }
@@ -380,8 +379,8 @@ fun f() {
   var a = "close_over_later_variable a";
   var b = "close_over_later_variable b";
   fun g() {
-    print b; // expect: b
-    print a; // expect: a
+    print(b); // expect: b
+    print(a); // expect: a
   }
   g();
 }
@@ -393,7 +392,7 @@ var f;
 {
   var local = "closed_closure_in_function local";
   fun f_() {
-    print local;
+    print(local);
   }
   f = f_;
 }
@@ -404,7 +403,7 @@ f(); // expect: local
 {
   var local = "open_closure_in_function local";
   fun f() {
-    print local; // expect: local
+    print(local); // expect: local
   }
   f();
 }
@@ -419,9 +418,9 @@ fun f1() {
     fun f3() {
       var c = "nested_closure c";
       fun f4() {
-        print a;
-        print b;
-        print c;
+        print(a);
+        print(b);
+        print(c);
       }
       f = f4;
     }
@@ -435,14 +434,13 @@ f();
 // expect: b
 // expect: c
 
-
 // reference_closure_multiple_times.lox
 var f;
 {
   var a = "reference_closure_multiple_times abc";
   fun f_() {
-    print a;
-    print a;
+    print(a);
+    print(a);
   }
   f = f_;
 }
@@ -453,12 +451,14 @@ f();
 
 
 
+
+
 // reuse_closure_slot.lox:
 {
   var f;
   {
     var a = "a";
-    fun f_() { print a; }
+    fun f_() { print(a); }
     f = f_;
   }
 
@@ -474,11 +474,11 @@ f();
   var foo = "closure";
   fun f() {
     {
-      print foo; // expect: closure
+      print(foo); // expect: closure
       var foo = "shadow";
-      print foo; // expect: shadow
+      print(foo); // expect: shadow
     }
-    print foo; // expect: closure
+    print(foo); // expect: closure
   }
   f();
 }
@@ -489,6 +489,7 @@ f();
 // Here we create two locals that can be closed over, but only the first one
 // actually is. When "b" goes out of scope, we need to make sure we don't
 // prematurely close "a".
+
 var closure;
 
 {
@@ -509,7 +510,7 @@ var closure;
     }
   }
 
-  print closure(); // expect: a
+  print(closure()); // expect: a
 }
 
 
@@ -518,43 +519,42 @@ var closure;
 // ===========================================================================
 class Pastry {
     taste() {
-      print "would you like some...";
+      print("would you like some...");
     }
 }
 var eclair = Pastry();
 eclair.taste();
 eclair.filling = "pastry creme";
-print eclair.filling;
+print(eclair.filling);
 
 class Pair {}
 var pair = Pair();
 pair.first = 1;
 pair.second = 2;
-print pair.first + pair.second; // 3.
+print(pair.first + pair.second); // 3.
 
 
 
 // === Class Methods with passed values. PASS ================================
 // ===========================================================================
-/*
 class Scone {
   topping(first, second) {
-    print "scone with " + first + " and " + second;
+    print("scone with " + first + " and " + second);
   }
 }
 
 var scone = Scone();
 scone.topping("berries", "cream");
-*/
+
 
 
 // === Class Methods and Method References. PASS =============================
 // ===========================================================================
-/*
+
 class Oops {
     init() {
         fun f() {
-            print "not a method.";
+            print("not a method.");
         }
         this.field = f;
     }
@@ -568,7 +568,7 @@ class Person {
     this.name = n;
   }
   sayName() {
-    print this.name;
+    print(this.name);
   }
 }
 
@@ -584,7 +584,7 @@ class CoffeeMaker {
   }
 
   brew() {
-    print "Enjoy your cup of " + this.coffee;
+    print("Enjoy your cup of " + this.coffee);
 
     // No reusing the grounds!
     this.coffee = nil;
@@ -593,38 +593,38 @@ class CoffeeMaker {
 
 var maker = CoffeeMaker("coffee and chicory");
 maker.brew();
-
+*/
 // === Ch 29 Superclasses. PASS ==============================================
 // ===========================================================================
-
+/*
 class Doughnut {
   cook() {
-    print "Dunk in the fryer.";
+    print("Dunk in the fryer.");
   }
 }
 
 class Cruller < Doughnut {
   finish() {
-    print "Glaze with icing";
+    print("Glaze with icing");
   }
 }
 
 var c = Cruller();
 c.cook();
 c.finish();
-
+*/
 
 // === Ch 29 Referencing Superclass with 'super'. PASS =======================
 // ===========================================================================
 
 class Doughnut {
   cook() {
-    print "Dunk in the fryer.";
+    print("Dunk in the fryer.");
     this.finish();
   }
 
   finish(ingredient) {
-    print "Finish with " + ingredient;
+    print("Finish with " + ingredient);
   }
 }
 
@@ -638,4 +638,3 @@ var c = Cruller();
 c.cook();
 
 
-*/

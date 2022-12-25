@@ -1,7 +1,7 @@
 // === Fibonacci Benchmark ===================================================
-// This benchmarks performance of function calls. Creating a new function context is
-// one of the most expensive operations in the VM. Calculating the first fibonacci
-// numbers using this (unoptimized!) method requires roughly 4,350,000 calls.
+// This benchmarks performance of function calls. Creating a new function 
+// context is a very expensive operation in the VM. Calculating fibonacci for
+// 0-30 using this (unoptimized!) method requires roughly 4,350,000 calls.
 // Compiler flags: release mode/optimize+/prefer 64-bit
 // Native C#                     8.3 ms
 // AST:                        40090 ms                       5725x slower than native
@@ -27,7 +27,8 @@ var total = 0;
 for (var j = 0; j < 10; j = j + 1) {
     var start = clock();
     for (var i = 0; i < 30; i = i + 1) {
-        fibonacci(i);
+        var x = fibonacci(i);
+        print(x);
     }
     var now = clock() - start;
     total = total + now;
