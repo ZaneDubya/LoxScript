@@ -24,7 +24,6 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             _Keywords["if"] = IF;
             _Keywords["nil"] = NIL;
             _Keywords["or"] = OR;
-            // _Keywords["print"] = PRINT;
             // _Keywords["public"] = PUBLIC;
             _Keywords["return"] = RETURN;
             _Keywords["super"] = SUPER;
