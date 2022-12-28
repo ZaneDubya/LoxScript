@@ -37,6 +37,8 @@ namespace XPT.Core.Scripting.Base {
 
         private int _CurrentToken = 0;
 
+        public Token Current => _Tokens[_CurrentToken];
+
         /// <summary>
         /// Checks to see if the next token is of the expected type.
         /// If so, it consumes it and everything is groovy.
@@ -44,6 +46,18 @@ namespace XPT.Core.Scripting.Base {
         /// </summary>
         public Token Consume(int type, string message) {
             if (Check(type)) {
+                return Advance();
+            }
+            throw new CompilerException(Peek(), message);
+        }
+
+        /// <summary>
+        /// Checks to see if the next token is of the expected type and lexeme.
+        /// If so, it consumes it and everything is groovy.
+        /// If some other token is there, then we’ve hit an error.
+        /// </summary>
+        public Token Consume(int type, string lexeme, string message) {
+            if (Check(type) && Current.Lexeme == lexeme) {
                 return Advance();
             }
             throw new CompilerException(Peek(), message);

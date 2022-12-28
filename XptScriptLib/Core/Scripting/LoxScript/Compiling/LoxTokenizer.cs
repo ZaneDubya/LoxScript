@@ -202,9 +202,9 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         private void Identifier() {
             while (IsAlphaUnderscoreOrNumeric(Peek())) {
                 Advance();
-            } 
-            // See if the identifier is a reserved word.   
+            }
             string text = Source.Substring(Start, Current - Start);
+            // See if the identifier is a reserved word.   
             int? keyword = LoxTokenTypes.Get(text);
             if (keyword != null) {
                 AddToken(keyword.Value);

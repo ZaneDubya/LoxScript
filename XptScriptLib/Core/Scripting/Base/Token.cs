@@ -1,4 +1,6 @@
-﻿namespace XPT.Core.Scripting.Base {
+﻿using System;
+
+namespace XPT.Core.Scripting.Base {
     class Token {
         internal readonly int Type;
         internal readonly int Line;
@@ -16,7 +18,12 @@
                     return value;
                 }
                 else {
-                    return int.Parse(_Source.Substring(_SrcStart, _SrcLength));
+                    try {
+                        return int.Parse(_Source.Substring(_SrcStart, _SrcLength));
+                    }
+                    catch (Exception e) {
+                        return 0;
+                    }
                 }
             }
     }
