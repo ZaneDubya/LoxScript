@@ -1,7 +1,7 @@
 ﻿namespace XPT.Core.Scripting.Base {
     internal static class TokenTypes {
         // End of file.
-        internal const int 
+        internal const int
             EOF = 0,
             // Error.
             ERROR = 1,
@@ -12,8 +12,6 @@
             GREATER = 17, GREATER_EQUAL = 18, LESS = 19, LESS_EQUAL = 20,
             AMPERSAND = 21, PIPE = 22, LEFT_BRACKET = 23, RIGHT_BRACKET = 24,
             // Literals.                                     
-            IDENTIFIER = 81, STRING = 82, NUMBER = 83,
-            // Comment!
-            COMMENT = 99;
+            IDENTIFIER = 81, STRING = 82, NUMBER = 83;
     }
 }
