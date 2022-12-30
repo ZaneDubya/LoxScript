@@ -45,7 +45,7 @@ namespace XPT.Core.Scripting.Base {
             return _Files.Count > 0;
         }
 
-        internal TokenList ScanTokens() {
+        internal TokenList ScanTokens(bool addEofAtEnd = true) {
             int lastLine;
             while (true) {
                 while (!IsAtEnd) {
@@ -58,7 +58,9 @@ namespace XPT.Core.Scripting.Base {
                     break;
                 }
             }
-            Tokens.Add(new Token(TokenTypes.EOF, lastLine));
+            if (addEofAtEnd) {
+                Tokens.Add(new Token(TokenTypes.EOF, lastLine));
+            }
             return Tokens;
         }
 

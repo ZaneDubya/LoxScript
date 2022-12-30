@@ -18,7 +18,7 @@ namespace XPT.Core.Scripting.Base {
             }
         }
 
-        public void Add(Token token) {
+        public Token Add(Token token) {
             if (_Next >= Capacity) {
                 if (_Tokens == null) {
                     _Tokens = new Token[16];
@@ -30,7 +30,16 @@ namespace XPT.Core.Scripting.Base {
                 }
             }
             _Tokens[_Next++] = token;
+            return token;
         }
+
+        public void AddedRewind(int count = 1) {
+            for (int i = 0; i < count; i++) {
+                _Tokens[--_Next] = default;
+            }
+        }
+
+        public Token AddedLast => _Next > 0 ? _Tokens[_Next - 1] : default;
 
         // === Infrastructure, should only be used by Compiler =======================================================
         // ===========================================================================================================
