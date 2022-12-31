@@ -144,5 +144,13 @@ namespace XPT.Core.Scripting.Base {
                 _CurrentToken = 0;
             }
         }
+
+        internal Token[] ToArray() {
+            Token[] array = new Token[Count];
+            for (int i = 0; i < Count; i++) {
+                array[i] = _Tokens[i];
+            }
+            return array;
+        }
     }
 }
