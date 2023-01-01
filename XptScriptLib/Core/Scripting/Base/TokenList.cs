@@ -18,6 +18,11 @@ namespace XPT.Core.Scripting.Base {
             }
         }
 
+        public override string ToString() => $"Tokens: [{_CurrentToken}/{Count}]{(Current != null ? $"({Current})" : String.Empty)}";
+
+        // === Added support, used by tokenizer ======================================================================
+        // ===========================================================================================================
+
         public Token Add(Token token) {
             if (_Next >= Capacity) {
                 if (_Tokens == null) {
@@ -46,7 +51,7 @@ namespace XPT.Core.Scripting.Base {
 
         private int _CurrentToken = 0;
 
-        public Token Current => _Tokens[_CurrentToken];
+        public Token Current => this[_CurrentToken];
 
         /// <summary>
         /// Checks to see if the next token is of the expected type.

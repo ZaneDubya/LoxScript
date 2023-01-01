@@ -1,5 +1,4 @@
-﻿using XPT.Core.Extensions;
-using XPT.Core.IO;
+﻿using XPT.Core.IO;
 
 namespace XPT.Core.Scripting.Rules {
     class RuleCondition {

@@ -47,6 +47,6 @@ namespace XPT.Core.Scripting.Base {
         /// </summary>
         internal bool IsEOF => Type == TokenTypes.EOF;
 
-        public override string ToString() => $"{Type} {Lexeme} @{Line}";
+        public override string ToString() => $"{Type} \'{Lexeme}\' @{Line}";
     }
 }
