@@ -21,7 +21,7 @@ namespace XPT.Core.Scripting.Base {
                     try {
                         return int.Parse(_Source.Substring(_SrcStart, _SrcLength));
                     }
-                    catch (Exception e) {
+                    catch {
                         return 0;
                     }
                 }
