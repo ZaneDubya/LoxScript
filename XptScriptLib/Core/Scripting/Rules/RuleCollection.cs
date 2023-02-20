@@ -12,10 +12,10 @@ namespace XPT.Core.Scripting.Rules {
         /// <summary>
         /// Returns the "ResultFnName" value of all rules that match the passed trigger and context.
         /// </summary>
-        internal IEnumerable<string> AttemptMatch(string trigger, RuleInvocationContext context) {
+        internal IEnumerable<Rule> GetMatching(string triggerName, RuleInvocationContext context) {
             foreach (Rule rule in _Rules) {
-                if (rule.IsTrue(trigger, context)) {
-                    yield return rule.ResultFnName;
+                if (rule.Match(triggerName, context)) {
+                    yield return rule;
                 }
             }
         }
@@ -28,7 +28,7 @@ namespace XPT.Core.Scripting.Rules {
             }
         }
 
-        internal static bool Deserialize(IReader reader, out RuleCollection collection) {
+        internal static bool TryDeserialize(IReader reader, RuleInvocationWithName onInvoke, out RuleCollection collection) {
             if (!reader.ReadFourBytes("rulx")) {
                 collection = null;
                 return false;
@@ -36,7 +36,7 @@ namespace XPT.Core.Scripting.Rules {
             collection = new RuleCollection();
             int count = reader.Read7BitInt();
             for (int i = 0; i < count; i++) {
-                Rule rule = Rule.Deserialize(reader);
+                Rule rule = Rule.Deserialize(reader, onInvoke);
                 collection.AddRule(rule);
             }
             return true;

@@ -2,12 +2,12 @@
 
 namespace XPT.Core.Scripting.Rules {
     class RuleCondition {
-        internal readonly string VarName;
+        internal readonly string Key;
         internal readonly int Min;
         internal readonly int Max;
 
-        private RuleCondition(string varName, int min, int max) {
-            VarName = varName;
+        private RuleCondition(string keyName, int min, int max) {
+            Key = keyName;
             Min = min;
             Max = max;
         }
@@ -33,7 +33,7 @@ namespace XPT.Core.Scripting.Rules {
         }
 
         internal bool IsTrue(RuleInvocationContext context) {
-            if (!context.TryGetValue(VarName, out int value)) {
+            if (!context.TryGetValue(Key, out int value)) {
                 return false;
             }
             if (value == Min && value == Max) {
@@ -46,7 +46,7 @@ namespace XPT.Core.Scripting.Rules {
         }
 
         internal void Serialize(IWriter writer) {
-            writer.WriteAsciiPrefix(VarName);
+            writer.WriteAsciiPrefix(Key);
             writer.Write(Min);
             writer.Write(Max);
         }

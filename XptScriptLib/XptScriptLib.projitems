@@ -45,10 +45,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\Rule.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleCollection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleCondition.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleInvocation.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleInvocationContext.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleInvocationResult.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="$(MSBuildThisFileDirectory)Core\" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleSystem.cs" />
   </ItemGroup>
 </Project>

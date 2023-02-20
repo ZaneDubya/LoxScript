@@ -68,17 +68,5 @@ namespace XPT.Core.Scripting.LoxScript {
                 return success;
             }
         }
-
-        // === Invocation ============================================================================================
-        // ===========================================================================================================
-
-        internal static void InvokeByTrigger(IEnumerable<Gears> vms, string triggerName, RuleInvocationContext context, Action<RuleInvocationResult> resultHandler, params object[] args) {
-            foreach (Gears vm in vms) {
-                foreach (string fnName in vm.Chunk.GetRuleMatches(triggerName, context)) {
-                    bool success = vm.CallGearsFunction(fnName, out object returned, args);
-                    resultHandler?.Invoke(new RuleInvocationResult(fnName, success, returned));
-                }
-            }
-        }
     }
 }

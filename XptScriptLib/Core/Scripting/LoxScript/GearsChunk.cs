@@ -48,9 +48,9 @@ namespace XPT.Core.Scripting.LoxScript {
 
         internal ushort[] _Lines = null; // todo: optimize with RLE.
 
-        internal Rule[] Rules = null;
-
         internal readonly string Name;
+
+        private RuleCollection _Rules = null;
 
         internal GearsChunk(string name, GearsChunk containerChunk) {
             Name = name;
@@ -98,12 +98,8 @@ namespace XPT.Core.Scripting.LoxScript {
                     writer.Write7BitInt(_Lines[i]);
                 }
             }
-            if (Rules?.Length > 0) {
-                writer.WriteFourBytes("rule");
-                writer.Write7BitInt(Rules.Length);
-                for (int i = 0; i < Rules.Length; i++) {
-                    Rules[i].Serialize(writer);
-                }
+            if (_Rules != null) {
+                _Rules.Serialize(writer);
             }
         }
 
@@ -132,11 +128,8 @@ namespace XPT.Core.Scripting.LoxScript {
                     _Lines[i] = (ushort)reader.Read7BitInt();
                 }
             }
-            if (reader.ReadFourBytes("rule")) {
-                Rules = new Rule[reader.Read7BitInt()];
-                for (int i = 0; i < Rules.Length; i++) {
-                    Rules[i] = Rule.Deserialize(reader);
-                }
+            if (RuleCollection.TryDeserialize(reader, OnInvokeRule, out RuleCollection collection)) {
+                _Rules = collection;
             }
             return true;
         }
@@ -240,12 +233,18 @@ namespace XPT.Core.Scripting.LoxScript {
         // === Rules =================================================================================================
         // ===========================================================================================================
 
-        internal IEnumerable<string> GetRuleMatches(string triggerName, RuleInvocationContext context) {
-            for (int i = 0; i < Rules.Length; i++) {
-                if (Rules[i].IsTrue(triggerName, context)) {
-                    yield return Rules[i].ResultFnName;
-                }
+        internal void SetRules(IEnumerable<Rule> rules) {
+            if (_Rules == null) {
+                _Rules = new RuleCollection();
             }
+            foreach (Rule rule in rules) {
+                _Rules.AddRule(new Rule(rule.Trigger, rule.InvokedFnName, rule.Conditions, OnInvokeRule));
+            }
+        }
+
+        private object OnInvokeRule(string fnName, params object[] args) {
+            // get the fn by fnName, invoke, return value.
+            throw new NotImplementedException();
         }
     }
 }

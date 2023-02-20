@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace XPT.Core.Scripting.Base {
+﻿namespace XPT.Core.Scripting.Base {
     class Token {
         internal readonly int Type;
         internal readonly int Line;

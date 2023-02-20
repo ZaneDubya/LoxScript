@@ -106,7 +106,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             EmitReturn();
             if (_EnclosingCompiler == null) {
                 DoFixups(_Chunk, 0, MakeValueConstant, MakeStringConstant, _FixupFns);
-                _Chunk.Rules = _Rules.ToArray();
+                _Chunk.SetRules(_Rules);
             }
         }
 
@@ -382,7 +382,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             if (_EnclosingCompiler != null) {
                 throw new CompilerException(Tokens.Peek(), "Rules must be globally scoped.");
             }
-            Token triggerName = Tokens.Consume(IDENTIFIER, "Rule declarations must begin with a named trigger.");
+            Token trigger = Tokens.Consume(IDENTIFIER, "Rule declarations must begin with a named trigger.");
             List<RuleCondition> conditions = new List<RuleCondition>();
             // rule conditions
             while (!Tokens.Match(RIGHT_BRACKET)) {
@@ -415,7 +415,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             }
             if (Tokens.Peek().Type == FUNCTION && Tokens.Peek(1).Type == IDENTIFIER) {
                 string functionName = Tokens.Peek(1).Lexeme;
-                _Rules.Add(new Rule(triggerName.Lexeme, functionName, conditions.ToArray()));
+                _Rules.Add(new Rule(trigger.Lexeme, functionName, conditions.ToArray()));
             }
             else {
                 throw new CompilerException(Tokens.Peek(), "Rule declaration must be followed by function.");
