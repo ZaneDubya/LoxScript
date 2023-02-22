@@ -2,18 +2,13 @@
 
 namespace XPT.Core.Scripting.Rules {
     class RuleCondition {
-        internal readonly string Key;
-        internal readonly int Min;
-        internal readonly int Max;
-
-        private RuleCondition(string keyName, int min, int max) {
-            Key = keyName;
-            Min = min;
-            Max = max;
-        }
 
         internal static RuleCondition ConditionEquals(string varName, int value) {
             return new RuleCondition(varName, value, value);
+        }
+
+        internal static RuleCondition ConditionEquals(string varName, string value) {
+            return new RuleCondition(varName, value);
         }
 
         internal static RuleCondition ConditionLessThan(string varName, int value) {
@@ -32,14 +27,42 @@ namespace XPT.Core.Scripting.Rules {
             return new RuleCondition(varName, value, int.MaxValue);
         }
 
-        internal bool IsTrue(RuleInvocationContext context) {
-            if (!context.TryGetValue(Key, out int value)) {
+        // === Instance ==============================================================================================
+        // ===========================================================================================================
+
+        internal readonly string Key;
+        internal readonly int ValueMin;
+        internal readonly int ValueMax;
+        internal readonly string ValueString;
+
+        private RuleCondition(string keyName, int min, int max) {
+            Key = keyName;
+            ValueMin = min;
+            ValueMax = max;
+            ValueString = null;
+        }
+
+        private RuleCondition(string keyName, string value) {
+            Key = keyName;
+            ValueMin = 0;
+            ValueMax = 0;
+            ValueString = value;
+        }
+
+        internal bool IsTrue(ValueCollection context) {
+            if (ValueString != null) {
+                if (!context.TryGet(Key, out string sValue)) {
+                    return false;
+                }
+                return ValueString == sValue;
+            }
+            if (!context.TryGet(Key, out int value)) {
                 return false;
             }
-            if (value == Min && value == Max) {
+            if (value == ValueMin && value == ValueMax) {
                 return true;
             }
-            if (value >= Min && value <= Max) {
+            if (value >= ValueMin && value <= ValueMax) {
                 return true;
             }
             return false;
@@ -47,8 +70,8 @@ namespace XPT.Core.Scripting.Rules {
 
         internal void Serialize(IWriter writer) {
             writer.WriteAsciiPrefix(Key);
-            writer.Write(Min);
-            writer.Write(Max);
+            writer.Write(ValueMin);
+            writer.Write(ValueMax);
         }
 
         internal static RuleCondition Deserialize(IReader reader) {

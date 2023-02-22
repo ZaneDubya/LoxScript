@@ -4,6 +4,7 @@ using System.IO;
 using XPT.Core.Scripting.Base;
 using XPT.Core.Scripting.LoxScript.VirtualMachine;
 using XPT.Core.Scripting.Rules;
+using XPT.Core.Scripting.Rules.Compiling;
 using static XPT.Core.Scripting.Base.TokenTypes;
 using static XPT.Core.Scripting.LoxScript.Compiling.LoxTokenTypes;
 using static XPT.Core.Scripting.LoxScript.VirtualMachine.EGearsOpCode;
@@ -66,7 +67,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         // Compiling code to:
         private int Arity;
         private readonly GearsChunk _Chunk;
-        private readonly List<Rule> _Rules;
+        private readonly RuleCollection _Rules;
         private readonly ELoxFunctionType _FunctionType;
         private LoxCompilerClass _CurrentClass;
         private bool _CanAssign = false;
@@ -90,7 +91,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             _FunctionType = type;
             Arity = 0;
             _Chunk = new GearsChunk(name, containerChunk);
-            _Rules = new List<Rule>();
+            _Rules = new RuleCollection();
             _EnclosingCompiler = enclosing;
             _CurrentClass = enclosingClass;
             // stack slot zero is used for 'this' reference in methods, and is empty for script/functions:
@@ -106,7 +107,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             EmitReturn();
             if (_EnclosingCompiler == null) {
                 DoFixups(_Chunk, 0, MakeValueConstant, MakeStringConstant, _FixupFns);
-                _Chunk.SetRules(_Rules);
+                _Chunk.Rules = _Rules;
             }
         }
 
@@ -120,7 +121,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         private static void DoFixups(GearsChunk chunk, int origin, Func<GearsValue, int> makeConstant, Func<string, int> makeConstantString, List<LoxCompiler> fns) {
             foreach (LoxCompiler fn in fns) {
                 int codeBase = chunk.SizeCode;
-                chunk.WriteCode(fn._Chunk._Code, fn._Chunk._Lines, fn._Chunk.SizeCode);
+                chunk.WriteCode(fn._Chunk.Code, fn._Chunk.Lines, fn._Chunk.SizeCode);
                 chunk.WriteCodeAt(origin + fn._OriginAddress, (byte)(codeBase >> 8));
                 chunk.WriteCodeAt(origin + fn._OriginAddress + 1, (byte)(codeBase & 0xff));
                 foreach (LoxCompilerFixup fixup in fn._FixupConstants) {
@@ -382,40 +383,12 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             if (_EnclosingCompiler != null) {
                 throw new CompilerException(Tokens.Peek(), "Rules must be globally scoped.");
             }
-            Token trigger = Tokens.Consume(IDENTIFIER, "Rule declarations must begin with a named trigger.");
-            List<RuleCondition> conditions = new List<RuleCondition>();
             // rule conditions
-            while (!Tokens.Match(RIGHT_BRACKET)) {
-                Token contextVariableName = Tokens.Consume(IDENTIFIER, "Rule must contain list of comparison expressions (missing identifier).");
-                Token comparisonOperation = Tokens.Advance(); // we will check validity of this token after consuming the value
-                Token contextVariableValue = Tokens.Consume(NUMBER, "Rule must contain list of comparison expressions (missing value)");
-                switch (comparisonOperation.Type) {
-                    case BANG_EQUAL:
-                        // conditions.Add(RuleCondition.ConditionNotEquals(contextVariableName.Lexeme, contextVariableValue.LiteralAsNumber));
-                        throw new CompilerException(Tokens.Peek(), "Rule must contain list of comparison expressions (can't use != operator).");
-                    case EQUAL:
-                    case EQUAL_EQUAL:
-                        conditions.Add(RuleCondition.ConditionEquals(contextVariableName.Lexeme, contextVariableValue.LiteralAsNumber));
-                        break;
-                    case GREATER:
-                        conditions.Add(RuleCondition.ConditionGreaterThan(contextVariableName.Lexeme, contextVariableValue.LiteralAsNumber));
-                        break;
-                    case GREATER_EQUAL:
-                        conditions.Add(RuleCondition.ConditionGreaterThanOrEqual(contextVariableName.Lexeme, contextVariableValue.LiteralAsNumber));
-                        break;
-                    case LESS:
-                        conditions.Add(RuleCondition.ConditionLessThan(contextVariableName.Lexeme, contextVariableValue.LiteralAsNumber));
-                        break;
-                    case LESS_EQUAL:
-                        conditions.Add(RuleCondition.ConditionLessThanOrEqual(contextVariableName.Lexeme, contextVariableValue.LiteralAsNumber));
-                        break;
-                    default:
-                        throw new CompilerException(Tokens.Peek(), "Rule must contain list of comparison expressions (missing operator).");
-                }
-            }
+            RuleCompiler.TryCompile(Tokens, out string triggerName, out RuleCondition[] conditions);
+            // following function
             if (Tokens.Peek().Type == FUNCTION && Tokens.Peek(1).Type == IDENTIFIER) {
                 string functionName = Tokens.Peek(1).Lexeme;
-                _Rules.Add(new Rule(trigger.Lexeme, functionName, conditions.ToArray()));
+                _Rules.AddRule(new Rule(triggerName, functionName, conditions));
             }
             else {
                 throw new CompilerException(Tokens.Peek(), "Rule declaration must be followed by function.");

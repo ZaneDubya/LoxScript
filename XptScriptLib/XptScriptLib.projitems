@@ -41,13 +41,14 @@
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\Gears_Disassembly.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\Gears_NativeCalls.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\Gears_State.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\Compiling\SingleRuleCompiler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\Compiling\RuleCompiler.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\Compiling\RuleTokenizer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\Rule.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleCollection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleCondition.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleInvocation.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleInvocationDelegates.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleAttribute.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleInvocationContext.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\ValueCollection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleSystem.cs" />
   </ItemGroup>
 </Project>

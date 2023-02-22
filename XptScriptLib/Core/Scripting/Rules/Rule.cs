@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using XPT.Core.IO;
 
 namespace XPT.Core.Scripting.Rules {
@@ -6,34 +7,35 @@ namespace XPT.Core.Scripting.Rules {
         internal readonly string Trigger;
         internal readonly string InvokedFnName;
         internal readonly RuleCondition[] Conditions;
-        private readonly RuleInvocationWithName _OnInvokeWithName;
-        private readonly RuleInvocationWithoutName _OnInvokeWithoutName;
+
+        private readonly RuleInvocationDelegateHosted _OnInvokeNative; // use this for c# code
+        private readonly RuleInvocationDelegateNative _OnInvokeHosted; // use this for loxscript code
 
         public Rule(string trigger, string fnName, RuleCondition[] conditions) {
             Trigger = trigger;
             InvokedFnName = fnName;
             Conditions = conditions;
-            _OnInvokeWithName = null;
-            _OnInvokeWithoutName = null;
+            _OnInvokeNative = null;
+            _OnInvokeHosted = null;
         }
 
-        public Rule(string trigger, string fnName, RuleCondition[] conditions, RuleInvocationWithName onInvoke) {
+        public Rule(string trigger, string fnName, RuleCondition[] conditions, RuleInvocationDelegateHosted onInvoke) {
             Trigger = trigger;
             InvokedFnName = fnName;
             Conditions = conditions;
-            _OnInvokeWithName = onInvoke;
-            _OnInvokeWithoutName = null;
+            _OnInvokeNative = onInvoke;
+            _OnInvokeHosted = null;
         }
 
-        public Rule(string trigger, string fnName, RuleCondition[] conditions, RuleInvocationWithoutName onInvoke) {
+        public Rule(string trigger, string fnName, RuleCondition[] conditions, RuleInvocationDelegateNative onInvoke) {
             Trigger = trigger;
             InvokedFnName = fnName;
             Conditions = conditions;
-            _OnInvokeWithName = null;
-            _OnInvokeWithoutName = onInvoke;
+            _OnInvokeNative = null;
+            _OnInvokeHosted = onInvoke;
         }
 
-        internal bool Match(string trigger, RuleInvocationContext context) {
+        internal bool Match(string trigger, ValueCollection context) {
             if (Trigger != trigger) {
                 return false;
             }
@@ -45,8 +47,13 @@ namespace XPT.Core.Scripting.Rules {
             return true;
         }
 
-        internal object Invoke(params object[] args) {
-            return (_OnInvokeWithName != null) ? _OnInvokeWithName.Invoke(InvokedFnName, args) : _OnInvokeWithoutName.Invoke(args);
+        internal void Invoke(ValueCollection args) {
+            if (_OnInvokeNative != null) {
+                _OnInvokeNative.Invoke(InvokedFnName, args);
+            }
+            else {
+                _OnInvokeHosted.Invoke(args);
+            }
         }
 
         internal void Serialize(IWriter writer) {
@@ -58,7 +65,10 @@ namespace XPT.Core.Scripting.Rules {
             }
         }
 
-        internal static Rule Deserialize(IReader reader, RuleInvocationWithName onInvoke) {
+        /// <summary>
+        /// Deserializes a rule from binary data. Does not make rules invocable.
+        /// </summary>
+        internal static Rule Deserialize(IReader reader) {
             string trigger = reader.ReadAsciiPrefix();
             string invokeFnName = reader.ReadAsciiPrefix();
             int count = reader.Read7BitInt();
@@ -66,7 +76,11 @@ namespace XPT.Core.Scripting.Rules {
             for (int i = 0; i < count; i++) {
                 cs.Add(RuleCondition.Deserialize(reader));
             }
-            return new Rule(trigger, invokeFnName, cs.ToArray(), onInvoke);
+            return new Rule(trigger, invokeFnName, cs.ToArray());
+        }
+
+        internal Rule CreateCopyWithHostedDelegate(RuleInvocationDelegateHosted fn) {
+            return new Rule(Trigger, InvokedFnName, Conditions, fn);
         }
 
         public override string ToString() => $"[{Trigger} ...] => {InvokedFnName}(context)";

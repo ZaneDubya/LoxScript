@@ -4,6 +4,7 @@ namespace XPT.Core.Scripting.Base {
     class TokenList {
         private Token[] _Tokens = null;
         private int _Next = 0;
+        private int _CurrentToken = 0;
 
         private int Capacity => _Tokens?.Length ?? 0;
 
@@ -11,11 +12,16 @@ namespace XPT.Core.Scripting.Base {
 
         public Token this[int index] {
             get {
-                if (index < 0 || index >= Capacity) {
+                if (index < 0 || index >= _Next) {
                     return default;
                 }
                 return _Tokens[index];
             }
+        }
+
+        public void Reset() {
+            _CurrentToken = 0;
+            _Next = 0;
         }
 
         public override string ToString() => $"Tokens: [{_CurrentToken}/{Count}]{(Current != null ? $"({Current})" : String.Empty)}";
@@ -48,8 +54,6 @@ namespace XPT.Core.Scripting.Base {
 
         // === Infrastructure, should only be used by Compiler =======================================================
         // ===========================================================================================================
-
-        private int _CurrentToken = 0;
 
         public Token Current => this[_CurrentToken];
 

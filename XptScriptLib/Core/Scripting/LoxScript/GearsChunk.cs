@@ -42,15 +42,15 @@ namespace XPT.Core.Scripting.LoxScript {
 
         internal readonly StringTable VarNameStrings;
 
-        internal byte[] _Code = null;
+        internal byte[] Code = null;
 
-        internal int[] _Constants = null;
+        internal int[] Constants = null;
 
-        internal ushort[] _Lines = null; // todo: optimize with RLE.
+        internal ushort[] Lines = null; // todo: optimize with RLE.
 
         internal readonly string Name;
 
-        private RuleCollection _Rules = null;
+        internal RuleCollection Rules = null;
 
         internal GearsChunk(string name, GearsChunk containerChunk) {
             Name = name;
@@ -65,12 +65,12 @@ namespace XPT.Core.Scripting.LoxScript {
         }
 
         internal void Compress() {
-            if (SizeCode < _Code?.Length) {
-                Array.Resize(ref _Code, SizeCode);
-                Array.Resize(ref _Lines, SizeCode);
+            if (SizeCode < Code?.Length) {
+                Array.Resize(ref Code, SizeCode);
+                Array.Resize(ref Lines, SizeCode);
             }
-            if (SizeConstant < _Constants?.Length) {
-                Array.Resize(ref _Constants, SizeConstant);
+            if (SizeConstant < Constants?.Length) {
+                Array.Resize(ref Constants, SizeConstant);
             }
             Strings.Compress();
             VarNameStrings.Compress();
@@ -80,26 +80,26 @@ namespace XPT.Core.Scripting.LoxScript {
             Compress();
             writer.WriteFourBytes("loxx");
             writer.Write7BitInt(3); // version
-            writer.Write7BitInt(_Code?.Length ?? 0);
-            if (_Code != null) {
-                writer.Write(_Code);
+            writer.Write7BitInt(Code?.Length ?? 0);
+            if (Code != null) {
+                writer.Write(Code);
             }
-            writer.Write7BitInt(_Constants?.Length ?? 0);
-            if (_Constants != null) {
-                for (int i = 0; i < _Constants.Length; i++) {
-                    writer.Write(_Constants[i]);
+            writer.Write7BitInt(Constants?.Length ?? 0);
+            if (Constants != null) {
+                for (int i = 0; i < Constants.Length; i++) {
+                    writer.Write(Constants[i]);
                 }
             }
             Strings.Serialize(writer);
             VarNameStrings.Serialize(writer);
-            writer.Write7BitInt(_Lines?.Length ?? 0);
-            if (_Lines != null) {
-                for (int i = 0; i < _Lines.Length; i++) {
-                    writer.Write7BitInt(_Lines[i]);
+            writer.Write7BitInt(Lines?.Length ?? 0);
+            if (Lines != null) {
+                for (int i = 0; i < Lines.Length; i++) {
+                    writer.Write7BitInt(Lines[i]);
                 }
             }
-            if (_Rules != null) {
-                _Rules.Serialize(writer);
+            if (Rules != null) {
+                Rules.Serialize(writer);
             }
         }
 
@@ -110,26 +110,26 @@ namespace XPT.Core.Scripting.LoxScript {
             int version = reader.Read7BitInt();
             SizeCode = reader.Read7BitInt();
             if (SizeCode > 0) {
-                _Code = reader.ReadBytes(SizeCode);
+                Code = reader.ReadBytes(SizeCode);
             }
             SizeConstant = reader.Read7BitInt();
             if (SizeConstant > 0) {
-                _Constants = new int[SizeConstant];
+                Constants = new int[SizeConstant];
                 for (int i = 0; i < SizeConstant; i++) {
-                    _Constants[i] = reader.ReadInt();
+                    Constants[i] = reader.ReadInt();
                 }
             }
             Strings.Deserialize(reader);
             VarNameStrings.Deserialize(reader);
             int linesLength = reader.Read7BitInt();
             if (linesLength > 0) {
-                _Lines = new ushort[linesLength];
+                Lines = new ushort[linesLength];
                 for (int i = 0; i < linesLength; i++) {
-                    _Lines[i] = (ushort)reader.Read7BitInt();
+                    Lines[i] = (ushort)reader.Read7BitInt();
                 }
             }
-            if (RuleCollection.TryDeserialize(reader, OnInvokeRule, out RuleCollection collection)) {
-                _Rules = collection;
+            if (RuleCollection.TryDeserialize(reader, out RuleCollection collection)) {
+                Rules = collection;
             }
             return true;
         }
@@ -144,7 +144,7 @@ namespace XPT.Core.Scripting.LoxScript {
             if (index < 0 || index >= SizeCode) {
                 throw new GearsRuntimeException(0, "Attempted to read outside of a chunk.");
             }
-            return _Code[index++];
+            return Code[index++];
         }
 
         internal void WriteCode(EGearsOpCode value, int line) {
@@ -152,12 +152,12 @@ namespace XPT.Core.Scripting.LoxScript {
         }
 
         internal void WriteCode(byte value, int line) {
-            int capacity = _Code?.Length ?? 0;
+            int capacity = Code?.Length ?? 0;
             if (capacity < SizeCode + 1) {
                 GrowCodeCapacity();
             }
-            _Lines[SizeCode] = (ushort)line;
-            _Code[SizeCode++] = value;
+            Lines[SizeCode] = (ushort)line;
+            Code[SizeCode++] = value;
         }
 
         internal void WriteCode(byte[] value, ushort[] lines, int count) {
@@ -167,26 +167,26 @@ namespace XPT.Core.Scripting.LoxScript {
         }
 
         internal void WriteCodeAt(int offset, byte value) {
-            _Code[offset] = value;
-            _Lines[offset] = value;
+            Code[offset] = value;
+            Lines[offset] = value;
         }
 
         internal int LineAt(int index) {
             if (index < 0 || index >= SizeCode) {
                 return -1; // todo: runtime error
             }
-            return _Lines[index];
+            return Lines[index];
         }
 
         private void GrowCodeCapacity() {
-            if (_Code == null) {
-                _Code = new byte[InitialChunkCapcity];
-                _Lines = new ushort[InitialChunkCapcity];
+            if (Code == null) {
+                Code = new byte[InitialChunkCapcity];
+                Lines = new ushort[InitialChunkCapcity];
             }
             else {
-                int newCapacity = _Code.Length * GrowCapacityFactor;
-                Array.Resize(ref _Code, newCapacity);
-                Array.Resize(ref _Lines, newCapacity);
+                int newCapacity = Code.Length * GrowCapacityFactor;
+                Array.Resize(ref Code, newCapacity);
+                Array.Resize(ref Lines, newCapacity);
             }
         }
 
@@ -200,51 +200,34 @@ namespace XPT.Core.Scripting.LoxScript {
             if (offset < 0 || offset > SizeConstant) {
                 return -1; // todo: runtime error
             }
-            GearsValue value = _Constants[offset];
+            GearsValue value = Constants[offset];
             return value;
         }
 
         internal int WriteConstantValue(GearsValue value) {
             CheckGrowConstantCapacity(1);
             int index = SizeConstant;
-            _Constants[index] = (int)value;
+            Constants[index] = (int)value;
             SizeConstant += 1;
             return index;
         }
 
         private void CheckGrowConstantCapacity(int size) {
-            int capacity = _Constants?.Length ?? 0;
+            int capacity = Constants?.Length ?? 0;
             if (capacity < SizeConstant + size) {
-                int newCapacity = _Constants == null ? InitialConstantCapcity : _Constants.Length * GrowCapacityFactor;
+                int newCapacity = Constants == null ? InitialConstantCapcity : Constants.Length * GrowCapacityFactor;
                 while (newCapacity < SizeConstant + size) {
                     newCapacity *= GrowCapacityFactor;
                 }
-                if (_Constants == null) {
-                    _Constants = new int[newCapacity];
+                if (Constants == null) {
+                    Constants = new int[newCapacity];
                 }
                 else {
                     int[] newData = new int[newCapacity];
-                    Array.Copy(_Constants, newData, _Constants.Length);
-                    _Constants = newData;
+                    Array.Copy(Constants, newData, Constants.Length);
+                    Constants = newData;
                 }
             }
-        }
-
-        // === Rules =================================================================================================
-        // ===========================================================================================================
-
-        internal void SetRules(IEnumerable<Rule> rules) {
-            if (_Rules == null) {
-                _Rules = new RuleCollection();
-            }
-            foreach (Rule rule in rules) {
-                _Rules.AddRule(new Rule(rule.Trigger, rule.InvokedFnName, rule.Conditions, OnInvokeRule));
-            }
-        }
-
-        private object OnInvokeRule(string fnName, params object[] args) {
-            // get the fn by fnName, invoke, return value.
-            throw new NotImplementedException();
         }
     }
 }

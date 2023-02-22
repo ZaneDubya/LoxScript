@@ -1,17 +1,18 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using XPT.Core.Scripting.Base;
+using XPT.Core.Scripting.LoxScript.Compiling;
 
-namespace XPT.Core.Scripting.LoxScript.Compiling {
+namespace XPT.Core.Scripting.Rules.Compiling {
     /// <summary>
     /// Tokenizer is a scanner that transforms an input source file into TokenList.
-    /// Tokens defined by reserved keywords are recognized by checking against Grammar/Keywords.cs
+    /// Tokens defined by reserved keywords are recognized by checking against Grammar.
     /// </summary>
-    internal class LoxTokenizer : ATokenizer {
+    internal class RuleTokenizer : ATokenizer {
 
         private readonly Dictionary<string, string> _PreProcessorDefines = new Dictionary<string, string>();
 
-        public LoxTokenizer(string path, string source) : base(path, source) { }
+        public RuleTokenizer() : base() { }
 
         public override void Reset(string path, string source, int line = 1) {
             _PreProcessorDefines.Clear();
@@ -22,7 +23,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         // ===========================================================================================================
 
         protected bool IsFloatingPointPermitted => false;
-
+        
         /// <summary>
         /// Grabs the text of the current lexeme and creates a new token for it.
         /// </summary>

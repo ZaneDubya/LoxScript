@@ -13,11 +13,6 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
     /// </summary>
     internal partial class Gears { // frame, heap, state management
 
-        private static readonly string InitString = "init";
-        private const int FRAMES_MAX = 32;
-        private const int HEAP_MAX = 256;
-        private const int STACK_MAX = 256;
-
         /// <summary>
         /// Reset the VM. Heap, globals, and stack are cleared.
         /// Then the VM is run once, unless firstRun == false
@@ -42,6 +37,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             Push(GearsValue.CreateObjPtr(HeapAddObject(closure)));
             AddNativeFunctionToGlobals("clock", 0, NativeFnClock);
             AddNativeFunctionToGlobals("print", 1, NativeFnPrint);
+            RegisterRules();
             if (firstRun) {
                 Run();
             }
@@ -113,7 +109,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
 
         private void LoadFrameVars(GearsCallFrame frame) {
             Chunk = frame.Function.Chunk;
-            _Code = Chunk._Code;
+            _Code = Chunk.Code;
             _IP = frame.IP;
             _BP = frame.BP;
         }
@@ -296,7 +292,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             }
             MarkObject(value.AsObject(this));
         }
-
+        
         public void MarkObject(GearsObj obj) {
             if (obj == null || obj.IsMarked) {
                 return;

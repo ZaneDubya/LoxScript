@@ -6,7 +6,7 @@ using static XPT.Core.Scripting.LoxScript.VirtualMachine.EGearsOpCode;
 
 namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
     /// <summary>
-    /// Gears is a bytecode virtual machine for the Lox language.
+    /// Gears is a virtual machine for the Lox language, which has been compiled to byte code.
     /// </summary>
     internal partial class Gears { // run
 

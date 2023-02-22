@@ -1,20 +1,33 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using XPT.Core.Scripting.Rules;
 
 namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
-    internal partial class Gears { // all state variables, ctor
+    internal partial class Gears { // all state variables and ctor
 
-        private readonly GearsCallFrame[] _Frames;
-        private GearsObj[] _Heap;
-        private readonly GearsValue[] _Stack;
+        // constants:
+
+        private static readonly string InitString = "init";
+        private const int FRAMES_MAX = 32;
+        private const int HEAP_MAX = 256;
+        private const int STACK_MAX = 256;
+
+        // private variables:
+
         private int _FrameCount = 0;
+        private readonly GearsCallFrame[] _Frames;
         private readonly Queue<GearsObj> _GrayList = new Queue<GearsObj>();
-        protected GearsObjUpvalue _OpenUpvalues = null; // reference to open upvariables
-        protected GearsCallFrame _OpenFrame => _Frames[_FrameCount - 1]; // references the current Frame
-        protected int _BP;
-        protected int _IP;
-        protected int _SP;
-        protected byte[] _Code;
+        private readonly GearsObj[] _Heap;
+        private RuleCollection _Rules = null;
+        private readonly GearsValue[] _Stack;
+
+        private GearsObjUpvalue _OpenUpvalues = null; // reference to open upvariables
+        private GearsCallFrame _OpenFrame => _Frames[_FrameCount - 1]; // references the current Frame
+        private int _BP;
+        private int _IP;
+        private int _SP;
+        private byte[] _Code;
+
         internal GearsChunk Chunk; // reference to current chunk
         internal readonly GearsHashTable Globals;
         internal GearsValue LastReturnValue;

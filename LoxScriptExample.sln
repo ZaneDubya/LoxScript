@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32825.248
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoxScript", "LoxScript\LoxScript.csproj", "{BAACB847-DD68-4037-9D94-FB987397E01C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoxScriptExample", "LoxScriptExample\LoxScriptExample.csproj", "{BAACB847-DD68-4037-9D94-FB987397E01C}"
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "XptScriptLib", "XptScriptLib\XptScriptLib.shproj", "{821F5BAD-D32C-4E09-BED2-2C39069F9E9C}"
 EndProject

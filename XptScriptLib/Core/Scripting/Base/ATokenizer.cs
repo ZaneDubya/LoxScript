@@ -28,12 +28,20 @@ namespace XPT.Core.Scripting.Base {
 
         private List<TokenizerContext> _Files = new List<TokenizerContext>();
 
+        protected ATokenizer() { }
+
         protected ATokenizer(string path, string source) {
             SourceBegin(path, source);
         }
 
-        protected void SourceBegin(string filepath, string filesource, int line = 1) {
-            _Files.Add(new TokenizerContext(filepath, filesource, line));
+        protected void SourceBegin(string path, string source, int line = 1) {
+            Reset(path, source, line);
+        }
+
+        public virtual void Reset(string path, string source, int line = 1) {
+            Tokens.Reset();
+            _Files.Clear();
+            _Files.Add(new TokenizerContext(path, source, line));
         }
 
         /// <summary>

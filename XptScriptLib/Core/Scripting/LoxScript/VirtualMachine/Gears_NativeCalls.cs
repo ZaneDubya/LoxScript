@@ -1,24 +1,25 @@
 ﻿using System;
+using XPT.Core.Scripting.Rules;
+using XPT.Core.Utilities;
 
 namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
-    internal partial class Gears { // support for native c# calling lox script functions.
-
+    internal partial class Gears { // support for native c# calling lox script functions and rules.
         /// <summary>
-        /// Calls a LoxScript function from code, passing arguments.
+        /// Calls a LoxScript function from native c#, passing arguments.
         /// If the function call was successful, returns true, and returnValue will be the returned value from the function, if any. 
         /// If the function call was not successful, returns false, and returnValue will be an error string.
         /// </summary>
-        internal bool CallGearsFunction(string name, out object returned, params object[] args) {
-            if (!Globals.TryGet(name, out GearsValue fnValue) || !fnValue.IsObjPtr) {
+        internal bool CallGearsFunction(string fnName, out object returned, params object[] args) {
+            if (!Globals.TryGet(fnName, out GearsValue fnValue) || !fnValue.IsObjPtr) {
                 // error: no function with that name.
-                returned = $"Error: no function with name '{name}'.";
+                returned = $"Error: no function with name '{fnName}'.";
                 return false;
             }
             GearsObj fnObject = fnValue.AsObject(this);
             if (fnObject is GearsObjFunction fnFunction) {
                 if (fnFunction.Arity != args.Length) {
                     // error: wrong arity.
-                    returned = $"Error: called '{name}' with wrong arity (passed arity is '{args?.Length ?? 0}').";
+                    returned = $"Error: called '{fnName}' with wrong arity (passed arity is '{args?.Length ?? 0}').";
                     return false;
                 }
             }
@@ -56,7 +57,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                 }
                 else {
                     // error: could not pass arg of this type
-                    returned = $"Error: called '{name}' with argument of type '{argType.Name}' as parameter {i}. Gears could not interpret this argument.";
+                    returned = $"Error: called '{fnName}' with argument of type '{argType.Name}' as parameter {i}. Gears could not interpret this argument.";
                     return false;
                 }
             }
@@ -65,6 +66,32 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             returned = LastReturnValue; // the return value
             // todo: process return value?
             return true;
+        }
+
+        // === Rules =================================================================================================
+        // ===========================================================================================================
+
+        private void RegisterRules() {
+            if (Chunk.Rules != null && Chunk.Rules.Count > 0) {
+                _Rules = Chunk.Rules.CreateCopyWithHostedDelegate(OnInvokeByRule);
+                RuleSystem.RegisterRules(this, _Rules);
+            }
+            else {
+                _Rules = null;
+            }
+        }
+
+        private void UnregisterRules() {
+            if (_Rules != null) {
+                RuleSystem.UnregisterRules(this);
+                _Rules = null;
+            }
+        }
+
+        private void OnInvokeByRule(string fnName, ValueCollection vars) {
+            if (!CallGearsFunction(fnName, out object returned, vars)) {
+                Tracer.Error($"Gears.OnInvokeByRule({fnName}: {returned}");
+            }
         }
     }
 }

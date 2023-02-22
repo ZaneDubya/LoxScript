@@ -16,7 +16,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
         }
 
         private int Disassemble(GearsChunk chunk, int offset, Action<string> write, Action<string> writeLine) {
-            write($"{chunk._Lines[offset]:D4}  {offset:D4}  ");
+            write($"{chunk.Lines[offset]:D4}  {offset:D4}  ");
             EGearsOpCode instruction = (EGearsOpCode)chunk.ReadCode(ref offset);
             switch (instruction) {
                 case OP_LOAD_CONSTANT:
