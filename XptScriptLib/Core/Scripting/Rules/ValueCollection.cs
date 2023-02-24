@@ -10,6 +10,7 @@ namespace XPT.Core.Scripting.Rules {
         }
 
         internal void Clear(string key) {
+            key = key.ToLowerInvariant();
             _Values.Remove(key);
         }
 
