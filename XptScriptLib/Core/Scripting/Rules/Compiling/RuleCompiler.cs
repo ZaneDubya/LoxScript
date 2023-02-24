@@ -26,13 +26,13 @@ namespace XPT.Core.Scripting.Rules.Compiling {
         }
 
         internal static bool TryCompile(TokenList tokens, out string trigger, out RuleCondition[] conditions) {
-            Token triggerName = tokens.Consume(IDENTIFIER, $"Expect trigger name.");
+            Token triggerName = tokens.Consume(IDENTIFIER, $"Expect trigger name");
             List<RuleCondition> conditionsList = new List<RuleCondition>();
             while (!tokens.Match(RIGHT_BRACKET) && !tokens.IsAtEnd()) {
-                Token contextVariableName = tokens.Consume(IDENTIFIER, "Rule must contain list of comparison expressions (missing identifier).");
+                Token contextVariableName = tokens.Consume(IDENTIFIER, "Rule must contain list of comparison expressions (missing identifier)");
                 Token comparisonOperation = tokens.Advance(); // we will check validity of this token after consuming the value
                 Token contextVariableValue = null;
-                if (tokens.Check(NUMBER) || tokens.Check(STRING)) {
+                if (tokens.Check(NUMBER) || tokens.Check(STRING) || tokens.Check(IDENTIFIER)) {
                     contextVariableValue = tokens.Advance();
                 }
                 else {
@@ -40,11 +40,12 @@ namespace XPT.Core.Scripting.Rules.Compiling {
                 }
                 switch (comparisonOperation.Type) {
                     case BANG_EQUAL:
-                        throw new CompilerException(comparisonOperation, "Rule must contain list of comparison expressions (can't use != operator).");
+                        throw new CompilerException(comparisonOperation, "Rule must contain list of comparison expressions (can't use != operator)");
                     case EQUAL:
                     case EQUAL_EQUAL:
-                        if (contextVariableValue.Type == STRING) {
-                            conditionsList.Add(RuleCondition.ConditionEquals(contextVariableName.Lexeme, contextVariableValue.LiteralAsString));
+                        if (contextVariableValue.Type == STRING || contextVariableValue.Type == IDENTIFIER) {
+                            string value = contextVariableValue.Type == STRING ? contextVariableValue.LiteralAsString : contextVariableValue.Lexeme;
+                            conditionsList.Add(RuleCondition.ConditionEquals(contextVariableName.Lexeme, value));
                         }
                         else {
                             conditionsList.Add(RuleCondition.ConditionEquals(contextVariableName.Lexeme, contextVariableValue.LiteralAsNumber));
@@ -63,7 +64,7 @@ namespace XPT.Core.Scripting.Rules.Compiling {
                         conditionsList.Add(RuleCondition.ConditionLessThanOrEqual(contextVariableName.Lexeme, contextVariableValue.LiteralAsNumber));
                         break;
                     default:
-                        throw new CompilerException(comparisonOperation, "Rule must contain list of comparison expressions (missing operator).");
+                        throw new CompilerException(comparisonOperation, "Rule must contain list of comparison expressions (missing operator)");
                 }
             }
             trigger = triggerName.Lexeme;

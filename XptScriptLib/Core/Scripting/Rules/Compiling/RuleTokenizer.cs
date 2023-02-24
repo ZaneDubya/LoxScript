@@ -121,8 +121,9 @@ namespace XPT.Core.Scripting.Rules.Compiling {
                 case '\n':
                     Line += 1;
                     break;
+                case '\'':
                 case '"':
-                    String();
+                    String(c);
                     break;
                 case '#':
                     PreProcessor();
@@ -135,7 +136,7 @@ namespace XPT.Core.Scripting.Rules.Compiling {
                         Identifier();
                     }
                     else {
-                        throw new CompilerException(new Token(TokenTypes.ERROR, Line, c.ToString()), $"Unexpected character '{c}'.");
+                        throw new CompilerException(new Token(TokenTypes.ERROR, Line, c.ToString()), $"Unexpected character '{c}'");
                     }
                     break;
             }
@@ -154,7 +155,7 @@ namespace XPT.Core.Scripting.Rules.Compiling {
                     PreProcessorInclude();
                     break;
                 default:
-                    throw new CompilerException(new Token(TokenTypes.ERROR, Line), $"Unrecognized preprocessor '{preprocessor}'.");
+                    throw new CompilerException(new Token(TokenTypes.ERROR, Line), $"Unrecognized preprocessor '{preprocessor}'");
             }
         }
 
@@ -170,7 +171,7 @@ namespace XPT.Core.Scripting.Rules.Compiling {
             string name = Source.Substring(nameStart, Current - nameStart);
             int? keyword = LoxTokenTypes.Get(name);
             if (keyword != null) {
-                throw new CompilerException(new Token(TokenTypes.ERROR, Line), $"Cannot redefine keyword '{name}'.");
+                throw new CompilerException(new Token(TokenTypes.ERROR, Line), $"Cannot redefine keyword '{name}'");
             }
             while (Peek() == ' ' || Peek() == '\t') {
                 Advance();
@@ -201,7 +202,7 @@ namespace XPT.Core.Scripting.Rules.Compiling {
                 SourceBegin(filepath, filesource);
             }
             catch {
-                throw new CompilerException(new Token(TokenTypes.ERROR, Line), $"Error including '{filename}'.");
+                throw new CompilerException(new Token(TokenTypes.ERROR, Line), $"Error including '{filename}'");
             }
         }
 
@@ -243,7 +244,7 @@ namespace XPT.Core.Scripting.Rules.Compiling {
                 }
                 // Look for a fractional part, if this language supports floating pt numbers.
                 if (IsFloatingPointPermitted && Peek() == '.' && IsDigit(PeekNext())) {
-                    // Consume the "."
+                    // Consume . character
                     Advance();
                     while (IsDigit(Peek())) {
                         Advance();
@@ -253,8 +254,8 @@ namespace XPT.Core.Scripting.Rules.Compiling {
             AddToken(TokenTypes.NUMBER);
         }
 
-        private void String() {
-            while (Peek() != '"' && !IsAtEnd) {
+        private void String(char enclosing) {
+            while (Peek() != enclosing && !IsAtEnd) {
                 if (Peek() == '\n') {
                     Line++;
                 }
@@ -262,7 +263,7 @@ namespace XPT.Core.Scripting.Rules.Compiling {
             }
             // Unterminated string.                                 
             if (IsAtEnd) {
-                throw new CompilerException(new Token(TokenTypes.EOF, Line), "Unterminated string.");
+                throw new CompilerException(new Token(TokenTypes.EOF, Line), "Unterminated string");
             }
             // The closing ".                                       
             Advance();
