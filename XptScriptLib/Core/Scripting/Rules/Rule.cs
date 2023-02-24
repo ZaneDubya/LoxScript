@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using XPT.Core.IO;
 
 namespace XPT.Core.Scripting.Rules {

@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using XPT.Core.IO;
 using XPT.Core.Scripting.LoxScript.Compiling;
 using XPT.Core.Scripting.LoxScript.VirtualMachine;
-using XPT.Core.Scripting.Rules;
 
 namespace XPT.Core.Scripting.LoxScript {
     static class LoxHandler {

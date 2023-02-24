@@ -2,7 +2,6 @@
 using System.Runtime.CompilerServices;
 #endif
 using System;
-using System.Collections.Generic;
 using XPT.Core.IO;
 using XPT.Core.Scripting.Base;
 using XPT.Core.Scripting.LoxScript.VirtualMachine;

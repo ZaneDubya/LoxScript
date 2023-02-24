@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using XPT.Core.Scripting.Base;
-using XPT.Core.Utilities;
 using static XPT.Core.Scripting.Base.TokenTypes;
 
 namespace XPT.Core.Scripting.Rules.Compiling {
