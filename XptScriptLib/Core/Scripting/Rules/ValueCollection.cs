@@ -19,7 +19,6 @@ namespace XPT.Core.Scripting.Rules {
             _Values[key] = value;
         }
 
-
         internal object Get(string key) {
             key = key.ToLowerInvariant();
             if (_Values.TryGetValue(key, out object value)) {
