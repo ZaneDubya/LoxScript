@@ -1,5 +1,12 @@
 ﻿namespace XPT.Core.Scripting.Rules {
-    internal delegate void RuleInvocationDelegateNative(ValueCollection vars); // use this for c# code
 
-    internal delegate void RuleInvocationDelegateHosted(string fnName, ValueCollection vars); // use this for loxscript code
+    /// <summary>
+    /// A method that can be invoked from C# code.
+    /// </summary>
+    internal delegate void RuleInvocationDelegateNative(VarCollection vars);
+
+    /// <summary>
+    /// A method that can be invoked from LoxScript code.
+    /// </summary>
+    internal delegate void RuleInvocationDelegateHosted(string fnName, VarCollection vars);
 }

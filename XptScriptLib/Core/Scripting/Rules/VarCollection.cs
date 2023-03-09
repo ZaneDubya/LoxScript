@@ -1,7 +1,11 @@
 ﻿using System.Collections.Generic;
 
 namespace XPT.Core.Scripting.Rules {
-    internal class ValueCollection {
+    /// <summary>
+    /// A collection of variables that is passed to RuleSystem when a trigger is invoked. RuleSystem checks the 
+    /// conditions of each rule against the values in the VarCollection to see if the rule has been matched.
+    /// </summary>
+    internal class VarCollection {
 
         private readonly Dictionary<string, object> _Values = new Dictionary<string, object>();
 

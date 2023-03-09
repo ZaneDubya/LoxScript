@@ -48,7 +48,7 @@ namespace XPT.Core.Scripting.Rules {
             _RuleCollections.Remove(key);
         }
 
-        internal static void InvokeTrigger(string triggerName, ValueCollection vars) {
+        internal static void InvokeTrigger(string triggerName, VarCollection vars) {
             foreach (RuleCollection rules in _RuleCollections.Values) {
                 foreach (Rule rule in rules.GetMatching(triggerName, vars)) {
                     rule.Invoke(vars);

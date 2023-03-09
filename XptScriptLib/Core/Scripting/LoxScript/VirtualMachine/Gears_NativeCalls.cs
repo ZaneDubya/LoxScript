@@ -88,7 +88,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             }
         }
 
-        private void OnInvokeByRule(string fnName, ValueCollection vars) {
+        private void OnInvokeByRule(string fnName, VarCollection vars) {
             if (!CallGearsFunction(fnName, out object returned, vars)) {
                 Tracer.Error($"Gears.OnInvokeByRule({fnName}: {returned}");
             }

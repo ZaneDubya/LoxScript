@@ -7,7 +7,7 @@ using XPT.Core.IO;
 namespace XPT.Core.Scripting.Rules {
     class RuleCollection {
         private readonly static Type TypeOfVoid = typeof(void);
-        private readonly static Type TypeOfValueCollection = typeof(ValueCollection);
+        private readonly static Type TypeOfValueCollection = typeof(VarCollection);
         private readonly static Type TypeOfDelegateNative = typeof(RuleInvocationDelegateNative);
         private readonly static BindingFlags Binding = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
 
@@ -54,7 +54,7 @@ namespace XPT.Core.Scripting.Rules {
         /// <summary>
         /// Returns all the rules that match the passed trigger and context.
         /// </summary>
-        internal IEnumerable<Rule> GetMatching(string triggerName, ValueCollection context) {
+        internal IEnumerable<Rule> GetMatching(string triggerName, VarCollection context) {
             if (_Rules == null) {
                 yield break;
             }

@@ -49,7 +49,7 @@ namespace XPT.Core.Scripting.Rules {
             ValueString = value;
         }
 
-        internal bool IsTrue(ValueCollection context) {
+        internal bool IsTrue(VarCollection context) {
             if (ValueString != null) {
                 if (!context.TryGet(Key, out string sValue)) {
                     return false;

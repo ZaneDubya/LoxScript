@@ -48,7 +48,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleCondition.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleInvocationDelegates.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleAttribute.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\ValueCollection.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\VarCollection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleSystem.cs" />
   </ItemGroup>
 </Project>

@@ -34,7 +34,7 @@ namespace XPT.Core.Scripting.Rules {
             _OnInvokeHosted = onInvoke;
         }
 
-        internal bool Match(string trigger, ValueCollection context) {
+        internal bool Match(string trigger, VarCollection context) {
             if (Trigger != trigger) {
                 return false;
             }
@@ -46,7 +46,7 @@ namespace XPT.Core.Scripting.Rules {
             return true;
         }
 
-        internal void Invoke(ValueCollection args) {
+        internal void Invoke(VarCollection args) {
             if (_OnInvokeNative != null) {
                 _OnInvokeNative.Invoke(InvokedFnName, args);
             }
