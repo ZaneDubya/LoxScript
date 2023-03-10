@@ -9,6 +9,10 @@ namespace XPT.Core.Scripting.Rules {
 
         private readonly Dictionary<string, object> _Values = new Dictionary<string, object>();
 
+        internal VarCollection() {
+
+        }
+
         internal void Reset() {
             _Values.Clear();
         }
