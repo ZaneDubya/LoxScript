@@ -7,54 +7,79 @@ namespace XPT.Core.Scripting.Rules {
     /// </summary>
     internal class VarCollection {
 
+        private readonly VarCollection _Permanent;
+
         private readonly Dictionary<string, object> _Values = new Dictionary<string, object>();
 
-        internal VarCollection() {
-
+        internal VarCollection(VarCollection permanent) {
+            _Permanent = permanent;
         }
 
         internal void Reset() {
             _Values.Clear();
         }
 
-        internal void Clear(string key) {
+        internal void Clear(string key, bool clearPermanent = false) {
             key = key.ToLowerInvariant();
             _Values.Remove(key);
-        }
-
-        internal void Set(string key, object value) {
-            key = key.ToLowerInvariant();
-            _Values[key] = value;
-        }
-
-        internal object Get(string key) {
-            key = key.ToLowerInvariant();
-            if (_Values.TryGetValue(key, out object value)) {
-                return value;
+            if (clearPermanent && _Permanent != null) {
+                _Permanent.Clear(key);
             }
-            return null;
         }
 
-        internal T Get<T>(string key) {
-            key = key.ToLowerInvariant();
-            if (_Values.TryGetValue(key, out object value)) {
-                if (value is T typedValue) {
-                    return typedValue;
+        internal void Set(string key, object value, bool setPermanent = false) {
+            if (setPermanent && _Permanent != null) {
+                _Permanent.Set(key, value);
+            }
+            else {
+                key = key.ToLowerInvariant();
+                _Values[key] = value;
+            }
+        }
+
+        internal object Get(string key, bool getPermanent = false) {
+            if (getPermanent && _Permanent != null) {
+                return _Permanent.Get(key);
+            }
+            else {
+                key = key.ToLowerInvariant();
+                if (_Values.TryGetValue(key, out object value)) {
+                    return value;
                 }
+                return null;
             }
-            return default;
         }
 
-        internal bool TryGet<T>(string key, out T value) {
-            key = key.ToLowerInvariant();
-            if (_Values.TryGetValue(key, out object obj)) {
-                if (obj is T typedValue) {
-                    value = typedValue;
-                    return true;
-                }
+        internal T Get<T>(string key, bool getPermanent = false) {
+            if (getPermanent && _Permanent != null) {
+                return _Permanent.Get<T>(key);
             }
-            value = default;
-            return false;
+            else {
+                key = key.ToLowerInvariant();
+                if (_Values.TryGetValue(key, out object value)) {
+                    if (value is T typedValue) {
+                        return typedValue;
+                    }
+                }
+                return default;
+            }
+        }
+
+        internal bool TryGet<T>(string key, out T value, bool getPermanent = false) {
+            if (getPermanent && _Permanent != null) {
+                return _Permanent.TryGet<T>(key, out value);
+            }
+            else {
+                key = key.ToLowerInvariant();
+                if (_Values.TryGetValue(key, out object obj)) {
+                    if (obj is T typedValue) {
+                        value = typedValue;
+                        return true;
+                    }
+                }
+                value = default;
+                return false;
+            }
         }
     }
 }
