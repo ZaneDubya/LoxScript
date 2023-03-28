@@ -5,6 +5,9 @@ using XPT.Core.Scripting.LoxScript.Compiling;
 using XPT.Core.Scripting.LoxScript.VirtualMachine;
 
 namespace XPT.Core.Scripting.LoxScript {
+    /// <summary>
+    /// LoxHandler is a static helper class that handles loading and running LoxScript files.
+    /// </summary>
     static class LoxHandler {
 
         // === Loading ============================================================================================

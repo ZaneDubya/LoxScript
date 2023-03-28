@@ -5,6 +5,10 @@ using System.Reflection;
 using XPT.Core.IO;
 
 namespace XPT.Core.Scripting.Rules {
+    /// <summary>
+    /// RuleCollection is a collection of rules that can be invoked by a trigger. You will have one RuleCollection
+    /// per script or object.
+    /// </summary>
     class RuleCollection {
         private readonly static Type TypeOfVoid = typeof(void);
         private readonly static Type TypeOfValueCollection = typeof(VarCollection);

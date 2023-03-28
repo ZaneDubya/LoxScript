@@ -1,4 +1,8 @@
 ﻿namespace XPT.Core.Scripting.Base {
+    /// <summary>
+    /// ACompiler is the base class for all compilers.
+    /// Compilers are used to compile a list of tokens into bytecode that will be executed by the VM.
+    /// </summary>
     abstract class ACompiler {
 
         // input and error:

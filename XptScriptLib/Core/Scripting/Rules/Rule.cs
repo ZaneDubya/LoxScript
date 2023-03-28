@@ -2,6 +2,10 @@
 using XPT.Core.IO;
 
 namespace XPT.Core.Scripting.Rules {
+    /// <summary>
+    /// A Rule is the basic unit of logic in the RuleSystem. When the named Trigger is fired, the Rule will be
+    /// evaluated, and if all of the conditions are true, the InvokedFnName will be invoked.
+    /// </summary>
     class Rule {
         internal readonly string Trigger;
         internal readonly string InvokedFnName;

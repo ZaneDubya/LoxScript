@@ -1,4 +1,7 @@
 ﻿namespace XPT.Core.Scripting.Base {
+    /// <summary>
+    /// Token represents a single parseable piece of input source code.
+    /// </summary>
     class Token {
         internal readonly int Type;
         internal readonly int Line;

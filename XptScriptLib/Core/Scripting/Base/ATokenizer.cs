@@ -1,6 +1,10 @@
 ﻿using System.Collections.Generic;
 
 namespace XPT.Core.Scripting.Base {
+    /// <summary>
+    /// ATokenizer is the base class for all tokenizers.
+    /// Tokenizers are used to tokenize a source string into a list of tokens.
+    /// </summary>
     abstract class ATokenizer {
 
         protected int Start {

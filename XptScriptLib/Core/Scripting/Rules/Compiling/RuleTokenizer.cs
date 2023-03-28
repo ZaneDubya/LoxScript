@@ -5,7 +5,7 @@ using XPT.Core.Scripting.LoxScript.Compiling;
 
 namespace XPT.Core.Scripting.Rules.Compiling {
     /// <summary>
-    /// Tokenizer is a scanner that transforms an input source file into TokenList.
+    /// RuleTokenizer is a scanner that transforms an input source file into TokenList.
     /// Tokens defined by reserved keywords are recognized by checking against Grammar.
     /// </summary>
     internal class RuleTokenizer : ATokenizer {

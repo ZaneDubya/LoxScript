@@ -4,6 +4,9 @@ using XPT.Core.Scripting.Base;
 using static XPT.Core.Scripting.Base.TokenTypes;
 
 namespace XPT.Core.Scripting.Rules.Compiling {
+    /// <summary>
+    /// RuleCompiler is used to compile a rule definition into a Trigger and list of Conditions.
+    /// </summary>
     internal static class RuleCompiler {
 
         private static readonly RuleTokenizer _Tokenizer = new RuleTokenizer();

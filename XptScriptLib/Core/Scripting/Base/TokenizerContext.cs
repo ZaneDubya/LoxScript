@@ -1,4 +1,7 @@
 ﻿namespace XPT.Core.Scripting.Base {
+    /// <summary>
+    /// TokenizerContext is used to keep track of the current state of the tokenizer.
+    /// </summary>
     class TokenizerContext {
         internal string Path;
         internal string Source;

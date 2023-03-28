@@ -1,6 +1,9 @@
 ﻿using System;
 
 namespace XPT.Core.Scripting.Base {
+    /// <summary>
+    /// TokenList is used to keep track of the tokens that have been parsed.
+    /// </summary>
     class TokenList {
         private Token[] _Tokens = null;
         private int _Next = 0;

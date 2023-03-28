@@ -1,6 +1,9 @@
 ﻿using XPT.Core.IO;
 
 namespace XPT.Core.Scripting.Rules {
+    /// <summary>
+    /// Each Rule has a number of RuleConditions that are checked to see if the rule is true.
+    /// </summary>
     class RuleCondition {
 
         internal static RuleCondition ConditionEquals(string varName, int value) {

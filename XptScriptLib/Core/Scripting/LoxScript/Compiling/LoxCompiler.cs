@@ -11,7 +11,7 @@ using static XPT.Core.Scripting.LoxScript.VirtualMachine.EGearsOpCode;
 
 namespace XPT.Core.Scripting.LoxScript.Compiling {
     /// <summary>
-    /// Compiler parses a TokenList and compiles it into a GearsChunk: bytecode executed by Gears.
+    /// LoxCompiler parses a TokenList and compiles it into a GearsChunk, which is bytecode executed by the Gears VM.
     /// </summary>
     internal sealed class LoxCompiler : ACompiler {
         /// <summary>

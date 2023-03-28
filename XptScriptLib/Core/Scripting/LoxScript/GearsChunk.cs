@@ -9,7 +9,8 @@ using XPT.Core.Scripting.Rules;
 
 namespace XPT.Core.Scripting.LoxScript {
     /// <summary>
-    /// A wrapper around an array of bytes.
+    /// GearsChunk is a container for compiled bytecode. The bytecode is a sequence of instructions that are executed
+    /// by the VM. The chunk also contains a constant values and strings.
     /// </summary>
     internal class GearsChunk {
         internal static bool TryDeserialize(string name, IReader reader, out GearsChunk chunk) {

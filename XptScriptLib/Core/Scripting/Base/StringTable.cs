@@ -3,6 +3,9 @@ using System.Text;
 using XPT.Core.IO;
 
 namespace XPT.Core.Scripting.Base {
+    /// <summary>
+    /// StringTable stores constant strings that are referenced by the VM while executing a chunk of bytecode.
+    /// </summary>
     sealed class StringTable {
         private const int InitialConstantCapcity = 8;
         private const int GrowCapacityFactor = 2;
