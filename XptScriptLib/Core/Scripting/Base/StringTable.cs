@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Text;
 using XPT.Core.IO;
+using XPT.Core.Utilities;
 
 namespace XPT.Core.Scripting.Base {
     /// <summary>
@@ -41,7 +41,7 @@ namespace XPT.Core.Scripting.Base {
             }
             for (int i = offset; i < SizeStringTable; i++) {
                 if (_StringTable[i] == 0) {
-                    string value = Encoding.ASCII.GetString(_StringTable, offset, i - offset);
+                    string value = TextEncoding.GetString(_StringTable, offset, i - offset);
                     return value;
                 }
             }
@@ -53,7 +53,7 @@ namespace XPT.Core.Scripting.Base {
         /// Returns the index of that string in the string table.
         /// </summary>
         internal int WriteStringConstant(string value) {
-            byte[] ascii = Encoding.ASCII.GetBytes(value);
+            byte[] ascii = TextEncoding.GetBytes(value);
             int size = ascii.Length + 1;
             for (int i = 0; i < SizeStringTable; i++) {
                 if (ReadStringConstant(i) == value) {
