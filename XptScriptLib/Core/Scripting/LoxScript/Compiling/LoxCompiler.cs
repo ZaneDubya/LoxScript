@@ -13,7 +13,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
     /// <summary>
     /// LoxCompiler parses a TokenList and compiles it into a GearsChunk, which is bytecode executed by the Gears VM.
     /// </summary>
-    internal sealed class LoxCompiler : ACompiler {
+    internal sealed partial class LoxCompiler : ACompiler {
         /// <summary>
         /// Attempts to compile the passed source, tokenizing first.
         /// If compilation is successful, compiler.Chunk will be set.
@@ -71,6 +71,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         private readonly ELoxFunctionType _FunctionType;
         private LoxCompilerClass _CurrentClass;
         private bool _CanAssign = false;
+        private bool _InSwitchStatement = false; // no nested switches
         private int _OriginAddress = 0;
 
         // scope and locals (locals are references to variables in scope; these are stored on the stack at runtime):
@@ -426,6 +427,10 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                 IfStatement();
                 return;
             }
+            if (Tokens.Match(SWITCH)) {
+                SwitchStatement();
+                return;
+            }
             if (Tokens.Match(RETURN)) {
                 ReturnStatement();
                 return;
@@ -551,7 +556,6 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                 Declaration();
             }
             Tokens.Consume(RIGHT_BRACE, "Expect '}' after block.");
-            return;
         }
 
         /// <summary>
@@ -697,32 +701,40 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         /// </summary>
         private void Multiplication() {
             Unary();
-            while (Tokens.Match(SLASH, STAR)) {
+            while (Tokens.Match(SLASH, STAR, PERCENT)) {
                 _CanAssign = false;
                 Token op = Tokens.Previous();
                 Unary();
                 switch (op.Type) {
                     case SLASH: EmitOpcode(LineOfLastToken, OP_DIVIDE); break;
                     case STAR: EmitOpcode(LineOfLastToken, OP_MULTIPLY); break;
+                    case PERCENT: EmitOpcode(LineOfLastToken, OP_MODULUS); break;
                 }
             }
         }
 
         /// <summary>
-        /// unary → ( "!" | "-" ) unary | call ;
+        /// unary → ( "!" | "-" | "~" ) unary | call ;
         /// </summary>
         private void Unary() {
-            if (Tokens.Match(BANG, MINUS)) {
+            if (Tokens.Match(BANG, MINUS, TILDE)) {
                 _CanAssign = false;
                 Token op = Tokens.Previous();
                 Unary();
                 switch (op.Type) {
                     case MINUS: EmitOpcode(LineOfLastToken, OP_NEGATE); break;
                     case BANG: EmitOpcode(LineOfLastToken, OP_NOT); break;
+                    case TILDE: EmitOpcode(LineOfLastToken, OP_BITWISE_COMPLEMENT); break;
                 }
-                return; // !!! return new Expr.Unary(op, right);
+                return;
             }
-            Call(); // !!! return Call();
+            Call();
+            if (Tokens.Match(INCREMENT, DECREMENT)) {
+                switch (Tokens.Previous().Type) {
+                    case INCREMENT: EmitOpcode(LineOfLastToken, OP_INCREMENT); break;
+                    case DECREMENT: EmitOpcode(LineOfLastToken, OP_DECREMENT); break;
+                }
+            }
         }
 
         /// <summary>
@@ -850,6 +862,9 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             if (Tokens.Match(LEFT_PAREN)) {
                 Expression();
                 Tokens.Consume(RIGHT_PAREN, "Expect ')' after expression.");
+                return;
+            }
+            if (_InSwitchStatement && (Tokens.Peek().Type == BREAK || Tokens.Peek().Type == CASE)) {
                 return;
             }
             throw new CompilerException(Tokens.Peek(), "Expect expression.");

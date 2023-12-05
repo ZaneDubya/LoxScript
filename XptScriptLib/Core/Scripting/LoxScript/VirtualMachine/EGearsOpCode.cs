@@ -70,10 +70,20 @@
         OP_GET_SUPER,
 
         /// <summary>
-        /// Types of Values comparison-ops
+        /// Pops two values from the stack, performs a comparison, and pushes the result to the stack.
         /// </summary>
         OP_EQUAL,
+        /// <summary>
+        /// Pops two values from the stack, performs a comparison, pushes the first operand, and pushes the result to the stack.
+        /// </summary>
+        OP_EQUAL_PRESERVE_FIRST_VALUE,
+        /// <summary>
+        /// Pops two values from the stack, performs a comparison, and pushes the result to the stack.
+        /// </summary>
         OP_GREATER,
+        /// <summary>
+        /// Pops two values from the stack, performs a comparison, and pushes the result to the stack.
+        /// </summary>
         OP_LESS,
 
         /// <summary>
@@ -106,12 +116,32 @@
         /// </summary>
         OP_DIVIDE,
 
+        /// <summary>
+        /// Pops the dividend and divisor from the stack, divides them, and pushes the remainder to the stack.
+        /// </summary>
+        OP_MODULUS,
+
         OP_NOT,
 
         /// <summary>
-        /// Pops a value on the stack, negates it, and pushes it back onto the stack.
+        /// Pops a value from the stack, negates it, and pushes it back onto the stack.
         /// </summary>
         OP_NEGATE,
+
+        /// <summary>
+        /// Pops a value from the stack, performs a bitwise complement on it, and pushes it back onto the stack.
+        /// </summary>
+        OP_BITWISE_COMPLEMENT,
+
+        /// <summary>
+        /// Pops a value from the stack, increments it, and pushes it back onto the stack.
+        /// </summary>
+        OP_INCREMENT,
+
+        /// <summary>
+        /// Pops a value from the stack, decrements it, and pushes it back onto the stack.
+        /// </summary>
+        OP_DECREMENT,
 
         OP_JUMP,
 

@@ -55,6 +55,8 @@
     <Compile Include="Core\IO\BinaryFileWriter.cs" />
     <Compile Include="Core\IO\IReader.cs" />
     <Compile Include="Core\IO\IWriter.cs" />
+    <Compile Include="Core\Utilities\SharedBuffer.cs" />
+    <Compile Include="Core\Utilities\TextEncoding.cs" />
     <Compile Include="Core\Utilities\Tracer.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -64,5 +66,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup />
+  <Import Project="..\XptScriptLib\XptScriptLib.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

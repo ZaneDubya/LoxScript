@@ -22,6 +22,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\Compiling\LoxCompilerClass.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\Compiling\LoxCompilerFixup.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\Compiling\LoxCompilerLocal.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\Compiling\LoxCompilerSwitch.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\Compiling\LoxCompilerUpvalue.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\Compiling\LoxTokenizer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\Compiling\LoxTokenTypes.cs" />

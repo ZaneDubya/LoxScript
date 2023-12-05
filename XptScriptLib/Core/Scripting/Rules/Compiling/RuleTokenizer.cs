@@ -19,6 +19,10 @@ namespace XPT.Core.Scripting.Rules.Compiling {
             base.Reset(path, source, line);
         }
 
+        protected override void PostProcessTokens() {
+            // rules don't need post-processing
+        }
+
         // === These must be implemented for each language. ==========================================================
         // ===========================================================================================================
 

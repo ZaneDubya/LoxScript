@@ -92,7 +92,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                     fieldInfo.SetValue(wrappedObject, null);
                     return;
                 }
-                else if (fieldInfo.FieldType == typeof(bool) && value.IsBool) {
+                else if (fieldInfo.FieldType == typeof(bool) && value.IsNumber) {
                     fieldInfo.SetValue(wrappedObject, value.IsTrue);
                     return;
                 }
@@ -124,7 +124,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                     propertyInfo.SetValue(wrappedObject, null, null);
                     return;
                 }
-                else if (propertyInfo.PropertyType == typeof(bool) && value.IsBool) {
+                else if (propertyInfo.PropertyType == typeof(bool) && value.IsNumber) {
                     propertyInfo.SetValue(wrappedObject, value.IsTrue, null);
                     return;
                 }
@@ -233,7 +233,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                     parameters[i] = null;
                     continue;
                 }
-                else if (value.IsBool && info.ParameterType == typeof(bool)) {
+                else if (value.IsNumber && info.ParameterType == typeof(bool)) {
                     parameters[i] = value.IsTrue ? true : false;
                     continue;
                 }

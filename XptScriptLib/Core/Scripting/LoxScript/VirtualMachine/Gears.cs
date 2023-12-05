@@ -158,6 +158,13 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                     case OP_EQUAL:
                         Push(AreValuesEqual(Pop(), Pop()));
                         break;
+                    case OP_EQUAL_PRESERVE_FIRST_VALUE: {
+                            GearsValue b = Pop();
+                            GearsValue a = Pop();
+                            Push(a);
+                            Push(AreValuesEqual(a, b));
+                        }
+                        break;
                     case OP_GREATER: {
                             if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
                                 throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operands must be numbers.");
@@ -247,7 +254,17 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                             Push(a / b);
                         }
                         break;
+                    case OP_MODULUS: {
+                            if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
+                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operands of modulus must be numbers.");
+                            }
+                            GearsValue b = Pop();
+                            GearsValue a = Pop();
+                            Push(a % b);
+                        }
+                        break;
                     case OP_NOT:
+                        // if popped value is true, push 0. Else push 1.
                         Push(IsFalsey(Pop()));
                         break;
                     case OP_NEGATE: {
@@ -257,6 +274,27 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                             Push(-Pop());
                         }
                         break;
+                    case OP_BITWISE_COMPLEMENT: {
+                            if (!Peek(0).IsNumber) {
+                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operand of bitwise complement must be a number.");
+                            }
+                            Push(~Pop());
+                        }
+                        break;
+                    case OP_INCREMENT: {
+                            if (!Peek(0).IsNumber) {
+                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operand of increment must be a number.");
+                            }
+                            Push(Pop() + 1);
+                            break;
+                        }
+                    case OP_DECREMENT: {
+                            if (!Peek(0).IsNumber) {
+                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operand of decrement must be a number.");
+                            }
+                            Push(Pop() - 1);
+                            break;
+                        }
                     case OP_JUMP: {
                             int offset = ReadShort();
                             ModIP(offset);
@@ -334,10 +372,11 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
         }
 
         private GearsValue AreValuesEqual(GearsValue a, GearsValue b) {
-            if (a.IsBool && b.IsBool) {
+            /*if (a.IsBool && b.IsBool) { <--- removed because there are no bools in Gears; 0 and !0 are used instead.
                 return a.AsBool == b.AsBool;
             }
-            else if (a.IsNil && b.IsNil) {
+            else */
+            if (a.IsNil && b.IsNil) {
                 return true;
             }
             else if (a.IsNumber && b.IsNumber) {
@@ -353,7 +392,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
         private bool IsFalsey(GearsValue value) {
-            return value.IsNil || (value.IsBool && !value.AsBool);
+            return value.IsNil || (value.IsNumber && !value.AsBool);
         }
 
         private T GetObjectFromPtr<T>(GearsValue ptr) where T : GearsObj {

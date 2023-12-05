@@ -26,5 +26,6 @@ Global
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		XptScriptLib\XptScriptLib.projitems*{821f5bad-d32c-4e09-bed2-2c39069f9e9c}*SharedItemsImports = 13
+		XptScriptLib\XptScriptLib.projitems*{baacb847-dd68-4037-9d94-fb987397e01c}*SharedItemsImports = 4
 	EndGlobalSection
 EndGlobal

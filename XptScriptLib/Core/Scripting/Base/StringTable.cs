@@ -15,7 +15,10 @@ namespace XPT.Core.Scripting.Base {
         /// <summary>
         /// How much of the constant string table is in use.
         /// </summary>
-        internal int SizeStringTable { get; private set; } = 0;
+        internal int SizeStringTable { 
+            get; 
+            private set; 
+        } = 0;
 
         internal void Compress() {
             if (SizeStringTable < _StringTable?.Length) {
@@ -54,12 +57,28 @@ namespace XPT.Core.Scripting.Base {
         /// </summary>
         internal int WriteStringConstant(string value) {
             byte[] ascii = TextEncoding.GetBytes(value);
+            if (ascii == null) {
+                return -1;
+            }
             int size = ascii.Length + 1;
-            for (int i = 0; i < SizeStringTable; i++) {
-                if (ReadStringConstant(i) == value) {
+            // does the string exist in this chunk already?
+            for (int i = 0; i <= SizeStringTable - size; i++) {
+                if (_StringTable[i + size - 1] != 0) {
+                    continue;
+                }
+                bool match = true;
+                for (int j = 0; j < ascii.Length; j++) {
+                    if (_StringTable[i + j] != ascii[j]) {
+                        match = false;
+                        break;
+                    }
+                }
+                if (match) {
+                    // yes! return the index of the existing string.
                     return i;
                 }
             }
+            // nope! add it to the string table.
             CheckGrowStringTable(size);
             int index = SizeStringTable;
             Array.Copy(ascii, 0, _StringTable, index, ascii.Length);

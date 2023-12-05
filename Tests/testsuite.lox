@@ -616,7 +616,7 @@ c.finish();
 
 // === Ch 29 Referencing Superclass with 'super'. PASS =======================
 // ===========================================================================
-
+/*
 class Doughnut {
   cook() {
     print("Dunk in the fryer.");
@@ -636,5 +636,18 @@ class Cruller < Doughnut {
 
 var c = Cruller();
 c.cook();
+*/
 
-
+var i = 0;
+while (i < 10) {
+    print(i);
+    switch (i) {
+        case 2:
+            print("two");
+        case 4:
+            print("four");
+        case 6:
+            print("six");
+    }
+    i = i + 1;
+}

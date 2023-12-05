@@ -2,12 +2,12 @@
 using static XPT.Core.Scripting.LoxScript.VirtualMachine.EGearsOpCode;
 
 namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
-    internal partial class Gears { // disassembly
+    internal sealed partial class Gears { // disassembly
 
         // === Disassembly ===========================================================================================
         // ===========================================================================================================
 
-        public void Disassemble(GearsChunk chunk, Action<string> write, Action<string> writeLine) {
+        public static void Disassemble(GearsChunk chunk, Action<string> write, Action<string> writeLine) {
             writeLine($"=== chunk ===");
             int offset = 0;
             while (offset < chunk.SizeCode) {
@@ -15,7 +15,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             }
         }
 
-        private int Disassemble(GearsChunk chunk, int offset, Action<string> write, Action<string> writeLine) {
+        private static int Disassemble(GearsChunk chunk, int offset, Action<string> write, Action<string> writeLine) {
             write($"{chunk.Lines[offset]:D4}  {offset:D4}  ");
             EGearsOpCode instruction = (EGearsOpCode)chunk.ReadCode(ref offset);
             switch (instruction) {
@@ -55,6 +55,8 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                     return DisassembleConstant("OP_GET_SUPER", chunk, offset, OP_LOAD_FUNCTION, writeLine);
                 case OP_EQUAL:
                     return DisassembleSimple("OP_EQUAL", chunk, offset, writeLine);
+                case OP_EQUAL_PRESERVE_FIRST_VALUE:
+                    return DisassembleSimple("OP_EQUAL_SAVING_FIRST_VALUE", chunk, offset, writeLine);
                 case OP_GREATER:
                     return DisassembleSimple("OP_GREATER", chunk, offset, writeLine);
                 case OP_LESS:
@@ -67,16 +69,24 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                     return DisassembleSimple("OP_MULTIPLY", chunk, offset, writeLine);
                 case OP_DIVIDE:
                     return DisassembleSimple("OP_DIVIDE", chunk, offset, writeLine);
+                case OP_MODULUS:
+                    return DisassembleSimple("OP_MODULUS", chunk, offset, writeLine);
                 case OP_NOT:
                     return DisassembleSimple("OP_NOT", chunk, offset, writeLine);
                 case OP_NEGATE:
                     return DisassembleSimple("OP_NEGATE", chunk, offset, writeLine);
+                case OP_BITWISE_COMPLEMENT:
+                    return DisassembleSimple("OP_BITWISE_COMPLEMENT", chunk, offset, writeLine);
+                case OP_INCREMENT:
+                    return DisassembleSimple("OP_INC", chunk, offset, writeLine);
+                case OP_DECREMENT:
+                    return DisassembleSimple("OP_DEC", chunk, offset, writeLine);
                 case OP_JUMP:
-                    return DisassembleTwoParams("OP_JUMP", chunk, offset, writeLine);
+                    return DisassembleJump("OP_JUMP", chunk, offset, writeLine);
                 case OP_JUMP_IF_FALSE:
-                    return DisassembleTwoParams("OP_JUMP_IF_FALSE", chunk, offset, writeLine);
+                    return DisassembleJump("OP_JUMP_IF_FALSE", chunk, offset, writeLine);
                 case OP_LOOP:
-                    return DisassembleTwoParams("OP_LOOP", chunk, offset, writeLine);
+                    return DisassembleLoop("OP_LOOP", chunk, offset, writeLine);
                 case OP_CALL:
                     return DisassembleOneParam("OP_CALL", chunk, offset, writeLine);
                 case OP_INVOKE:
@@ -99,7 +109,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             }
         }
 
-        private int DisassembleInvoke(string opcode, GearsChunk chunk, int offset, Action<string> writeLine) {
+        private static int DisassembleInvoke(string opcode, GearsChunk chunk, int offset, Action<string> writeLine) {
             int argCount = chunk.ReadCode(ref offset);
             int nameIndex = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
             string name = chunk.VarNameStrings.ReadStringConstant(nameIndex);
@@ -107,7 +117,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             return offset;
         }
 
-        private int DisassembleInvokeSuper(string opcode, GearsChunk chunk, int offset, Action<string> writeLine) {
+        private static int DisassembleInvokeSuper(string opcode, GearsChunk chunk, int offset, Action<string> writeLine) {
             int argCount = chunk.ReadCode(ref offset);
             chunk.ReadCode(ref offset); // OP GET UPVALUE
             int slot = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
@@ -117,7 +127,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             return offset;
         }
 
-        private int DisassembleFunction(string name, GearsChunk chunk, int offset, Action<string> writeLine) {
+        private static int DisassembleFunction(string name, GearsChunk chunk, int offset, Action<string> writeLine) {
             int argCount = chunk.ReadCode(ref offset);
             int fnAddress = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
             int upvalueCount = chunk.ReadCode(ref offset);
@@ -129,24 +139,36 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             return offset;
         }
 
-        private int DisassembleSimple(string name, GearsChunk chunk, int offset, Action<string> writeLine) {
+        private static int DisassembleSimple(string name, GearsChunk chunk, int offset, Action<string> writeLine) {
             writeLine(name);
             return offset;
         }
 
-        private int DisassembleOneParam(string name, GearsChunk chunk, int offset, Action<string> writeLine) {
+        private static int DisassembleOneParam(string name, GearsChunk chunk, int offset, Action<string> writeLine) {
             int index = chunk.ReadCode(ref offset);
             writeLine($"{name} ({index})");
             return offset;
         }
 
-        private int DisassembleTwoParams(string name, GearsChunk chunk, int offset, Action<string> writeLine) {
+        private static int DisassembleTwoParams(string name, GearsChunk chunk, int offset, Action<string> writeLine) {
             int index = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
             writeLine($"{name} ({index})");
             return offset;
         }
 
-        private int DisassembleConstant(string name, GearsChunk chunk, int offset, EGearsOpCode constantType, Action<string> writeLine) {
+        private static int DisassembleJump(string name, GearsChunk chunk, int offset, Action<string> writeLine) {
+            int index = (offset + 2) + (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
+            writeLine($"{name} >>> {index}");
+            return offset;
+        }
+
+        private static int DisassembleLoop(string name, GearsChunk chunk, int offset, Action<string> writeLine) {
+            int index = (offset + 2) - ((chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset));
+            writeLine($"{name} >>> {index}");
+            return offset;
+        }
+
+        private static int DisassembleConstant(string name, GearsChunk chunk, int offset, EGearsOpCode constantType, Action<string> writeLine) {
             int constantIndex = (chunk.ReadCode(ref offset) << 8) + chunk.ReadCode(ref offset);
             switch (constantType) {
                 case OP_LOAD_CONSTANT: {

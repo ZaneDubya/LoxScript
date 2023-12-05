@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using XPT.Core.Scripting.Base;
 
@@ -58,10 +59,10 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                     AddToken(TokenTypes.DOT);
                     break;
                 case '-':
-                    AddToken(TokenTypes.MINUS);
+                    AddToken(Match('-') ? TokenTypes.DECREMENT : TokenTypes.MINUS);
                     break;
                 case '+':
-                    AddToken(TokenTypes.PLUS);
+                    AddToken(Match('+') ? TokenTypes.INCREMENT : TokenTypes.PLUS);
                     break;
                 case ';':
                     AddToken(TokenTypes.SEMICOLON);
@@ -87,6 +88,12 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                 case '|':
                     AddToken(Match('|') ? LoxTokenTypes.OR : TokenTypes.PIPE);
                     break;
+                case ':':
+                    AddToken(TokenTypes.COLON);
+                    break;
+                case '~':
+                    AddToken(TokenTypes.TILDE);
+                    break;
                 case '/':
                     if (Match('/')) {
                         // A comment goes until the end of the line.                
@@ -111,6 +118,9 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                     else {
                         AddToken(TokenTypes.SLASH);
                     }
+                    break;
+                case '%':
+                    AddToken(TokenTypes.PERCENT);
                     break;
                 case ' ':
                 case '\r':
@@ -266,6 +276,21 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             // The closing ".                                       
             Advance();
             AddToken(TokenTypes.STRING);
+        }
+
+        // === Post Processing =======================================================================================
+        // ===========================================================================================================
+
+        protected override void PostProcessTokens() {
+            TransformSwitchStatementsToIfStatements();
+        }
+
+        private void TransformSwitchStatementsToIfStatements() {
+            for (int i = 0; i < Tokens.Count; i++) {
+                if (Tokens[i].Type == LoxTokenTypes.SWITCH) {
+
+                }
+            }
         }
     }
 }

@@ -13,5 +13,13 @@ namespace XPT.Core.Utilities {
         internal static void Warn(string text) {
             Console.WriteLine(text);
         }
+
+        /// <summary>
+        /// Will show error message but attempt to keep running.
+        /// </summary>
+        /// <param name="text"></param>
+        internal static void Error(string text) {
+            Console.WriteLine(text);
+        }
     }
 }

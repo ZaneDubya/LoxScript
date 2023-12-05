@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace XPT.Core.Scripting.Base {
     /// <summary>
@@ -39,7 +40,7 @@ namespace XPT.Core.Scripting.Base {
         }
 
         protected void SourceBegin(string path, string source, int line = 1) {
-            Reset(path, source, line);
+            _Files.Add(new TokenizerContext(path, source, line));
         }
 
         public virtual void Reset(string path, string source, int line = 1) {
@@ -73,8 +74,11 @@ namespace XPT.Core.Scripting.Base {
             if (addEofAtEnd) {
                 Tokens.Add(new Token(TokenTypes.EOF, lastLine));
             }
+            PostProcessTokens();
             return Tokens;
         }
+
+        protected abstract void PostProcessTokens();
 
         protected abstract void ScanToken();
 

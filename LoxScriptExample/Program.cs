@@ -70,7 +70,7 @@ namespace XPT {
                 Gears gears = new Gears();
                 gears.Reset(chunk, false);
                 gears.AddNativeObjectToGlobals("TestObj", new TestNativeObject());
-                gears.Disassemble(chunk, Console.Write, Console.WriteLine);
+                Gears.Disassemble(chunk, Console.Write, Console.WriteLine);
                 Console.WriteLine("Press enter to run.");
                 Console.ReadKey();
                 gears.Run();

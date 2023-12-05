@@ -7,11 +7,21 @@ namespace XPT.Core.Scripting.Base {
     class TokenList {
         private Token[] _Tokens = null;
         private int _Next = 0;
-        private int _CurrentToken = 0;
+        private int _Current = 0;
 
         private int Capacity => _Tokens?.Length ?? 0;
 
         public int Count => _Next;
+
+        public int CurrentIndex {
+            get => _Current;
+            set {
+                _Current = value;
+                if (_Current < 0) {
+                    _Current = 0;
+                }
+            }
+        } 
 
         public Token this[int index] {
             get {
@@ -23,11 +33,11 @@ namespace XPT.Core.Scripting.Base {
         }
 
         public void Reset() {
-            _CurrentToken = 0;
+            _Current = 0;
             _Next = 0;
         }
 
-        public override string ToString() => $"Tokens: [{_CurrentToken}/{Count}]{(Current != null ? $"({Current})" : String.Empty)}";
+        public override string ToString() => $"Tokens: [{_Current}/{Count}]{(Current != null ? $"({Current})" : String.Empty)}";
 
         // === Added support, used by tokenizer ======================================================================
         // ===========================================================================================================
@@ -47,18 +57,12 @@ namespace XPT.Core.Scripting.Base {
             return token;
         }
 
-        public void AddedRewind(int count = 1) {
-            for (int i = 0; i < count; i++) {
-                _Tokens[--_Next] = default;
-            }
-        }
-
         public Token AddedLast => _Next > 0 ? _Tokens[_Next - 1] : default;
 
         // === Infrastructure, should only be used by Compiler =======================================================
         // ===========================================================================================================
 
-        public Token Current => this[_CurrentToken];
+        public Token Current => this[_Current];
 
         /// <summary>
         /// Checks to see if the next token is of the expected type.
@@ -114,7 +118,7 @@ namespace XPT.Core.Scripting.Base {
         /// </summary>
         public Token Advance() {
             if (!IsAtEnd()) {
-                _CurrentToken++;
+                _Current++;
             }
             return Previous();
         }
@@ -130,30 +134,30 @@ namespace XPT.Core.Scripting.Base {
         /// returns the current token we have yet to consume
         /// </summary>
         public Token Peek() {
-            return _Tokens[_CurrentToken];
+            return _Tokens[_Current];
         }
 
         /// <summary>
         /// returns a token with offset from the next token that will be consumed. Peek() is equivalent to Peek(0).
         /// </summary>
         public Token Peek(int offset) {
-            if (_CurrentToken + offset >= _Tokens.Length || _CurrentToken + offset < 0) {
+            if (_Current + offset >= _Tokens.Length || _Current + offset < 0) {
                 return null;
             }
-            return _Tokens[_CurrentToken + offset];
+            return _Tokens[_Current + offset];
         }
 
         /// <summary>
         /// returns the most recently consumed token.
         /// </summary>
         public Token Previous() {
-            return _Tokens[_CurrentToken - 1];
+            return _Tokens[_Current - 1];
         }
 
         public void Rewind(int count = 1) {
-            _CurrentToken -= count;
-            if (_CurrentToken < 0) {
-                _CurrentToken = 0;
+            _Current -= count;
+            if (_Current < 0) {
+                _Current = 0;
             }
         }
 
