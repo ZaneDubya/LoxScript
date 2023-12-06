@@ -645,7 +645,6 @@ while (i < 10) {
         case 2:
         case 3:
             print("two");
-            break;
         case 4:
         default:
             print("four");

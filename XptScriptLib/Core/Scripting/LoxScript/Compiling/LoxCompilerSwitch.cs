@@ -150,35 +150,19 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                 if (maxCodeBodyIndex > codeBodyIndex) {
                     continue;
                 }
-                for (int i = 0; i < caseStatementCodeBodyTokenIndexes.Count; i++) {
-                    if (caseStatementCodeBodyTokenIndexes[i] == codeBodyIndex) {
-                        PatchJump(caseStatementJumpIndexes[i]);
-                    }
-                }
-                if (defaultStatement != null && defaultStatementCodeBodyTokenIndex == codeBodyIndex) {
-                    PatchJump(defaultStatementJumpIndex);
-                }
+                SwitchStatement_PatchCase(caseStatementCodeBodyTokenIndexes, caseStatementJumpIndexes, codeBodyIndex);
+                SwitchStatement_PatchDefault(defaultStatement, defaultStatementCodeBodyTokenIndex, defaultStatementJumpIndex, codeBodyIndex);
                 Tokens.CurrentIndex = codeBodyIndex;
                 while (!Tokens.Check(BREAK) && !Tokens.Check(RIGHT_BRACE)) {
                     if (Tokens.Match(CASE)) {
                         Tokens.Consume(NUMBER, "Expect numeric value following case statement.");
                         Tokens.Consume(COLON, "Expect ':' after case statement.");
-                        for (int i = 0; i < caseStatementCodeBodyTokenIndexes.Count; i++) {
-                            if (caseStatementCodeBodyTokenIndexes[i] == Tokens.CurrentIndex) {
-                                PatchJump(caseStatementJumpIndexes[i]);
-                            }
-                        }
+                        SwitchStatement_PatchCase(caseStatementCodeBodyTokenIndexes, caseStatementJumpIndexes, Tokens.CurrentIndex);
                     }
                     else if (Tokens.Match(DEFAULT)) {
                         Tokens.Consume(COLON, "Expect ':' after default statement.");
-                        if (defaultStatement != null && defaultStatementCodeBodyTokenIndex == Tokens.CurrentIndex) {
-                            PatchJump(defaultStatementJumpIndex);
-                        }
-                        for (int i = 0; i < caseStatementCodeBodyTokenIndexes.Count; i++) {
-                            if (caseStatementCodeBodyTokenIndexes[i] == Tokens.CurrentIndex) {
-                                PatchJump(caseStatementJumpIndexes[i]);
-                            }
-                        }
+                        SwitchStatement_PatchDefault(defaultStatement, defaultStatementCodeBodyTokenIndex, defaultStatementJumpIndex, Tokens.CurrentIndex);
+                        SwitchStatement_PatchCase(caseStatementCodeBodyTokenIndexes, caseStatementJumpIndexes, Tokens.CurrentIndex);
                     }
                     else {
                         Statement();
@@ -195,6 +179,20 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             EmitOpcode(switchToken.Line, OP_POP); // Pop the result of the switch comparison
             Tokens.CurrentIndex = bookmarkSwitchEnd;
             _InSwitchStatement = false;
+        }
+
+        private void SwitchStatement_PatchCase(List<int> caseStatementCodeBodyTokenIndexes, List<int> caseStatementJumpIndexes, int currentToken) {
+            for (int i = 0; i < caseStatementCodeBodyTokenIndexes.Count; i++) {
+                if (caseStatementCodeBodyTokenIndexes[i] == currentToken) {
+                    PatchJump(caseStatementJumpIndexes[i]);
+                }
+            }
+        }
+
+        private void SwitchStatement_PatchDefault(Token defaultStatement, int defaultStatementCodeBodyTokenIndex, int defaultStatementJumpIndex, int currentToken) {
+            if (defaultStatement != null && defaultStatementCodeBodyTokenIndex == currentToken) {
+                PatchJump(defaultStatementJumpIndex);
+            }
         }
     }
 }
