@@ -8,6 +8,7 @@ Improvements over Lox/clox:
 
 - Compiler can write bytecode to a binary file and load/run this at runtime.
 - Native interfaces allow Lox files to interact with native C# functions and objects.
+- Support for switch statement! This only took hours, and the code is horrifying.
 
 Performance:
 
