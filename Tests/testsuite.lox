@@ -643,11 +643,13 @@ while (i < 10) {
     print(i);
     switch (i) {
         case 2:
+        case 3:
             print("two");
+            break;
         case 4:
+        default:
             print("four");
-        case 6:
-            print("six");
+            
     }
     i = i + 1;
 }

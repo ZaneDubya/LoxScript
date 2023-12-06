@@ -142,29 +142,52 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             }
 
             // For each unique code body, emit the code for the code body, and patch jumps to it.
+            int maxCodeBodyIndex = -1;
             foreach (int codeBodyIndex in uniqueCodeBodyTokenIndexes) {
                 if (codeBodyIndex == -1) {
                     throw new CompilerException(switchToken, "Empty case or default statement in switch statement.");
+                }
+                if (maxCodeBodyIndex > codeBodyIndex) {
+                    continue;
                 }
                 for (int i = 0; i < caseStatementCodeBodyTokenIndexes.Count; i++) {
                     if (caseStatementCodeBodyTokenIndexes[i] == codeBodyIndex) {
                         PatchJump(caseStatementJumpIndexes[i]);
                     }
                 }
-                if (defaultStatement != null && codeBodyIndex == defaultStatementCodeBodyTokenIndex) {
+                if (defaultStatement != null && defaultStatementCodeBodyTokenIndex == codeBodyIndex) {
                     PatchJump(defaultStatementJumpIndex);
                 }
                 Tokens.CurrentIndex = codeBodyIndex;
                 while (!Tokens.Check(BREAK) && !Tokens.Check(RIGHT_BRACE)) {
                     if (Tokens.Match(CASE)) {
-                        Tokens.Match(NUMBER, "Expect numeric value following case statement.");
-                        Tokens.Match(COLON, "Expect ':' after case statement.");
+                        Tokens.Consume(NUMBER, "Expect numeric value following case statement.");
+                        Tokens.Consume(COLON, "Expect ':' after case statement.");
+                        for (int i = 0; i < caseStatementCodeBodyTokenIndexes.Count; i++) {
+                            if (caseStatementCodeBodyTokenIndexes[i] == Tokens.CurrentIndex) {
+                                PatchJump(caseStatementJumpIndexes[i]);
+                            }
+                        }
                     }
-                    Statement();
+                    else if (Tokens.Match(DEFAULT)) {
+                        Tokens.Consume(COLON, "Expect ':' after default statement.");
+                        if (defaultStatement != null && defaultStatementCodeBodyTokenIndex == Tokens.CurrentIndex) {
+                            PatchJump(defaultStatementJumpIndex);
+                        }
+                        for (int i = 0; i < caseStatementCodeBodyTokenIndexes.Count; i++) {
+                            if (caseStatementCodeBodyTokenIndexes[i] == Tokens.CurrentIndex) {
+                                PatchJump(caseStatementJumpIndexes[i]);
+                            }
+                        }
+                    }
+                    else {
+                        Statement();
+                    }
                 }
                 if (Tokens.Match(BREAK)) {
                     breakStatementJumpIndexes.Add(EmitJump(OP_JUMP));
                 }
+                maxCodeBodyIndex = Tokens.CurrentIndex;
             }
             foreach (int breakStatementJumpIndex in breakStatementJumpIndexes) {
                 PatchJump(breakStatementJumpIndex);
