@@ -140,8 +140,8 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
 
             // Get a list of unique code bodies handled by the switch statement.
             IEnumerable<int> uniqueCodeBodyTokenIndexes = defaultStatement != null ?
-                caseStatements.Select(cs => cs.CodeBodyTokenIndex).Concat(new[] { defaultStatement.CodeBodyTokenIndex }).Distinct() :
-                caseStatements.Select(cs => cs.CodeBodyTokenIndex).Distinct();
+                caseStatements.Select(cs => cs.CodeBodyTokenIndex).Concat(new[] { defaultStatement.CodeBodyTokenIndex }).Distinct().OrderBy(d => d) :
+                caseStatements.Select(cs => cs.CodeBodyTokenIndex).Distinct().OrderBy(d => d);
 
             // For each unique code body, emit the code for the code body, and patch jumps to it.
             int maxCodeBodyIndex = -1;

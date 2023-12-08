@@ -640,15 +640,14 @@ c.cook();
 
 var i = 0;
 while (i < 10) {
-    print(i);
     switch (i) {
+        default:
+            print(i);
         case 2:
         case 3:
             print("two");
         case 4:
-        default:
             print("four");
-            
     }
     i = i + 1;
 }
