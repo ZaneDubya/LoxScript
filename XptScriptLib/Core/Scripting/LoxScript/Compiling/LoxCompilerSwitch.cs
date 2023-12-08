@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using XPT.Core.Scripting.Base;
 using static XPT.Core.Scripting.Base.TokenTypes;
 using static XPT.Core.Scripting.LoxScript.Compiling.LoxTokenTypes;
@@ -7,30 +8,39 @@ using static XPT.Core.Scripting.LoxScript.VirtualMachine.EGearsOpCode;
 namespace XPT.Core.Scripting.LoxScript.Compiling {
     internal sealed partial class LoxCompiler {
 
+        const int NO_CODE_BODY = -1;
+
+        class SwitchCaseData {
+            public Token Token;
+            public int CodeBodyTokenIndex = NO_CODE_BODY;
+            public int JumpIndex;
+
+            public SwitchCaseData(Token token) {
+                Token = token;
+            }
+        }
+
         /// <summary>
         /// Follows 'switch' token.
         /// </summary>
         private void SwitchStatement() {
             Token switchToken = Tokens.Previous();
+            // don't allow nested switches
             if (_InSwitchStatement) {
                 throw new CompilerException(Tokens.Previous(), "Nested switch statements are not allowed.");
             }
-            _InSwitchStatement = true; // don't allow nested switches
+
+            _InSwitchStatement = true;
+            SwitchCaseData defaultStatement = null;
+            List<SwitchCaseData> caseStatements = new List<SwitchCaseData>();
+            List<int> breakStatementJumpIndexes = new List<int>();
+            bool inCodeStatement = false;
 
             // parse the switch condition, following 'switch' token:
             Tokens.Consume(LEFT_PAREN, "Expect '(' after 'switch'.");
             Expression(); // and push results
             Tokens.Consume(RIGHT_PAREN, "Expect ')' after switch condition.");
             Tokens.Consume(LEFT_BRACE, "Expect '{' after switch condition.");
-
-            Token defaultStatement = null;
-            int defaultStatementCodeBodyTokenIndex = -1;
-            List<Token> caseStatements = new List<Token>();
-            List<int> caseStatementCodeBodyTokenIndexes = new List<int>();
-            int defaultStatementJumpIndex = -1;
-            List<int> caseStatementJumpIndexes = new List<int>();
-            List<int> breakStatementJumpIndexes = new List<int>();
-            bool inCodeStatement = false;
 
             // Get token indexes of all the case comparisons, and the default statement (if any). Each case statement
             // or default statement is followed by a code body, so get indexes to these as well.
@@ -46,23 +56,21 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                         if (defaultStatement != null) {
                             throw new CompilerException(Tokens.Previous(), "Multiple default cases in a switch are not allowed.");
                         }
-                        defaultStatement = Tokens.Previous();
-                        defaultStatementCodeBodyTokenIndex = -1;
+                        defaultStatement = new SwitchCaseData(Tokens.Previous());
                     }
                     else {
-                        caseStatements.Add(Tokens.Consume(NUMBER, "Expect numeric value following case statement."));
-                        caseStatementCodeBodyTokenIndexes.Add(-1);
+                        caseStatements.Add(new SwitchCaseData(Tokens.Consume(NUMBER, "Expect numeric value following case statement.")));
                     }
                     Tokens.Consume(COLON, "Expect ':' after case or default statement.");
                 }
                 else {
                     if (!inCodeStatement) {
-                        if (defaultStatement != null && defaultStatementCodeBodyTokenIndex == -1) {
-                            defaultStatementCodeBodyTokenIndex = Tokens.CurrentIndex;
+                        if (defaultStatement != null && defaultStatement.CodeBodyTokenIndex == NO_CODE_BODY) {
+                            defaultStatement.CodeBodyTokenIndex = Tokens.CurrentIndex;
                         }
-                        for (int i = 0; i < caseStatementCodeBodyTokenIndexes.Count; i++) {
-                            if (caseStatementCodeBodyTokenIndexes[i] == -1) {
-                                caseStatementCodeBodyTokenIndexes[i] = Tokens.CurrentIndex;
+                        for (int i = 0; i < caseStatements.Count; i++) {
+                            if (caseStatements[i].CodeBodyTokenIndex == NO_CODE_BODY) {
+                                caseStatements[i].CodeBodyTokenIndex = Tokens.CurrentIndex;
                             }
                         }
                     }
@@ -102,7 +110,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             // Emit code for the case and default statements:
             for (int i = 0; i < caseStatements.Count; i++) {
                 bool isLast = (defaultStatement == null) && (i == caseStatements.Count - 1);
-                Token caseValue = caseStatements[i];
+                Token caseValue = caseStatements[i].Token;
                 if (i > 0) {
                     EmitOpcode(caseValue.Line, OP_POP);
                 }
@@ -118,28 +126,22 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                 }
                 EmitOpcode(caseValue.Line, OP_POP); // Pop the result of the comparison
                 int jumpCodeBody = EmitJump(OP_JUMP);
-                caseStatementJumpIndexes.Add(jumpCodeBody);
+                caseStatements[i].JumpIndex = jumpCodeBody;
                 if (!isLast) {
                     PatchJump(jumpNextCase);
                 }
             }
             if (defaultStatement != null) {
                 if (caseStatements.Count > 0) {
-                    EmitOpcode(defaultStatement.Line, OP_POP); // Pop the result of the last case comparison
+                    EmitOpcode(defaultStatement.Token.Line, OP_POP); // Pop the result of the last case comparison
                 }
-                defaultStatementJumpIndex = EmitJump(OP_JUMP);
+                defaultStatement.JumpIndex = EmitJump(OP_JUMP);
             }
 
             // Get a list of unique code bodies handled by the switch statement.
-            List<int> uniqueCodeBodyTokenIndexes = new List<int>();
-            foreach (int codeBodyIndex in caseStatementCodeBodyTokenIndexes) {
-                if (!uniqueCodeBodyTokenIndexes.Contains(codeBodyIndex)) {
-                    uniqueCodeBodyTokenIndexes.Add(codeBodyIndex);
-                }
-            }
-            if (defaultStatement != null && !uniqueCodeBodyTokenIndexes.Contains(defaultStatementCodeBodyTokenIndex)) {
-                uniqueCodeBodyTokenIndexes.Add(defaultStatementCodeBodyTokenIndex);
-            }
+            IEnumerable<int> uniqueCodeBodyTokenIndexes = defaultStatement != null ?
+                caseStatements.Select(cs => cs.CodeBodyTokenIndex).Concat(new[] { defaultStatement.CodeBodyTokenIndex }).Distinct() :
+                caseStatements.Select(cs => cs.CodeBodyTokenIndex).Distinct();
 
             // For each unique code body, emit the code for the code body, and patch jumps to it.
             int maxCodeBodyIndex = -1;
@@ -150,19 +152,19 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                 if (maxCodeBodyIndex > codeBodyIndex) {
                     continue;
                 }
-                SwitchStatement_PatchCase(caseStatementCodeBodyTokenIndexes, caseStatementJumpIndexes, codeBodyIndex);
-                SwitchStatement_PatchDefault(defaultStatement, defaultStatementCodeBodyTokenIndex, defaultStatementJumpIndex, codeBodyIndex);
+                SwitchStatement_PatchCase(caseStatements, codeBodyIndex);
+                SwitchStatement_PatchDefault(defaultStatement, codeBodyIndex);
                 Tokens.CurrentIndex = codeBodyIndex;
                 while (!Tokens.Check(BREAK) && !Tokens.Check(RIGHT_BRACE)) {
                     if (Tokens.Match(CASE)) {
                         Tokens.Consume(NUMBER, "Expect numeric value following case statement.");
                         Tokens.Consume(COLON, "Expect ':' after case statement.");
-                        SwitchStatement_PatchCase(caseStatementCodeBodyTokenIndexes, caseStatementJumpIndexes, Tokens.CurrentIndex);
+                        SwitchStatement_PatchCase(caseStatements, Tokens.CurrentIndex);
                     }
                     else if (Tokens.Match(DEFAULT)) {
                         Tokens.Consume(COLON, "Expect ':' after default statement.");
-                        SwitchStatement_PatchDefault(defaultStatement, defaultStatementCodeBodyTokenIndex, defaultStatementJumpIndex, Tokens.CurrentIndex);
-                        SwitchStatement_PatchCase(caseStatementCodeBodyTokenIndexes, caseStatementJumpIndexes, Tokens.CurrentIndex);
+                        SwitchStatement_PatchDefault(defaultStatement, Tokens.CurrentIndex);
+                        SwitchStatement_PatchCase(caseStatements, Tokens.CurrentIndex);
                     }
                     else {
                         Statement();
@@ -181,17 +183,17 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             _InSwitchStatement = false;
         }
 
-        private void SwitchStatement_PatchCase(List<int> caseStatementCodeBodyTokenIndexes, List<int> caseStatementJumpIndexes, int currentToken) {
-            for (int i = 0; i < caseStatementCodeBodyTokenIndexes.Count; i++) {
-                if (caseStatementCodeBodyTokenIndexes[i] == currentToken) {
-                    PatchJump(caseStatementJumpIndexes[i]);
+        private void SwitchStatement_PatchCase(List<SwitchCaseData> caseStatements, int currentToken) {
+            for (int i = 0; i < caseStatements.Count; i++) {
+                if (caseStatements[i].CodeBodyTokenIndex == currentToken) {
+                    PatchJump(caseStatements[i].JumpIndex);
                 }
             }
         }
 
-        private void SwitchStatement_PatchDefault(Token defaultStatement, int defaultStatementCodeBodyTokenIndex, int defaultStatementJumpIndex, int currentToken) {
-            if (defaultStatement != null && defaultStatementCodeBodyTokenIndex == currentToken) {
-                PatchJump(defaultStatementJumpIndex);
+        private void SwitchStatement_PatchDefault(SwitchCaseData defaultStatement, int currentToken) {
+            if (defaultStatement != null && defaultStatement.CodeBodyTokenIndex == currentToken) {
+                PatchJump(defaultStatement.JumpIndex);
             }
         }
     }
