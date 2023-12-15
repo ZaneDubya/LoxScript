@@ -27,7 +27,7 @@
                     }
                 }
             }
-    }
+        }
 
         internal string LiteralAsString => _Source.Substring(_SrcStart + 1, _SrcLength - 2);
 

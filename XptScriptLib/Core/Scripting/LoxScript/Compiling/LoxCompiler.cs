@@ -225,7 +225,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             DefineVariable(className.Line, MakeVariableConstant(className.Lexeme));
             _CurrentClass = new LoxCompilerClass(className, _CurrentClass);
             // superclass:
-            if (Tokens.Match(LESS)) { 
+            if (Tokens.Match(LESS)) {
                 Tokens.Consume(IDENTIFIER, "Expect superclass name.");
                 if (Tokens.Previous().Lexeme == className.Lexeme) {
                     throw new CompilerException(Tokens.Previous(), "A class cannot inherit from itself.");
@@ -671,11 +671,11 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                         break;
                     case LESS:
                         EmitOpcode(LineOfLastToken, OP_LESS);
-                        break; 
+                        break;
                     case LESS_EQUAL:
                         EmitOpcode(LineOfLastToken, OP_GREATER);
                         EmitOpcode(LineOfLastToken, OP_NOT);
-                        break; 
+                        break;
                 }
             }
         }

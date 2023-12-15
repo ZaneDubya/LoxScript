@@ -198,7 +198,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             }
             return _Stack[--_SP];
         }
-        
+
 #if NET_4_5
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
 #endif
@@ -292,7 +292,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             }
             MarkObject(value.AsObject(this));
         }
-        
+
         public void MarkObject(GearsObj obj) {
             if (obj == null || obj.IsMarked) {
                 return;

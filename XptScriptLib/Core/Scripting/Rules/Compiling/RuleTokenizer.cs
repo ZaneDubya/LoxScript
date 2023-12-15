@@ -27,7 +27,7 @@ namespace XPT.Core.Scripting.Rules.Compiling {
         // ===========================================================================================================
 
         protected bool IsFloatingPointPermitted => false;
-        
+
         /// <summary>
         /// Grabs the text of the current lexeme and creates a new token for it.
         /// </summary>

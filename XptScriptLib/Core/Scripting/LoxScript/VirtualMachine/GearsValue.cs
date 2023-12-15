@@ -41,8 +41,8 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
         /// Every value that is not a number will use a special "Not a number" representation. NaN is the 30th bit set
         /// and not a negative number. (value & MASK_NAN) == BIT_NAN represents this value.
         /// </summary>
-        private const int BIT_NAN =        0x40000000;
-        private const int BIT_OBJPTR =  0x20000000;
+        private const int BIT_NAN = 0x40000000;
+        private const int BIT_OBJPTR = 0x20000000;
 
         private const int TAG_OBJPTR = BIT_NAN | BIT_OBJPTR;
         private const int TAG_NIL = BIT_NAN | 0x00000001;
@@ -83,7 +83,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
         public int AsObjPtr => IsObjPtr ? _Value & ~TAG_OBJPTR : -1;
 
         public GearsObj AsObject(Gears context) => context.HeapGetObject(AsObjPtr); // todo: fix with reference to context's heap...
-        
+
         // --- Ctor and ToString -------------------------------------------------------------------------------------
 
         public GearsValue(int value) : this() {
@@ -154,7 +154,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
 
         public static GearsValue operator +(GearsValue a, GearsValue b) => a._Value + b._Value;
 
-        public static GearsValue operator -(GearsValue a, GearsValue b) =>  a._Value - b._Value;
+        public static GearsValue operator -(GearsValue a, GearsValue b) => a._Value - b._Value;
 
         public static GearsValue operator *(GearsValue a, GearsValue b) => a._Value * b._Value;
 

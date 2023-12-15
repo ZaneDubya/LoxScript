@@ -172,7 +172,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             }
             else if (_Methods.TryGetValue(name, out MethodInfo methodInfo)) {
                 value = GearsValue.CreateObjPtr(vm.HeapAddObject(
-                    new GearsObjFunctionNative(methodInfo.Name, methodInfo.GetParameters().Length, 
+                    new GearsObjFunctionNative(methodInfo.Name, methodInfo.GetParameters().Length,
                         (GearsValue[] args) => CreateNativeClosure(vm, wrappedObject, methodInfo, args))));
                 return true;
             }

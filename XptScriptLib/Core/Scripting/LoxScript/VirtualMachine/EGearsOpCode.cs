@@ -169,7 +169,7 @@
         /// Pops a value from the stack and returns it as the result of the current function.
         /// </summary>
         OP_RETURN,
-            
+
         OP_CLASS,
 
         OP_INHERIT,

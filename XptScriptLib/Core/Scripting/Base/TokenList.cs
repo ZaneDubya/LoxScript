@@ -21,7 +21,7 @@ namespace XPT.Core.Scripting.Base {
                     _Current = 0;
                 }
             }
-        } 
+        }
 
         public Token this[int index] {
             get {

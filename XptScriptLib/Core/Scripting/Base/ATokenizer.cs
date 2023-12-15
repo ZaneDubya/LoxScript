@@ -13,7 +13,7 @@ namespace XPT.Core.Scripting.Base {
         }
 
         protected int Current {
-            get => CurrentFile.Current; 
+            get => CurrentFile.Current;
             set => CurrentFile.Current = value;
         }
 

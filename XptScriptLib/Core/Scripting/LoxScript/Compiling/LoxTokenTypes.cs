@@ -7,7 +7,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             /*, PUBLIC */
             AND = 100, CLASS = 101, ELSE = 102, FALSE = 103,
             FUNCTION = 104, FOR = 105, IF = 106, NIL = 107,
-            OR = 108, RETURN = 109, SUPER = 110, THIS = 111, 
+            OR = 108, RETURN = 109, SUPER = 110, THIS = 111,
             TRUE = 112, VAR = 113, WHILE = 114, SWITCH = 115,
             CASE = 116, BREAK = 117, DEFAULT = 118;
 

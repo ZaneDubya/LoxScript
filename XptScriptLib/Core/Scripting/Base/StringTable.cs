@@ -15,9 +15,9 @@ namespace XPT.Core.Scripting.Base {
         /// <summary>
         /// How much of the constant string table is in use.
         /// </summary>
-        internal int SizeStringTable { 
-            get; 
-            private set; 
+        internal int SizeStringTable {
+            get;
+            private set;
         } = 0;
 
         internal void Compress() {
