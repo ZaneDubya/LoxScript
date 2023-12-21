@@ -34,7 +34,7 @@ namespace XPT.Core.Scripting.Rules.Compiling {
             while (!tokens.Match(RIGHT_BRACKET) && !tokens.IsAtEnd()) {
                 Token contextVariableName = tokens.Consume(IDENTIFIER, "Rule must contain list of comparison expressions (missing identifier)");
                 Token comparisonOperation = tokens.Advance(); // we will check validity of this token after consuming the value
-                Token contextVariableValue = null;
+                Token contextVariableValue;
                 if (tokens.Check(NUMBER) || tokens.Check(STRING) || tokens.Check(IDENTIFIER)) {
                     contextVariableValue = tokens.Advance();
                 }
