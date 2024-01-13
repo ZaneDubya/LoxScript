@@ -9,7 +9,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
     /// An implementation of the lox hash table.
     /// </summary>
     internal class GearsHashTable {
-        private Dictionary<string, GearsValue> _Table = new Dictionary<string, GearsValue>();
+        private readonly Dictionary<string, GearsValue> _Table = new Dictionary<string, GearsValue>();
 
         public void Reset() {
             _Table.Clear();

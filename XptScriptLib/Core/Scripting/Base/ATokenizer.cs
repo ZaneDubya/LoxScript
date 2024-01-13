@@ -30,7 +30,7 @@ namespace XPT.Core.Scripting.Base {
 
         protected TokenizerContext CurrentFile => _Files[_Files.Count - 1];
 
-        private List<TokenizerContext> _Files = new List<TokenizerContext>();
+        private readonly List<TokenizerContext> _Files = new List<TokenizerContext>();
 
         protected ATokenizer() { }
 
