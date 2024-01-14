@@ -142,6 +142,17 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             IEnumerable<int> uniqueCodeBodyTokenIndexes = defaultStatement != null ?
                 caseStatements.Select(cs => cs.CodeBodyTokenIndex).Concat(new[] { defaultStatement.CodeBodyTokenIndex }).Distinct().OrderBy(d => d) :
                 caseStatements.Select(cs => cs.CodeBodyTokenIndex).Distinct().OrderBy(d => d);
+            // This was the old way of getting the list of unique code bodies, keeping it here for reference.
+            //  List<int> uniqueCodeBodyTokenIndexes = new List<int>();
+            //  foreach (int codeBodyIndex in caseStatementCodeBodyTokenIndexes) {
+            //      if (!uniqueCodeBodyTokenIndexes.Contains(codeBodyIndex)) {
+            //          uniqueCodeBodyTokenIndexes.Add(codeBodyIndex);
+             //    }
+            //  }
+            //  if (defaultStatement != null && !uniqueCodeBodyTokenIndexes.Contains(defaultStatementCodeBodyTokenIndex)) {
+            //      uniqueCodeBodyTokenIndexes.Add(defaultStatementCodeBodyTokenIndex);
+            //  }
+            //  uniqueCodeBodyTokenIndexes.Sort();
 
             // For each unique code body, emit the code for the code body, and patch jumps to it.
             int maxCodeBodyIndex = -1;
