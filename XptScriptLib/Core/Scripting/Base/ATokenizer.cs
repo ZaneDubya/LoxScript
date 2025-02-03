@@ -24,7 +24,7 @@ namespace XPT.Core.Scripting.Base {
 
         protected string Source => CurrentFile.Source;
 
-        protected bool IsAtEnd => CurrentFile.Current >= CurrentFile.Source.Length;
+        protected bool IsAtEnd => CurrentFile.Current >= (CurrentFile.Source?.Length ?? 0);
 
         protected TokenList Tokens = new TokenList();
 
@@ -92,18 +92,6 @@ namespace XPT.Core.Scripting.Base {
         protected char Advance() {
             Current += 1;
             return Source[Current - 1];
-        }
-
-        protected bool IsAlphaOrUnderscore(char c) {
-            return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
-        }
-
-        protected bool IsAlphaUnderscoreOrNumeric(char c) {
-            return IsAlphaOrUnderscore(c) || IsDigit(c);
-        }
-
-        protected bool IsDigit(char c, bool allowHex = false) {
-            return (c >= '0' && c <= '9') || (allowHex && ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')));
         }
 
         /// <summary>

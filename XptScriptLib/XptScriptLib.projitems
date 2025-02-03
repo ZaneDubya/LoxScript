@@ -11,12 +11,15 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Base\ACompiler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Base\ATokenizer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Base\Validation.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Base\CompilerException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Base\StringTable.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Base\Token.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Base\TokenizerContext.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Base\TokenList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Base\TokenTypes.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Interfaces\IScript.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Interfaces\IScriptMethod.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\Compiling\ELoxFunctionType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\Compiling\LoxCompiler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\Compiling\LoxCompilerClass.cs" />

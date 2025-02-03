@@ -136,10 +136,10 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                     PreProcessor();
                     break;
                 default:
-                    if (IsDigit(c)) {
+                    if (Validation.IsDigit(c)) {
                         Number();
                     }
-                    else if (IsAlphaOrUnderscore(c)) {
+                    else if (Validation.IsAlphaOrUnderscore(c)) {
                         Identifier();
                     }
                     else {
@@ -150,7 +150,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         }
 
         private void PreProcessor() {
-            while (IsAlphaUnderscoreOrNumeric(Peek())) {
+            while (Validation.IsAlphaUnderscoreOrNumeric(Peek())) {
                 Advance();
             }
             string preprocessor = Source.Substring(Start, Current - Start);
@@ -171,7 +171,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                 Advance();
             }
             int nameStart = Current;
-            while (IsAlphaUnderscoreOrNumeric(Peek())) {
+            while (Validation.IsAlphaUnderscoreOrNumeric(Peek())) {
                 Advance();
             }
             // See if the name is a reserved word.   
@@ -214,7 +214,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         }
 
         private void Identifier() {
-            while (IsAlphaUnderscoreOrNumeric(Peek())) {
+            while (Validation.IsAlphaUnderscoreOrNumeric(Peek())) {
                 Advance();
             }
             string text = Source.Substring(Start, Current - Start);
@@ -238,22 +238,22 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         /// which is a decimal point (.), followed by at least one digit.
         /// </summary>
         private void Number() {
-            if (Peek() == 'x' && IsDigit(PeekNext(), allowHex: true)) {
+            if (Peek() == 'x' && Validation.IsDigit(PeekNext(), allowHex: true)) {
                 // Consume the "x"
                 Advance();
-                while (IsDigit(Peek(), allowHex: true)) {
+                while (Validation.IsDigit(Peek(), allowHex: true)) {
                     Advance();
                 }
             }
             else {
-                while (IsDigit(Peek())) {
+                while (Validation.IsDigit(Peek())) {
                     Advance();
                 }
                 // Look for a fractional part, if this language supports floating pt numbers.
-                if (IsFloatingPointPermitted && Peek() == '.' && IsDigit(PeekNext())) {
+                if (IsFloatingPointPermitted && Peek() == '.' && Validation.IsDigit(PeekNext())) {
                     // Consume the "."
                     Advance();
-                    while (IsDigit(Peek())) {
+                    while (Validation.IsDigit(Peek())) {
                         Advance();
                     }
                 }
