@@ -132,7 +132,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                     chunk.WriteCodeAt(codeBase + fixup.Address + 1, (byte)(constantFixup & 0xff));
                 }
                 foreach (LoxCompilerFixup fixup in fn._FixupStrings) {
-                    string value = fn._Chunk.Strings.ReadStringConstant(fixup.Value);
+                    string value = fn._Chunk.VarNameStrings.ReadStringConstant(fixup.Value);
                     int constantFixup = makeConstantString(value); // as fixup
                     chunk.WriteCodeAt(codeBase + fixup.Address, (byte)(constantFixup >> 8));
                     chunk.WriteCodeAt(codeBase + fixup.Address + 1, (byte)(constantFixup & 0xff));
@@ -259,12 +259,12 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         /// function    → IDENTIFIER "(" parameters? ")" block ;
         /// parameters  → IDENTIFIER( "," IDENTIFIER )* ;
         /// </summary>
-        private void FunctionDeclaration(string fnType, ELoxFunctionType fnType2) {
-            int global = ParseVariable($"Expect {fnType} name.");
+        private void FunctionDeclaration(string fnTypeName, ELoxFunctionType fnType) {
+            int global = ParseVariable($"Expect {fnTypeName} name.");
             MarkInitialized();
             string fnName = Tokens.Previous().Lexeme;
             int fnLine = LineOfLastToken;
-            LoxCompiler fnCompiler = new LoxCompiler(Tokens, fnType2, fnName, this, _CurrentClass, _Chunk);
+            LoxCompiler fnCompiler = new LoxCompiler(Tokens, fnType, fnName, this, _CurrentClass, _Chunk);
             fnCompiler.FunctionBody();
             fnCompiler.EndCompiler();
             EmitOpcode(fnLine, OP_LOAD_FUNCTION);
