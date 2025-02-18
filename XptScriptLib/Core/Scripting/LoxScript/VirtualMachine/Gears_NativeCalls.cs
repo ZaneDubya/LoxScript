@@ -62,7 +62,10 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                 }
             }
             Call(args?.Length ?? 0);
-            Run();
+            if (!TryRun(out string error)) {
+                returned = error;
+                return false;
+            }
             returned = LastReturnValue; // the return value
             // todo: process return value?
             return true;

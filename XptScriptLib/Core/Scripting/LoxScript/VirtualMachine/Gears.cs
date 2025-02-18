@@ -12,6 +12,18 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
 
         internal bool IsRunning => _IP < Chunk.SizeCode;
 
+        internal bool TryRun(out string error) {
+            try {
+                Run();
+                error = null;
+                return true;
+            }
+            catch (Exception e) {
+                error = e.Message;
+                return false;
+            }
+        }
+
         internal void Run() {
             if (IsRunning) {
                 try {
@@ -372,10 +384,6 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
         }
 
         private GearsValue AreValuesEqual(GearsValue a, GearsValue b) {
-            /*if (a.IsBool && b.IsBool) { <--- removed because there are no bools in Gears; 0 and !0 are used instead.
-                return a.AsBool == b.AsBool;
-            }
-            else */
             if (a.IsNil && b.IsNil) {
                 return true;
             }

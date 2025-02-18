@@ -30,6 +30,7 @@ namespace XPT.Core.Utilities {
 
         private static bool _IsInitialized = false;
         private static readonly StringBuilder _StringBuilder = new StringBuilder(1024);
+        private static char[] _StringBuilding = new char[1024];
 
         private static readonly Dictionary<char, byte> CodePage1252Lookup = new Dictionary<char, byte>();
 
@@ -102,6 +103,39 @@ namespace XPT.Core.Utilities {
         internal static string GetString(byte[] data) => GetString(data, 0, data.Length);
 
         internal static string GetString(byte[] data, int index, int count) {
+            if (!_IsInitialized) {
+                Initialize();
+            }
+            // Validate Parameters
+            if (data == null) {
+                throw new ArgumentNullException(nameof(data));
+            }
+            if (index < 0 || count < 0) {
+                throw new ArgumentOutOfRangeException(index < 0 ? nameof(index) : nameof(count));
+            }
+            if (data.Length - index < count) {
+                throw new ArgumentOutOfRangeException(nameof(data));
+            }
+            // Avoid problems with empty input buffer
+            if (count == 0) {
+                return string.Empty;
+            }
+            while (_StringBuilding.Length < count) {
+                count *= 2;
+                _StringBuilding = new char[count];
+            }
+            int resultIndex = 0;
+            for (int i = index; i < index + count; i++) {
+                char character = CodePage1252[data[i]];
+                if (character != '\x0') { // Skip invalid characters
+                    _StringBuilding[resultIndex++] = character;
+                }
+            }
+            // Create the string using the valid portion of the array
+            return new string(_StringBuilding, 0, resultIndex);
+        }
+
+        internal static string GetString2(byte[] data, int index, int count) {
             if (!_IsInitialized) {
                 Initialize();
             }

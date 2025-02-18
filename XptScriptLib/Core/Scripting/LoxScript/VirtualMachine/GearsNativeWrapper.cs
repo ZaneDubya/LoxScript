@@ -32,6 +32,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             WrappedType = wrappedType;
             BindingFlags binding = BindingFlags.Public | BindingFlags.Instance;
             FieldInfo[] fields = wrappedType.GetFields(binding);
+            // read fields:
             foreach (FieldInfo info in fields) {
                 LoxFieldAttribute attr = info.GetCustomAttribute<LoxFieldAttribute>();
                 if (!wrapAllPublicFields && attr == null) {
@@ -44,6 +45,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                 }
                 _Fields.Add(name, info);
             }
+            // read methods:
             MethodInfo[] methods = wrappedType.GetMethods(binding).Where(d => !d.IsSpecialName).ToArray();
             foreach (MethodInfo info in methods) {
                 LoxFieldAttribute attr = info.GetCustomAttribute<LoxFieldAttribute>();
@@ -57,6 +59,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                 }
                 _Methods.Add(name, info);
             }
+            // read properties:
             PropertyInfo[] properties = wrappedType.GetProperties(binding);
             foreach (PropertyInfo info in properties) {
                 LoxFieldAttribute attr = info.GetCustomAttribute<LoxFieldAttribute>();

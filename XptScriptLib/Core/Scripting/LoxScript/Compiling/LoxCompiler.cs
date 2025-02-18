@@ -119,7 +119,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         private readonly List<LoxCompilerFixup> _FixupConstants = new List<LoxCompilerFixup>();
         private readonly List<LoxCompilerFixup> _FixupStrings = new List<LoxCompilerFixup>();
 
-        private static void DoFixups(GearsChunk chunk, int origin, Func<GearsValue, int> makeConstant, Func<string, int> makeConstantString, List<LoxCompiler> fns) {
+        private static void DoFixups(GearsChunk chunk, int origin, Func<GearsValue, int> makeConstantValue, Func<string, int> makeConstantString, List<LoxCompiler> fns) {
             foreach (LoxCompiler fn in fns) {
                 int codeBase = chunk.SizeCode;
                 chunk.WriteCode(fn._Chunk.Code, fn._Chunk.Lines, fn._Chunk.SizeCode);
@@ -127,7 +127,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                 chunk.WriteCodeAt(origin + fn._OriginAddress + 1, (byte)(codeBase & 0xff));
                 foreach (LoxCompilerFixup fixup in fn._FixupConstants) {
                     GearsValue value = fn._Chunk.ReadConstantValue(fixup.Value);
-                    int constantFixup = makeConstant(value); // as fixup
+                    int constantFixup = makeConstantValue(value); // as fixup
                     chunk.WriteCodeAt(codeBase + fixup.Address, (byte)(constantFixup >> 8));
                     chunk.WriteCodeAt(codeBase + fixup.Address + 1, (byte)(constantFixup & 0xff));
                 }
@@ -137,7 +137,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                     chunk.WriteCodeAt(codeBase + fixup.Address, (byte)(constantFixup >> 8));
                     chunk.WriteCodeAt(codeBase + fixup.Address + 1, (byte)(constantFixup & 0xff));
                 }
-                DoFixups(chunk, codeBase, makeConstant, makeConstantString, fn._FixupFns);
+                DoFixups(chunk, codeBase, makeConstantValue, makeConstantString, fn._FixupFns);
                 chunk.Compress();
             }
         }
@@ -217,12 +217,12 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         /// </summary>
         private void ClassDeclaration() {
             Token className = Tokens.Consume(IDENTIFIER, "Expect class name.");
-            int nameConstant = MakeStringConstant(className.Lexeme); // no fixup needed
+            int nameConstant = MakeVarNameConstant(className.Lexeme); // no fixup needed
             DeclareVariable(className); // The class name binds the class object type to a variable of the same name.
             // todo? make the class declaration an expression, require explicit binding of class to variable (like var Pie = new Pie()); 27.2
             EmitOpcode(className.Line, OP_CLASS);
             EmitConstantIndex(className.Line, nameConstant, _FixupStrings);
-            DefineVariable(className.Line, MakeVariableConstant(className.Lexeme));
+            DefineVariable(className.Line, MakeVarNameConstant(className.Lexeme)); // no fixup needed
             _CurrentClass = new LoxCompilerClass(className, _CurrentClass);
             // superclass:
             if (Tokens.Match(LESS)) {
@@ -304,7 +304,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                 EmitData(fnLine, (byte)(fnCompiler._UpvalueData[i].Index));
             }
             EmitOpcode(fnLine, OP_METHOD);
-            EmitConstantIndex(fnLine, MakeVariableConstant(fnName), _FixupStrings); // has fixup
+            EmitConstantIndex(fnLine, MakeVarNameConstant(fnName), _FixupStrings); // has fixup
         }
 
         private void FunctionBody() {
@@ -347,7 +347,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             if (_ScopeDepth > SCOPE_GLOBAL) {
                 return 0;
             }
-            return MakeVariableConstant(name.Lexeme);
+            return MakeVarNameConstant(name.Lexeme);
         }
 
         private void DeclareVariable(Token name) {
@@ -752,19 +752,19 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                 }
                 else if (Tokens.Match(DOT)) {
                     Token name = Tokens.Consume(IDENTIFIER, "Expect a property name after '.'.");
-                    int nameConstant = MakeVariableConstant(name.Lexeme); // needs fixup
+                    int nameConstant = MakeVarNameConstant(name.Lexeme); // no fixup needed
                     if (_CanAssign && Tokens.Match(EQUAL)) {
                         Expression();
                         EmitOpcode(LineOfLastToken, OP_SET_PROPERTY);
-                        EmitConstantIndex(LineOfLastToken, nameConstant, _FixupStrings);
+                        EmitConstantIndex(LineOfLastToken, nameConstant, null);
                     }
                     else if (Tokens.Match(LEFT_PAREN)) {
                         FinishCall(OP_INVOKE);
-                        EmitConstantIndex(LineOfLastToken, nameConstant, _FixupStrings);
+                        EmitConstantIndex(LineOfLastToken, nameConstant, null);
                     }
                     else {
                         EmitOpcode(LineOfLastToken, OP_GET_PROPERTY);
-                        EmitConstantIndex(LineOfLastToken, nameConstant, _FixupStrings);
+                        EmitConstantIndex(LineOfLastToken, nameConstant, null);
                     }
                 }
                 else {
@@ -833,7 +833,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                 Token keyword = Tokens.Previous();
                 Tokens.Consume(DOT, "Expect '.' after 'super'.");
                 Token methodName = Tokens.Consume(IDENTIFIER, "Expect superclass method name.");
-                int nameIndex = MakeVariableConstant(methodName.Lexeme);
+                int nameIndex = MakeVarNameConstant(methodName.Lexeme);
                 NamedVariable(MakeSyntheticToken(THIS, "this", 0), false); // look up this - load instance onto stack
                 if (Tokens.Match(LEFT_PAREN)) {
                     FinishCall(OP_SUPER_INVOKE);
@@ -888,7 +888,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                 setOp = OP_SET_UPVALUE;
             }
             else {
-                index = MakeVariableConstant(name.Lexeme); // no longer needs a fixup
+                index = MakeVarNameConstant(name.Lexeme); // no longer needs a fixup
                 getOp = OP_GET_GLOBAL;
                 setOp = OP_SET_GLOBAL;
                 needsFixup = false;
@@ -1033,7 +1033,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             return index;
         }
 
-        private int MakeVariableConstant(string value) {
+        private int MakeVarNameConstant(string value) {
             int index = _Chunk.VarNameStrings.WriteStringConstant(value);
             if (index > short.MaxValue) {
                 throw new CompilerException(Tokens.Previous(), "Too many late-resolved variable names in one chunk.");

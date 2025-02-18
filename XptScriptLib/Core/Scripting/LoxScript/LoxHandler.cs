@@ -40,9 +40,9 @@ namespace XPT.Core.Scripting.LoxScript {
         }
 
         /// <summary>
-        /// Underlying - sets up a gears machine for this chunk.
+        /// Sets up a gears machine for this chunk.
         /// </summary>
-        private static bool TryLoad(string path, GearsChunk chunk, bool firstrun, ref Gears gears, ref string status) {
+        internal static bool TryLoad(string path, GearsChunk chunk, bool firstrun, ref Gears gears, ref string status) {
             if (DebugTestSerialization && !TestSerializeDeserialize(chunk, path)) {
                 status = $"Error serializing GearsChunk in LoxHandler.TryLoad: Could not serialize or deserialize '{path}'.";
                 return false;

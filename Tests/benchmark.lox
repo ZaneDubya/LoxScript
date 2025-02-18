@@ -28,10 +28,9 @@ for (var j = 0; j < 10; j = j + 1) {
     var start = clock();
     for (var i = 0; i < 30; i = i + 1) {
         var x = fibonacci(i);
-        print(x);
     }
     var now = clock() - start;
     total = total + now;
-    print(now);
+    print(j);
 }
 print(total / 10);
