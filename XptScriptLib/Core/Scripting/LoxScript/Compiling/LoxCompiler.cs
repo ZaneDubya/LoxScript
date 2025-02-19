@@ -117,7 +117,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
 
         private readonly List<LoxCompiler> _FixupFns = new List<LoxCompiler>();
         private readonly List<LoxCompilerFixup> _FixupConstants = new List<LoxCompilerFixup>();
-        private readonly List<LoxCompilerFixup> _FixupStrings = new List<LoxCompilerFixup>();
+        // private readonly List<LoxCompilerFixup> _FixupStrings = new List<LoxCompilerFixup>();  // got rid of fixup 19-02-2025
 
         private static void DoFixups(GearsChunk chunk, int origin, Func<GearsValue, int> makeConstantValue, Func<string, int> makeConstantString, List<LoxCompiler> fns) {
             foreach (LoxCompiler fn in fns) {
@@ -131,12 +131,13 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                     chunk.WriteCodeAt(codeBase + fixup.Address, (byte)(constantFixup >> 8));
                     chunk.WriteCodeAt(codeBase + fixup.Address + 1, (byte)(constantFixup & 0xff));
                 }
-                foreach (LoxCompilerFixup fixup in fn._FixupStrings) {
+                // got rid of fixup 19-02-2025
+                /*foreach (LoxCompilerFixup fixup in fn._FixupStrings) {
                     string value = fn._Chunk.VarNameStrings.ReadStringConstant(fixup.Value);
                     int constantFixup = makeConstantString(value); // as fixup
                     chunk.WriteCodeAt(codeBase + fixup.Address, (byte)(constantFixup >> 8));
                     chunk.WriteCodeAt(codeBase + fixup.Address + 1, (byte)(constantFixup & 0xff));
-                }
+                }*/
                 DoFixups(chunk, codeBase, makeConstantValue, makeConstantString, fn._FixupFns);
                 chunk.Compress();
             }
@@ -221,7 +222,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             DeclareVariable(className); // The class name binds the class object type to a variable of the same name.
             // todo? make the class declaration an expression, require explicit binding of class to variable (like var Pie = new Pie()); 27.2
             EmitOpcode(className.Line, OP_CLASS);
-            EmitConstantIndex(className.Line, nameConstant, _FixupStrings);
+            EmitConstantIndex(className.Line, nameConstant, null); // got rid of fixup 19-02-2025
             DefineVariable(className.Line, MakeVarNameConstant(className.Lexeme)); // no fixup needed
             _CurrentClass = new LoxCompilerClass(className, _CurrentClass);
             // superclass:
@@ -304,7 +305,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                 EmitData(fnLine, (byte)(fnCompiler._UpvalueData[i].Index));
             }
             EmitOpcode(fnLine, OP_METHOD);
-            EmitConstantIndex(fnLine, MakeVarNameConstant(fnName), _FixupStrings); // has fixup
+            EmitConstantIndex(fnLine, MakeVarNameConstant(fnName), null); // no fixup
         }
 
         private void FunctionBody() {
@@ -820,7 +821,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             }
             if (Tokens.Match(STRING)) {
                 EmitOpcode(LineOfLastToken, OP_LOAD_STRING);
-                EmitConstantIndex(LineOfLastToken, MakeStringConstant(Tokens.Previous().LiteralAsString), _FixupStrings);
+                EmitConstantIndex(LineOfLastToken, MakeStringConstant(Tokens.Previous().LiteralAsString), null); // got rid of fixup 19-02-2025
                 return;
             }
             if (Tokens.Match(SUPER)) {
@@ -838,12 +839,12 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                 if (Tokens.Match(LEFT_PAREN)) {
                     FinishCall(OP_SUPER_INVOKE);
                     NamedVariable(MakeSyntheticToken(SUPER, "super", 0), false); // look up this.super - load superclass of instance
-                    EmitConstantIndex(LineOfLastToken, nameIndex, _FixupStrings);
+                    EmitConstantIndex(LineOfLastToken, nameIndex, null); // got rid of fixup 19-02-2025
                 }
                 else {
                     NamedVariable(MakeSyntheticToken(SUPER, "super", 0), false); // look up this.super - load superclass of instance
                     EmitOpcode(LineOfLastToken, OP_GET_SUPER); // look up super.name - encode name of method to access as operand
-                    EmitConstantIndex(LineOfLastToken, nameIndex, _FixupStrings);
+                    EmitConstantIndex(LineOfLastToken, nameIndex, null); // got rid of fixup 19-02-2025
                 }
                 return;
             }
