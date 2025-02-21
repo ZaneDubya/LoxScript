@@ -111,7 +111,11 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                 if (!propertyInfo.GetSetMethod().IsPublic) {
                     throw new GearsRuntimeException($"Unsupported reference: Native class {WrappedType.Name} does not have a public set method for '{name}'.");
                 }
-                if (value.IsNumber) {
+                if (propertyInfo.PropertyType == typeof(bool) && value.IsNumber) {
+                    propertyInfo.SetValue(wrappedObject, value.IsTrue, null);
+                    return;
+                }
+                else if (value.IsNumber) {
                     if (!IsNumeric(propertyInfo.PropertyType)) {
                         throw new GearsRuntimeException($"Attempted to set {WrappedType.Name}.{propertyInfo.Name} to numeric value.");
                     }
@@ -125,10 +129,6 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                 }
                 else if (value.IsNil && propertyInfo.PropertyType == typeof(string)) {
                     propertyInfo.SetValue(wrappedObject, null, null);
-                    return;
-                }
-                else if (propertyInfo.PropertyType == typeof(bool) && value.IsNumber) {
-                    propertyInfo.SetValue(wrappedObject, value.IsTrue, null);
                     return;
                 }
                 else if (value.IsObjPtr) {
@@ -183,14 +183,14 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                 if (!propertyInfo.GetGetMethod().IsPublic) {
                     throw new GearsRuntimeException($"Unsupported reference: Native class {WrappedType.Name} does not have a public get method for '{name}'.");
                 }
-                if (IsNumeric(propertyInfo.PropertyType)) {
-                    int fieldValue = Convert.ToInt32(propertyInfo.GetValue(wrappedObject, null));
-                    value = new GearsValue(fieldValue);
-                    return true;
-                }
-                else if (propertyInfo.PropertyType == typeof(bool)) {
+                if (propertyInfo.PropertyType == typeof(bool)) {
                     bool fieldValue = Convert.ToBoolean(propertyInfo.GetValue(wrappedObject, null));
                     value = fieldValue ? GearsValue.TrueValue : GearsValue.FalseValue;
+                    return true;
+                }
+                else if(IsNumeric(propertyInfo.PropertyType)) {
+                    int fieldValue = Convert.ToInt32(propertyInfo.GetValue(wrappedObject, null));
+                    value = new GearsValue(fieldValue);
                     return true;
                 }
                 else if (propertyInfo.PropertyType == typeof(string)) {
@@ -215,7 +215,11 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             for (int i = 0; i < args.Length; i++) {
                 GearsValue value = args[i];
                 ParameterInfo info = paramInfo[i];
-                if (value.IsNumber) {
+                if (value.IsNumber && info.ParameterType == typeof(bool)) {
+                    parameters[i] = value.IsTrue ? true : false;
+                    continue;
+                }
+                else if(value.IsNumber) {
                     if (!IsNumeric(info.ParameterType)) {
                         throw new GearsRuntimeException($"Attempted to set {receiver.GetType().Name}.{info.Name} to numeric value.");
                     }
@@ -236,10 +240,6 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                     parameters[i] = null;
                     continue;
                 }
-                else if (value.IsNumber && info.ParameterType == typeof(bool)) {
-                    parameters[i] = value.IsTrue ? true : false;
-                    continue;
-                }
                 else if (value.IsObjPtr) {
                     GearsObj obj = value.AsObject(context);
                     if (info.ParameterType == typeof(string) && obj is GearsObjString objString) {
@@ -257,11 +257,11 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             if (methodInfo.ReturnType == typeof(void)) {
                 return GearsValue.NilValue;
             }
-            else if (IsNumeric(methodInfo.ReturnType)) {
-                return new GearsValue(Convert.ToInt32(returnValue));
-            }
             else if (methodInfo.ReturnType == typeof(bool)) {
                 return Convert.ToBoolean(returnValue) ? GearsValue.TrueValue : GearsValue.FalseValue;
+            }
+            else if (IsNumeric(methodInfo.ReturnType)) {
+                return new GearsValue(Convert.ToInt32(returnValue));
             }
             else if (methodInfo.ReturnType == typeof(string)) {
                 if (returnValue == null) {
