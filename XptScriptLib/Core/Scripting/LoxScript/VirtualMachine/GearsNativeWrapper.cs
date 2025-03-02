@@ -16,7 +16,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                 wrapper = new GearsNativeWrapper(type, true);
             }
             catch (Exception e) {
-                throw new GearsRuntimeException($"GearsNativeWrapper.GetWrapper: Could not wrap object of type {type.Name}. Inner error: {e.Message}");
+                throw new GearsRuntimeException($"GearsNativeWrapper: Could not wrap object of type {type.Name}. Inner error: {e.Message}");
             }
             _Wrappers[type] = wrapper;
             return wrapper;
@@ -81,14 +81,14 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             if (_Fields.TryGetValue(name, out FieldInfo fieldInfo)) {
                 if (value.IsNumber) {
                     if (!IsNumeric(fieldInfo.FieldType)) {
-                        throw new GearsRuntimeException($"Attempted to set {WrappedType.Name}.{fieldInfo.Name} to numeric value.");
+                        throw new GearsRuntimeException($"GearsNativeWrapper: Attempted to set {WrappedType.Name}.{fieldInfo.Name} to numeric value.");
                     }
                     try {
                         fieldInfo.SetValue(wrappedObject, Convert.ChangeType((int)value, fieldInfo.FieldType));
                         return;
                     }
                     catch (Exception e) {
-                        throw new GearsRuntimeException($"Error setting {WrappedType.Name}.{fieldInfo.Name} to {(int)value}: {e.Message}");
+                        throw new GearsRuntimeException($"GearsNativeWrapper: Error setting {WrappedType.Name}.{fieldInfo.Name} to {(int)value}: {e.Message}");
                     }
                 }
                 else if (value.IsNil && fieldInfo.FieldType == typeof(string)) {
@@ -109,7 +109,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             }
             else if (_Properties.TryGetValue(name, out PropertyInfo propertyInfo)) {
                 if (!propertyInfo.GetSetMethod().IsPublic) {
-                    throw new GearsRuntimeException($"Unsupported reference: Native class {WrappedType.Name} does not have a public set method for '{name}'.");
+                    throw new GearsRuntimeException($"GearsNativeWrapper: Unsupported reference: Native class {WrappedType.Name} does not have a public set method for '{name}'.");
                 }
                 if (propertyInfo.PropertyType == typeof(bool) && value.IsNumber) {
                     propertyInfo.SetValue(wrappedObject, value.IsTrue, null);
@@ -117,14 +117,14 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                 }
                 else if (value.IsNumber) {
                     if (!IsNumeric(propertyInfo.PropertyType)) {
-                        throw new GearsRuntimeException($"Attempted to set {WrappedType.Name}.{propertyInfo.Name} to numeric value.");
+                        throw new GearsRuntimeException($"GearsNativeWrapper: Attempted to set {WrappedType.Name}.{propertyInfo.Name} to numeric value.");
                     }
                     try {
                         propertyInfo.SetValue(wrappedObject, Convert.ChangeType((int)value, propertyInfo.PropertyType), null);
                         return;
                     }
                     catch (Exception e) {
-                        throw new GearsRuntimeException($"Error setting {WrappedType.Name}.{propertyInfo.Name} to {(int)value}: {e.Message}");
+                        throw new GearsRuntimeException($"GearsNativeWrapper: Error setting {WrappedType.Name}.{propertyInfo.Name} to {(int)value}: {e.Message}");
                     }
                 }
                 else if (value.IsNil && propertyInfo.PropertyType == typeof(string)) {
@@ -139,10 +139,11 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                     }
                 }
             }
-            throw new GearsRuntimeException($"Unsupported native conversion: Error setting {WrappedType.Name}.{name} to {value}.");
+            throw new GearsRuntimeException($"GearsNativeWrapper: Unsupported native conversion: Error setting {WrappedType.Name}.{name} to {value}.");
         }
 
         public bool TryGetField(Gears vm, object wrappedObject, string name, out GearsValue value) {
+            // fields:
             if (_Fields.TryGetValue(name, out FieldInfo fieldInfo)) {
                 if (IsNumeric(fieldInfo.FieldType)) {
                     int fieldValue = Convert.ToInt32(fieldInfo.GetValue(wrappedObject));
@@ -173,15 +174,15 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                     return true;
                 }
             }
+            // methods:
             else if (_Methods.TryGetValue(name, out MethodInfo methodInfo)) {
-                value = GearsValue.CreateObjPtr(vm.HeapAddObject(
-                    new GearsObjFunctionNative(methodInfo.Name, methodInfo.GetParameters().Length,
-                        (GearsValue[] args) => CreateNativeClosure(vm, wrappedObject, methodInfo, args))));
+                value = GearsValue.CreateObjPtr(vm.HeapAddObject(CreateGearsObjFunctionNative(vm, wrappedObject, methodInfo)));
                 return true;
             }
+            // properties:
             else if (_Properties.TryGetValue(name, out PropertyInfo propertyInfo)) {
                 if (!propertyInfo.GetGetMethod().IsPublic) {
-                    throw new GearsRuntimeException($"Unsupported reference: Native class {WrappedType.Name} does not have a public get method for '{name}'.");
+                    throw new GearsRuntimeException($"GearsNativeWrapper: Unsupported reference: Native class {WrappedType.Name} does not have a public get method for '{name}'.");
                 }
                 if (propertyInfo.PropertyType == typeof(bool)) {
                     bool fieldValue = Convert.ToBoolean(propertyInfo.GetValue(wrappedObject, null));
@@ -203,25 +204,30 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                     return true;
                 }
             }
-            throw new GearsRuntimeException($"Unsupported reference: Native class {WrappedType.Name} does not have a public field named '{name}'.");
+            throw new GearsRuntimeException($"GearsNativeWrapper: Unsupported reference: Native class {WrappedType.Name} does not have a public field named '{name}'.");
+        }
+
+        private GearsObj CreateGearsObjFunctionNative(Gears vm, object wrappedObject, MethodInfo methodInfo) {
+            return new GearsObjFunctionNative(methodInfo.Name, methodInfo.GetParameters().Length,
+                (GearsValue[] args) => CreateNativeClosure(vm, wrappedObject, methodInfo, args));
         }
 
         private static GearsValue CreateNativeClosure(Gears context, object receiver, MethodInfo methodInfo, GearsValue[] args) {
             object[] parameters = new object[args.Length];
             ParameterInfo[] paramInfo = methodInfo.GetParameters();
             if (paramInfo.Length != parameters.Length) {
-                throw new GearsRuntimeException($"NativeWrapper error: {receiver.GetType().Name}.{methodInfo.Name} param info count did not match passed param count.");
+                throw new GearsRuntimeException($"NativeWrapper: {receiver.GetType().Name}.{methodInfo.Name} param info count did not match passed param count.");
             }
             for (int i = 0; i < args.Length; i++) {
                 GearsValue value = args[i];
                 ParameterInfo info = paramInfo[i];
                 if (value.IsNumber && info.ParameterType == typeof(bool)) {
-                    parameters[i] = value.IsTrue ? true : false;
+                    parameters[i] = value.IsTrue;
                     continue;
                 }
                 else if(value.IsNumber) {
                     if (!IsNumeric(info.ParameterType)) {
-                        throw new GearsRuntimeException($"Attempted to set {receiver.GetType().Name}.{info.Name} to numeric value.");
+                        throw new GearsRuntimeException($"GearsNativeWrapper: Attempted to set {receiver.GetType().Name}.{info.Name} to numeric value.");
                     }
                     try {
                         if (info.ParameterType.IsEnum) {
@@ -233,7 +239,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                         continue;
                     }
                     catch (Exception e) {
-                        throw new GearsRuntimeException($"Error setting {receiver.GetType().Name}.{info.Name} to {(int)value}: {e.Message}");
+                        throw new GearsRuntimeException($"GearsNativeWrapper: Error setting {receiver.GetType().Name}.{info.Name} to {(int)value}: {e.Message}");
                     }
                 }
                 else if (value.IsNil && info.ParameterType == typeof(string)) {
@@ -251,7 +257,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                         continue;
                     }
                 }
-                throw new GearsRuntimeException($"Unsupported native conversion: Error casting parameter {i} for {receiver.GetType().Name}.{info.Name} to {info.ParameterType.Name}.");
+                throw new GearsRuntimeException($"GearsNativeWrapper: Unsupported native conversion: Error casting parameter {i} for {receiver.GetType().Name}.{info.Name} to {info.ParameterType.Name}.");
             }
             object returnValue = methodInfo.Invoke(receiver, parameters);
             if (methodInfo.ReturnType == typeof(void)) {
@@ -272,7 +278,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                 }
             }
             else {
-                throw new GearsRuntimeException($"Unsupported native return type: {receiver.GetType().Name}.{methodInfo.Name} cannot return type of {methodInfo.ReturnType.Name}.");
+                throw new GearsRuntimeException($"GearsNativeWrapper: Unsupported native return type: {receiver.GetType().Name}.{methodInfo.Name} cannot return type of {methodInfo.ReturnType.Name}.");
             }
         }
 
