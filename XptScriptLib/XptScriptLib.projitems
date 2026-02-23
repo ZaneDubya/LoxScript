@@ -18,8 +18,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Base\TokenizerContext.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Base\TokenList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Base\TokenTypes.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Interfaces\IScript.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Interfaces\IScriptMethod.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\Compiling\ELoxFunctionType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\Compiling\LoxCompiler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\Compiling\LoxCompilerClass.cs" />
@@ -35,6 +33,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\EGearsOpCode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\Gears.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\GearsCallFrame.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\GearsFunctionInfo.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\GearsHashTable.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\GearsNativeList.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\GearsNativeWrapper.cs" />
@@ -54,5 +53,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleAttribute.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\VarCollection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleSystem.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory).editorconfig" />
   </ItemGroup>
 </Project>

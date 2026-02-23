@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using XPT.Core.IO;
 using XPT.Core.Scripting.LoxScript.Compiling;
@@ -37,6 +39,15 @@ namespace XPT.Core.Scripting.LoxScript {
                 return false;
             }
             return TryLoad(path, chunk, firstrun, ref gears, ref status);
+        }
+
+        internal static bool TryGetFunctionsFromSource(string path, string source, out IEnumerable<GearsFunctionInfo> infos, out string status) {
+            infos = null;
+            if (!TryLoadFromSource(path, source, true, out Gears gears, out status)) {
+                return false;
+            }
+            infos = gears.GetAllFunctionInfos();
+            return true;
         }
 
         /// <summary>

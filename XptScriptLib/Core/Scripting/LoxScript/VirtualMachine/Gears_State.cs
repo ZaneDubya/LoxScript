@@ -43,5 +43,34 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             CollectGarbage();
             return $"BP={_BP} SP={_SP} IP={_IP} Frames={_FrameCount}/{FRAMES_MAX} Heap={_Heap.Where(d => d != null).Count()}/{HEAP_MAX}";
         }
+
+        /// <summary>
+        /// Returns information about all top-level functions, including their names, parameter counts, and any attached rules.
+        /// This should be called after the script has been initialized (after running to populate globals).
+        /// </summary>
+        internal IEnumerable<GearsFunctionInfo> GetAllFunctionInfos() {
+            foreach (string name in Globals.AllKeys) {
+                if (!Globals.TryGet(name, out GearsValue value)) {
+                    continue;
+                }
+                if (!value.IsObjPtr) {
+                    continue;
+                }
+                GearsObj obj = value.AsObject(this);
+                if (!(obj is GearsObjFunction function)) {
+                    continue;
+                }
+                // Find all rules that invoke this function
+                List<Rule> attachedRules = new List<Rule>();
+                if (Chunk?.Rules != null) {
+                    foreach (Rule rule in Chunk.Rules.GetAll()) {
+                        if (rule.InvokedFnName == name) {
+                            attachedRules.Add(rule);
+                        }
+                    }
+                }
+                yield return new GearsFunctionInfo(name, function.Arity, attachedRules.ToArray());
+            }
+        }
     }
 }

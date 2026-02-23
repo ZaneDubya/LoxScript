@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
     /// <summary>
     /// GearsValue is the type used to represent values in the VM. It is a 32-bit signed integer with special values
-    /// assigned to certain bit combinations. The range of a GearsValue number is -2,147,483,648 to +1,073,741,823.
+    /// assigned to certain bit combinations. GearsValue as a number has a range of -2,147,483,648 to +1,073,741,823.
     /// </summary>
     [StructLayout(LayoutKind.Explicit)]
     internal struct GearsValue : IEquatable<GearsValue> {

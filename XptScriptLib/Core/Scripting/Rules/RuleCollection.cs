@@ -70,6 +70,18 @@ namespace XPT.Core.Scripting.Rules {
         }
 
         /// <summary>
+        /// Returns all rules in the collection.
+        /// </summary>
+        internal IEnumerable<Rule> GetAll() {
+            if (_Rules == null) {
+                yield break;
+            }
+            foreach (Rule rule in _Rules) {
+                yield return rule;
+            }
+        }
+
+        /// <summary>
         /// Creates a deep copy of this Collection, 
         /// </summary>
         /// <param name="fn"></param>

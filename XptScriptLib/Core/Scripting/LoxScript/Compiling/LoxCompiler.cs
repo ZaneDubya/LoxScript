@@ -56,7 +56,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
             }
             catch (CompilerException e) {
                 chunk = null;
-                status = $"LoxCompiler at {e.TargetSite.DeclaringType.Name}.{e.TargetSite.Name} {path} {e}";
+                status = $"LoxCompiler: error in {e.TargetSite.DeclaringType.Name}.{e.TargetSite.Name} while compiling {path}, error={e}";
                 return false;
             }
         }
