@@ -73,7 +73,7 @@ namespace XPT.Core.Scripting.Base {
             if (Check(type)) {
                 return Advance();
             }
-            throw new CompilerException(Peek(), message);
+            throw new CompilerException(Previous(), message);
         }
 
         /// <summary>
@@ -85,7 +85,7 @@ namespace XPT.Core.Scripting.Base {
             if (Check(type) && Current.Lexeme == lexeme) {
                 return Advance();
             }
-            throw new CompilerException(Peek(), message);
+            throw new CompilerException(Previous(), message);
         }
 
         /// <summary>

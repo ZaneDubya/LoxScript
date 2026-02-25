@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using XPT.Core.IO;
@@ -23,7 +22,7 @@ namespace XPT.Core.Scripting.LoxScript {
         /// </summary>
         internal static bool TryLoadFromFile(string path, bool firstrun, out Gears gears, out string status) {
             gears = null;
-            if (!LoxCompiler.TryCompileFromPath(path, out GearsChunk chunk, out status)) {
+            if (!LoxCompiler.TryCompileFromPath(path, out GearsChunk chunk, out status, out int? _)) {
                 return false;
             }
             return TryLoad(path, chunk, firstrun, ref gears, ref status);
@@ -35,7 +34,7 @@ namespace XPT.Core.Scripting.LoxScript {
         /// </summary>
         internal static bool TryLoadFromSource(string path, string source, bool firstrun, out Gears gears, out string status) {
             gears = null;
-            if (!LoxCompiler.TryCompileFromSource(path, source, out GearsChunk chunk, out status)) {
+            if (!LoxCompiler.TryCompileFromSource(path, source, out GearsChunk chunk, out status, out int? _)) {
                 return false;
             }
             return TryLoad(path, chunk, firstrun, ref gears, ref status);

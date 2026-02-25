@@ -19,8 +19,9 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         /// If compilation is successful, compiler.Chunk will be set.
         /// If compilation fails, status will be the error message.
         /// </summary>
-        public static bool TryCompileFromPath(string path, out GearsChunk chunk, out string status) {
+        public static bool TryCompileFromPath(string path, out GearsChunk chunk, out string status, out int? line) {
             chunk = null;
+            line = null;
             string source;
             if (!File.Exists(path)) {
                 status = $"LoxCompiler: File '{path}' does not exist.";
@@ -33,7 +34,7 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
                 status = $"LoxCompiler: Could not read '{path}': {e.Message}";
                 return false;
             }
-            return TryCompileFromSource(path, source, out chunk, out status);
+            return TryCompileFromSource(path, source, out chunk, out status, out line);
         }
 
         /// <summary>
@@ -41,22 +42,25 @@ namespace XPT.Core.Scripting.LoxScript.Compiling {
         /// If compilation is successful, compiler.Chunk will be set.
         /// If compilation fails, status will be the error message.
         /// </summary>
-        public static bool TryCompileFromSource(string path, string source, out GearsChunk chunk, out string status) {
+        public static bool TryCompileFromSource(string path, string source, out GearsChunk chunk, out string status, out int? line) {
             try {
                 TokenList tokens = new LoxTokenizer(path, source).ScanTokens();
                 LoxCompiler compiler = new LoxCompiler(tokens, ELoxFunctionType.TYPE_SCRIPT, path, null, null, null);
                 if (compiler.Compile()) {
                     chunk = compiler._Chunk;
                     status = null;
+                    line = null;
                     return true;
                 }
                 status = $"LoxCompiler: uncaught error while compiling {path}.";
                 chunk = null;
+                line = null;
                 return false;
             }
             catch (CompilerException e) {
                 chunk = null;
-                status = $"LoxCompiler: error in {e.TargetSite.DeclaringType.Name}.{e.TargetSite.Name} while compiling {path}, error={e}";
+                status = $"LoxCompiler: error at {e.TargetSite.DeclaringType.Name}.{e.TargetSite.Name} while compiling {path}, error={e}";
+                line = e.Token.Line;
                 return false;
             }
         }
