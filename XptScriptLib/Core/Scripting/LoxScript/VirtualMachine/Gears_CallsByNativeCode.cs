@@ -1,15 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 using XPT.Core.Scripting.Rules;
-using XPT.Core.Utilities;
 
 namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
     internal partial class Gears { // support for native c# calling lox script functions and rules.
         /// <summary>
-        /// Calls a LoxScript function from native c#, passing arguments.
+        /// Invokes a LoxScript function call from native c#, passing arguments.
         /// If the function call was successful, returns true, and returnValue will be the returned value from the function, if any. 
         /// If the function call was not successful, returns false, and returnValue will be an error string.
         /// </summary>
-        internal bool CallGearsFunction(string fnName, out object returned, params object[] args) {
+        internal bool InvokeGearsFunction(string fnName, out object returned, params object[] args) {
             if (!Globals.TryGet(fnName, out GearsValue fnValue) || !fnValue.IsObjPtr) {
                 // error: no function with that name.
                 returned = $"Error: no function with name '{fnName}'.";
@@ -67,33 +67,21 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                 return false;
             }
             returned = LastReturnValue; // the return value
-            // todo: process return value?
             return true;
         }
 
-        // === Rules =================================================================================================
-        // ===========================================================================================================
-
-        private void RegisterRules() {
-            if (Chunk.Rules != null && Chunk.Rules.Count > 0) {
-                _Rules = Chunk.Rules.CreateCopyWithHostedDelegate(OnInvokeByRule);
-                RuleSystem.RegisterRules(this, _Rules);
-            }
-            else {
-                _Rules = null;
-            }
-        }
-
-        private void UnregisterRules() {
-            if (_Rules != null) {
-                RuleSystem.UnregisterRules(this);
-                _Rules = null;
-            }
-        }
-
-        private void OnInvokeByRule(string fnName, VarCollection vars) {
-            if (!CallGearsFunction(fnName, out object returned, vars)) {
-                Tracer.Error($"Gears.OnInvokeByRule({fnName}: {returned}");
+        /// <summary>
+        /// Invokes a LoxScript function call from native c#, by looking up rules matching the given trigger name and rule variables, and invoking the function specified in each matching rule, passing arguments.
+        /// </summary>
+        internal IEnumerable<object> InvokeByRule(string triggerName, RuleVarCollection vars, params object[] args) {
+            foreach (Rule rule in Chunk.Rules.GetMatching(triggerName, vars)) {
+                bool success = InvokeGearsFunction(rule.InvokedFnGearsName, out object returned, args);
+                if (success) {
+                    yield return returned;
+                }
+                else {
+                    throw new Exception($"Gears.InvokeByRule: Failed to invoke fn {rule.InvokedFnGearsName}: {returned}.");
+                }
             }
         }
     }

@@ -10,10 +10,6 @@ namespace XPT.Core.Scripting.Rules {
     /// per script or object.
     /// </summary>
     class RuleCollection {
-        private readonly static Type TypeOfVoid = typeof(void);
-        private readonly static Type TypeOfValueCollection = typeof(VarCollection);
-        private readonly static Type TypeOfDelegateNative = typeof(RuleInvocationDelegateNative);
-        private readonly static BindingFlags Binding = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
 
         // === instance ==============================================================================================
         // ===========================================================================================================
@@ -21,32 +17,6 @@ namespace XPT.Core.Scripting.Rules {
         public int Count => _Rules?.Count ?? 0;
 
         private List<Rule> _Rules;
-
-        /// <summary>
-        /// Creates invocable rules for every native c# method with a RuleAttribute.
-        /// </summary>
-        internal void AddNativeFromObject(object obj) {
-            Type type = obj.GetType();
-            MethodInfo[] methods = type.GetMethods(Binding).Where(d => !d.IsSpecialName).ToArray();
-            foreach (MethodInfo method in methods) {
-                RuleAttribute attr = method.GetCustomAttribute<RuleAttribute>();
-                if (attr == null) {
-                    continue;
-                }
-                if (method.ReturnType != TypeOfVoid) {
-                    throw new Exception($"RuleCollection: Method {type.Name}.{method.Name}() must be return void.");
-                }
-                ParameterInfo[] ps = method.GetParameters();
-                if (ps.Length != 1 || ps[0].ParameterType != TypeOfValueCollection) {
-                    throw new Exception($"RuleCollection: Method {type.Name}.{method.Name}() must accept one ValueCollection parameter.");
-                }
-                string trigger = attr.Trigger;
-                string fnName = method.Name;
-                RuleCondition[] conditions = attr.Conditions;
-                RuleInvocationDelegateNative fn = (RuleInvocationDelegateNative)Delegate.CreateDelegate(TypeOfDelegateNative, obj, method);
-                AddRule(new Rule(trigger, fnName, conditions, fn));
-            }
-        }
 
         internal void AddRule(Rule rule) {
             if (_Rules == null) {
@@ -58,12 +28,12 @@ namespace XPT.Core.Scripting.Rules {
         /// <summary>
         /// Returns all the rules that match the passed trigger and context.
         /// </summary>
-        internal IEnumerable<Rule> GetMatching(string triggerName, VarCollection context) {
+        internal IEnumerable<Rule> GetMatching(string triggerName, RuleVarCollection vars) {
             if (_Rules == null) {
                 yield break;
             }
             foreach (Rule rule in _Rules) {
-                if (rule.Match(triggerName, context)) {
+                if (rule.Match(triggerName, vars)) {
                     yield return rule;
                 }
             }
@@ -79,22 +49,6 @@ namespace XPT.Core.Scripting.Rules {
             foreach (Rule rule in _Rules) {
                 yield return rule;
             }
-        }
-
-        /// <summary>
-        /// Creates a deep copy of this Collection, 
-        /// </summary>
-        /// <param name="fn"></param>
-        /// <returns></returns>
-        internal RuleCollection CreateCopyWithHostedDelegate(RuleInvocationDelegateHosted fn) {
-            if (_Rules == null) {
-                return null;
-            }
-            RuleCollection collection = new RuleCollection();
-            foreach (Rule rule in _Rules) {
-                collection.AddRule(rule.CreateCopyWithHostedDelegate(fn));
-            }
-            return collection;
         }
 
         // === Serialization / Deserialization =======================================================================

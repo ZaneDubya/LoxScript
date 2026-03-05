@@ -64,15 +64,34 @@ namespace XPT.Core.Scripting.Rules {
             IsNegated = isNegated;
         }
 
-        internal bool IsTrue(VarCollection context) {
+        public override string ToString() {
             if (ValueString != null) {
-                if (!context.TryGet(Key, out string sValue)) {
+                return IsNegated ? $"{Key}!={ValueString}" : $"{Key}=={ValueString}";
+            }
+            if (ValueMin == ValueMax) {
+                return IsNegated ? $"{Key}!={ValueMin}" : $"{Key}=={ValueMin}";
+            }
+            if (ValueMin == int.MinValue && ValueMax == int.MaxValue) {
+                return IsNegated ? $"!({Key})" : $"{Key}";
+            }
+            if (ValueMin == int.MinValue) {
+                return IsNegated ? $"{Key}>{ValueMax}" : $"{Key}<={ValueMax}";
+            }
+            if (ValueMax == int.MaxValue) {
+                return IsNegated ? $"{Key}<{ValueMin}" : $"{Key}>={ValueMin}";
+            }
+            return IsNegated ? $"!({Key} in [{ValueMin}..{ValueMax}])" : $"{Key} in [{ValueMin}..{ValueMax}]";
+        }
+
+        internal bool IsTrue(RuleVarCollection vars) {
+            if (ValueString != null) {
+                if (!vars.TryGetRuleVar(Key, out string sValue)) {
                     return false;
                 }
                 bool matches = ValueString == sValue;
                 return IsNegated ? !matches : matches;
             }
-            if (!context.TryGet(Key, out int value)) {
+            if (!vars.TryGetRuleVar(Key, out int value)) {
                 return false;
             }
             bool inRange;

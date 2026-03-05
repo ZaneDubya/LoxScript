@@ -1,6 +1,9 @@
 ﻿using System.Collections.Generic;
 
 namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
+    /// <summary>
+    /// todo: not used
+    /// </summary>
     class GearsNativeList<T> {
         internal readonly List<T> List;
 

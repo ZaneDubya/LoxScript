@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using XPT.Core.IO;
 
 namespace XPT.Core.Scripting.Rules {
@@ -8,60 +9,38 @@ namespace XPT.Core.Scripting.Rules {
     /// </summary>
     class Rule {
         internal readonly string Trigger;
-        internal readonly string InvokedFnName;
+        internal readonly string InvokedFnGearsName;
         internal readonly RuleCondition[] Conditions;
 
-        private readonly RuleInvocationDelegateHosted _OnInvokeNative; // use this for c# code
-        private readonly RuleInvocationDelegateNative _OnInvokeHosted; // use this for loxscript code
-
-        public Rule(string trigger, string fnName, RuleCondition[] conditions) {
+        public Rule(string trigger, string invokedGearsFunctionName, RuleCondition[] conditions) {
             Trigger = trigger;
-            InvokedFnName = fnName;
+            InvokedFnGearsName = invokedGearsFunctionName;
             Conditions = conditions;
-            _OnInvokeNative = null;
-            _OnInvokeHosted = null;
         }
 
-        public Rule(string trigger, string fnName, RuleCondition[] conditions, RuleInvocationDelegateHosted onInvoke) {
-            Trigger = trigger;
-            InvokedFnName = fnName;
-            Conditions = conditions;
-            _OnInvokeNative = onInvoke;
-            _OnInvokeHosted = null;
-        }
+        public override string ToString() => $"[{Trigger} ...] => {InvokedFnGearsName}(context)";
 
-        public Rule(string trigger, string fnName, RuleCondition[] conditions, RuleInvocationDelegateNative onInvoke) {
-            Trigger = trigger;
-            InvokedFnName = fnName;
-            Conditions = conditions;
-            _OnInvokeNative = null;
-            _OnInvokeHosted = onInvoke;
-        }
+        // === match and invoke =======================================================================================
+        // ============================================================================================================
 
-        internal bool Match(string trigger, VarCollection context) {
+        internal bool Match(string trigger, RuleVarCollection vars) {
             if (Trigger != trigger) {
                 return false;
             }
             foreach (RuleCondition condition in Conditions) {
-                if (!condition.IsTrue(context)) {
+                if (!condition.IsTrue(vars)) {
                     return false;
                 }
             }
             return true;
         }
 
-        internal void Invoke(VarCollection args) {
-            if (_OnInvokeNative != null) {
-                _OnInvokeNative.Invoke(InvokedFnName, args);
-            }
-            else {
-                _OnInvokeHosted.Invoke(args);
-            }
-        }
+        // === serialization - use this only for Rules attached to GearsChunk =========================================
+        // ============================================================================================================
 
         internal void Serialize(IWriter writer) {
             writer.WriteAsciiPrefix(Trigger);
-            writer.WriteAsciiPrefix(InvokedFnName);
+            writer.WriteAsciiPrefix(InvokedFnGearsName);
             writer.Write7BitInt(Conditions.Length);
             for (int i = 0; i < Conditions.Length; i++) {
                 Conditions[i].Serialize(writer);
@@ -73,19 +52,13 @@ namespace XPT.Core.Scripting.Rules {
         /// </summary>
         internal static Rule Deserialize(IReader reader) {
             string trigger = reader.ReadAsciiPrefix();
-            string invokeFnName = reader.ReadAsciiPrefix();
+            string invokedFnName = reader.ReadAsciiPrefix();
             int count = reader.Read7BitInt();
             List<RuleCondition> cs = new List<RuleCondition>(count);
             for (int i = 0; i < count; i++) {
                 cs.Add(RuleCondition.Deserialize(reader));
             }
-            return new Rule(trigger, invokeFnName, cs.ToArray());
+            return new Rule(trigger, invokedFnName, cs.ToArray());
         }
-
-        internal Rule CreateCopyWithHostedDelegate(RuleInvocationDelegateHosted fn) {
-            return new Rule(Trigger, InvokedFnName, Conditions, fn);
-        }
-
-        public override string ToString() => $"[{Trigger} ...] => {InvokedFnName}(context)";
     }
 }

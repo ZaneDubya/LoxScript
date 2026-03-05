@@ -40,19 +40,17 @@
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\GearsObj.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\GearsRuntimeException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\GearsValue.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\Gears_Context.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\Gears_Disassembly.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\Gears_NativeCalls.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\Gears_CallsByNativeCode.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\LoxScript\VirtualMachine\Gears_State.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\Compiling\RuleCompiler.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\Compiling\RuleTokenizer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\IRuleVarProvider.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\Rule.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleCollection.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleCondition.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleInvocationDelegates.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleAttribute.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\VarCollection.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleSystem.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Scripting\Rules\RuleVarCollection.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory).editorconfig" />

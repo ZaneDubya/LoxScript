@@ -2,7 +2,7 @@ using XPT.Core.Scripting.Rules;
 
 namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
     /// <summary>
-    /// Information about a top-level function in a LoxScript, including its name, parameter count, and any attached rules.
+    /// Information about a LoxScript function, including its name and parameter count,.
     /// </summary>
     internal class GearsFunctionInfo {
         /// <summary>
@@ -15,20 +15,13 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
         /// </summary>
         internal int Arity { get; }
 
-        /// <summary>
-        /// Array of rules attached to this function. Rules are triggered by events and invoke this function when conditions are met.
-        /// </summary>
-        internal Rule[] Rules { get; }
-
-        internal GearsFunctionInfo(string name, int arity, Rule[] rules) {
+        internal GearsFunctionInfo(string name, int arity) {
             Name = name;
             Arity = arity;
-            Rules = rules ?? new Rule[0];
         }
 
         public override string ToString() {
-            string rulesStr = Rules.Length > 0 ? $", {Rules.Length} rule(s)" : "";
-            return $"{Name}({Arity} param(s){rulesStr})";
+            return $"{Name}({Arity} param(s))";
         }
     }
 }
