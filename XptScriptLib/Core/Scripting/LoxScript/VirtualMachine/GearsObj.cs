@@ -133,7 +133,7 @@
             }
         }
 
-        public override string ToString() => "<fn>";
+        public override string ToString() => "[fn]";
     }
 
     internal class GearsObjFunctionNative : GearsObj {
@@ -156,7 +156,7 @@
             return _OnInvoke(args);
         }
 
-        public override string ToString() => $"<native {Name}>";
+        public override string ToString() => $"[native {Name}]";
     }
 
     internal delegate GearsValue GearsFunctionNativeDelegate(GearsValue[] args);
@@ -185,6 +185,6 @@
             vm.MarkValue(Value);
         }
 
-        public override string ToString() => $"<upvalue {Value}>";
+        public override string ToString() => $"[upvalue {Value}]";
     }
 }

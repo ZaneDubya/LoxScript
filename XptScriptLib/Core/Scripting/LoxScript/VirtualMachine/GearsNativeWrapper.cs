@@ -13,7 +13,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                 return wrapper;
             }
             try {
-                wrapper = new GearsNativeWrapper(type, true);
+                wrapper = new GearsNativeWrapper(type, false);
             }
             catch (Exception e) {
                 throw new GearsRuntimeException($"GearsNativeWrapper: Could not wrap object of type {type.Name}. Inner error: {e.Message}");

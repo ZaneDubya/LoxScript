@@ -80,7 +80,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                     yield return returned;
                 }
                 else {
-                    throw new Exception($"Gears.InvokeByRule: Failed to invoke fn {rule.InvokedFnGearsName}: {returned}.");
+                    throw new Exception($"Gears InvokeByRule: Failed to invoke fn {rule.InvokedFnGearsName}: {returned}.");
                 }
             }
         }

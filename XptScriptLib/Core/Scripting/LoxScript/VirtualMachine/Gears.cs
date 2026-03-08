@@ -96,7 +96,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                     case OP_GET_GLOBAL: {
                             string name = ReadConstantVarName();
                             if (!Globals.TryGet(name, out GearsValue value)) {
-                                throw new GearsRuntimeException(Chunk.LineAt(_IP), $"Undefined variable '{name}'.");
+                                throw new GearsRuntimeException(Chunk.LineAt(_IP), $"Undefined variable '{name}'");
                             }
                             Push(value);
                         }
@@ -110,7 +110,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                     case OP_SET_GLOBAL: {
                             string name = ReadConstantVarName();
                             if (!Globals.ContainsKey(name)) {
-                                throw new GearsRuntimeException(Chunk.LineAt(_IP), $"Undefined variable '{name}'.");
+                                throw new GearsRuntimeException(Chunk.LineAt(_IP), $"Undefined variable '{name}'");
                             }
                             Globals.Set(name, Peek());
                             break;
@@ -148,7 +148,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                             if (instance is GearsObjInstanceLox loxInstance && BindLoxMethod(loxInstance.Class, name)) {
                                 break;
                             }
-                            throw new GearsRuntimeException(Chunk.LineAt(_IP), $"Undefined property or method '{name}'.");
+                            throw new GearsRuntimeException(Chunk.LineAt(_IP), $"Undefined property or method '{name}'");
                         }
                     case OP_SET_PROPERTY: {
                             GearsObjInstance instance = GetObjectFromPtr<GearsObjInstance>(Peek(1));
@@ -179,7 +179,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                         break;
                     case OP_GREATER: {
                             if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
-                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operands must be numbers.");
+                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operands must be numbers");
                             }
                             GearsValue b = Pop();
                             GearsValue a = Pop();
@@ -188,7 +188,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                         break;
                     case OP_LESS: {
                             if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
-                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operands must be numbers.");
+                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operands must be numbers");
                             }
                             GearsValue b = Pop();
                             GearsValue a = Pop();
@@ -197,7 +197,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                         break;
                     case OP_BITWISE_AND: {
                             if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
-                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operands of bitwise operators must be numbers.");
+                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operands of bitwise operators must be numbers");
                             }
                             GearsValue b = Pop();
                             GearsValue a = Pop();
@@ -206,7 +206,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                         break;
                     case OP_BITWISE_OR: {
                             if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
-                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operands of bitwise operators must be numbers.");
+                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operands of bitwise operators must be numbers");
                             }
                             GearsValue b = Pop();
                             GearsValue a = Pop();
@@ -235,13 +235,13 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                                 Push(GearsValue.CreateObjPtr(HeapAddObject(new GearsObjString(sa + sb))));
                             }
                             else {
-                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operands of add must be numbers or strings.");
+                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operands of add must be numbers or strings");
                             }
                         }
                         break;
                     case OP_SUBTRACT: {
                             if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
-                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operands of subtract must be numbers.");
+                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operands of subtract must be numbers");
                             }
                             GearsValue b = Pop();
                             GearsValue a = Pop();
@@ -250,7 +250,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                         break;
                     case OP_MULTIPLY: {
                             if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
-                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operands of multiply must be numbers.");
+                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operands of multiply must be numbers");
                             }
                             GearsValue b = Pop();
                             GearsValue a = Pop();
@@ -259,7 +259,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                         break;
                     case OP_DIVIDE: {
                             if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
-                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operands of divide must be numbers.");
+                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operands of divide must be numbers");
                             }
                             GearsValue b = Pop();
                             GearsValue a = Pop();
@@ -268,7 +268,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                         break;
                     case OP_MODULUS: {
                             if (!Peek(0).IsNumber || !Peek(1).IsNumber) {
-                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operands of modulus must be numbers.");
+                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operands of modulus must be numbers");
                             }
                             GearsValue b = Pop();
                             GearsValue a = Pop();
@@ -281,28 +281,28 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                         break;
                     case OP_NEGATE: {
                             if (!Peek(0).IsNumber) {
-                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operand of negate must be a number.");
+                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operand of negate must be a number");
                             }
                             Push(-Pop());
                         }
                         break;
                     case OP_BITWISE_COMPLEMENT: {
                             if (!Peek(0).IsNumber) {
-                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operand of bitwise complement must be a number.");
+                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operand of bitwise complement must be a number");
                             }
                             Push(~Pop());
                         }
                         break;
                     case OP_INCREMENT: {
                             if (!Peek(0).IsNumber) {
-                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operand of increment must be a number.");
+                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operand of increment must be a number");
                             }
                             Push(Pop() + 1);
                             break;
                         }
                     case OP_DECREMENT: {
                             if (!Peek(0).IsNumber) {
-                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operand of decrement must be a number.");
+                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Operand of decrement must be a number");
                             }
                             Push(Pop() - 1);
                             break;
@@ -345,7 +345,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                             CloseUpvalues(_OpenFrame.BP);
                             if (PopFrame()) {
                                 if (_SP != 0) {
-                                    throw new GearsRuntimeException(Chunk.LineAt(_IP), $"Error after final return: SP is '{_SP}', not '0'.");
+                                    throw new GearsRuntimeException(Chunk.LineAt(_IP), $"Error after final return: SP is '{_SP}', not '0'");
                                 }
                                 LastReturnValue = result;
                                 _IP = Chunk.SizeCode; // code is complete and no longer running.
@@ -360,13 +360,13 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                         break;
                     case OP_INHERIT: {
                             if (!Peek(0).IsObjType<GearsObjClass>(this)) {
-                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Superclass is not a class.");
+                                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Superclass is not a class");
                             }
                             GearsObjClass super = GetObjectFromPtr<GearsObjClass>(Peek(1));
                             GearsObjClass sub = GetObjectFromPtr<GearsObjClass>(Peek(0));
                             foreach (string key in super.Methods.AllKeys) {
                                 if (!super.Methods.TryGet(key, out GearsValue methodPtr)) {
-                                    throw new GearsRuntimeException(Chunk.LineAt(_IP), "Could not copy superclass method table.");
+                                    throw new GearsRuntimeException(Chunk.LineAt(_IP), "Could not copy superclass method table");
                                 }
                                 sub.Methods.Set(key, methodPtr);
                             }
@@ -405,13 +405,13 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
 
         private T GetObjectFromPtr<T>(GearsValue ptr) where T : GearsObj {
             if (!ptr.IsObjPtr) {
-                throw new Exception($"GetObjectFromPtr: Value is not a pointer and cannot reference a {typeof(T).Name}.");
+                throw new Exception($"GetObjectFromPtr: Value is not a pointer and cannot reference a {typeof(T).Name}");
             }
             GearsObj obj = HeapGetObject(ptr.AsObjPtr);
             if (obj is T) {
                 return obj as T;
             }
-            throw new Exception($"GetObjectFromPtr: Object is not {typeof(T).Name}.");
+            throw new Exception($"GetObjectFromPtr: Object is not {typeof(T).Name}");
         }
 
         // === Functions =============================================================================================
@@ -438,13 +438,13 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
 
         private void InvokeFromClass(int argCount, string methodName, GearsValue receiverPtr, GearsObjClass objClass) {
             if (!objClass.Methods.TryGet(methodName, out GearsValue methodPtr)) {
-                throw new GearsRuntimeException(Chunk.LineAt(_IP), $"{objClass} has no method with name '{methodName}'.");
+                throw new GearsRuntimeException(Chunk.LineAt(_IP), $"{objClass} has no method with name '{methodName}'");
             }
             if ((!methodPtr.IsObjPtr) || !(HeapGetObject(methodPtr.AsObjPtr) is GearsObjFunction method)) {
-                throw new GearsRuntimeException(Chunk.LineAt(_IP), $"Could not resolve method '{methodName}' in class {objClass}.");
+                throw new GearsRuntimeException(Chunk.LineAt(_IP), $"Could not resolve method '{methodName}' in class {objClass}");
             }
             if (method.Arity != argCount) {
-                throw new GearsRuntimeException(Chunk.LineAt(_IP), $"{method} expects {method.Arity} arguments but was passed {argCount}.");
+                throw new GearsRuntimeException(Chunk.LineAt(_IP), $"{method} expects {method.Arity} arguments but was passed {argCount}");
             }
             int ip = method.IP;
             int bp = _SP - (method.Arity + 1);
@@ -461,18 +461,18 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             string methodName = ReadConstantVarName();
             GearsValue receiverPtr = Peek(argCount);
             if (!receiverPtr.IsObjPtr) {
-                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Attempted invoke to non-pointer.");
+                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Attempted invoke to non-pointer");
             }
             GearsObj obj = receiverPtr.AsObject(this);
             if (obj is GearsObjInstance instance) {
                 if (instance.TryGetField(methodName, out GearsValue value)) {
                     if (!value.IsObjPtr) {
-                        throw new GearsRuntimeException(Chunk.LineAt(_IP), "Attempted call to non-pointer.");
+                        throw new GearsRuntimeException(Chunk.LineAt(_IP), "Attempted call to non-pointer");
                     }
                     GearsObj objFn = HeapGetObject(value.AsObjPtr);
                     if (objFn is GearsObjFunction function) {
                         if (function.Arity != argCount) {
-                            throw new GearsRuntimeException(Chunk.LineAt(_IP), $"{function} expects {function.Arity} arguments but was passed {argCount}.");
+                            throw new GearsRuntimeException(Chunk.LineAt(_IP), $"{function} expects {function.Arity} arguments but was passed {argCount}");
                         }
                         int ip = function.IP;
                         int bp = _SP - (function.Arity + 1);
@@ -480,7 +480,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                     }
                     else if (objFn is GearsObjFunctionNative native) {
                         if (native.Arity != argCount) {
-                            throw new GearsRuntimeException(Chunk.LineAt(_IP), $"{native} expects {native.Arity} arguments but was passed {argCount}.");
+                            throw new GearsRuntimeException(Chunk.LineAt(_IP), $"{native} expects {native.Arity} arguments but was passed {argCount}");
                         }
                         GearsValue[] args = new GearsValue[argCount];
                         for (int i = argCount - 1; i >= 0; i--) {
@@ -490,25 +490,25 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                         Push(native.Invoke(args));
                     }
                     else {
-                        throw new GearsRuntimeException(Chunk.LineAt(_IP), $"Could not resolve method {methodName} in {instance}.");
+                        throw new GearsRuntimeException(Chunk.LineAt(_IP), $"Could not resolve method {methodName} in {instance}");
                     }
                 }
                 else if (instance is GearsObjInstanceLox instanceLox) {
                     InvokeFromClass(argCount, methodName, receiverPtr, instanceLox.Class);
                 }
                 else {
-                    throw new GearsRuntimeException(Chunk.LineAt(_IP), $"{instance} does not have a public method named '{methodName}'.");
+                    throw new GearsRuntimeException(Chunk.LineAt(_IP), $"{instance} does not have a public method named '{methodName}'");
                 }
                 return;
             }
-            throw new GearsRuntimeException(Chunk.LineAt(_IP), "Attempted invoke to non-instance.");
+            throw new GearsRuntimeException(Chunk.LineAt(_IP), "Attempted invoke to non-instance");
         }
 
         private void CallInvokeSuper() {
             int argCount = ReadByte();
             // next instruction will always be OP_GET_UPVALUE (for the super class). we include it here:
             if (!(ReadByte() == (int)OP_GET_UPVALUE)) {
-                throw new GearsRuntimeException(Chunk.LineAt(_IP), "OP_SUPER_INVOKE must be followed by OP_GET_UPVALUE.");
+                throw new GearsRuntimeException(Chunk.LineAt(_IP), "OP_SUPER_INVOKE must be followed by OP_GET_UPVALUE");
             }
             int slot = ReadShort();
             GearsObjUpvalue upvalue = _OpenFrame.Function.Upvalues[slot];
@@ -520,12 +520,12 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
         private void Call(int argCount) {
             GearsValue ptr = Peek(argCount);
             if (!ptr.IsObjPtr) {
-                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Attempted call to non-pointer.");
+                throw new GearsRuntimeException(Chunk.LineAt(_IP), "Attempted call to non-pointer");
             }
             GearsObj obj = HeapGetObject(ptr.AsObjPtr);
             if (obj is GearsObjFunction function) {
                 if (function.Arity != argCount) {
-                    throw new GearsRuntimeException(Chunk.LineAt(_IP), $"{function} expects {function.Arity} arguments but was passed {argCount}.");
+                    throw new GearsRuntimeException(Chunk.LineAt(_IP), $"{function} expects {function.Arity} arguments but was passed {argCount}");
                 }
                 int ip = function.IP;
                 int bp = _SP - (function.Arity + 1);
@@ -533,7 +533,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             }
             else if (obj is GearsObjFunctionNative native) {
                 if (native.Arity != argCount) {
-                    throw new GearsRuntimeException(Chunk.LineAt(_IP), $"{native} expects {native.Arity} arguments but was passed {argCount}.");
+                    throw new GearsRuntimeException(Chunk.LineAt(_IP), $"{native} expects {native.Arity} arguments but was passed {argCount}");
                 }
                 GearsValue[] args = new GearsValue[argCount];
                 for (int i = argCount - 1; i >= 0; i--) {
@@ -544,7 +544,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
             }
             else if (obj is GearsObjBoundMethod method) {
                 if (method.Method.Arity != argCount) {
-                    throw new GearsRuntimeException(Chunk.LineAt(_IP), $"{method} expects {method.Method.Arity} arguments but was passed {argCount}.");
+                    throw new GearsRuntimeException(Chunk.LineAt(_IP), $"{method} expects {method.Method.Arity} arguments but was passed {argCount}");
                 }
                 int ip = method.Method.IP;
                 int bp = _SP - (method.Method.Arity + 1);
@@ -555,7 +555,7 @@ namespace XPT.Core.Scripting.LoxScript.VirtualMachine {
                 StackSet(_SP - argCount - 1, GearsValue.CreateObjPtr(HeapAddObject(new GearsObjInstanceLox(classObj))));
                 if (classObj.Methods.TryGet(InitString, out GearsValue initPtr)) {
                     if (!initPtr.IsObjPtr) {
-                        throw new GearsRuntimeException(Chunk.LineAt(_IP), "Attempted call to non-pointer.");
+                        throw new GearsRuntimeException(Chunk.LineAt(_IP), "Attempted call to non-pointer");
                     }
                     GearsObjFunction initFn = HeapGetObject(initPtr.AsObjPtr) as GearsObjFunction;
                     PushFrame(new GearsCallFrame(initFn, initFn.IP, _SP - argCount - 1));
